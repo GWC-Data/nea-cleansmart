@@ -1,17 +1,68 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "./assets/vite.svg";
-import heroImg from "./assets/hero.png";
+import React from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { LandingPage } from './apps/user/pages/LandingPage';
+import { LoginPage } from './apps/user/pages/LoginPage';
+import { RegisterPage } from './apps/user/pages/RegisterPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AdminApp } from './apps/admin/AdminApp';
+import { ParticipantDashboard } from './apps/user/pages/ParticipantDashboard';
+
+// Wrapper component to provide navigation logic for the Login Page
+const LoginRoute = () => {
+  const navigate = useNavigate();
+  return (
+    <LoginPage
+      onLoginSuccess={() => navigate('/dashboard')}
+      onNavigateToRegister={() => navigate('/register')}
+    />
+  );
+};
+
+// Wrapper component to provide navigation logic for the Registration Page
+const RegisterRoute = () => {
+  const navigate = useNavigate();
+  return (
+    <RegisterPage
+      onNavigateToLogin={() => navigate('/login')}
+    />
+  );
+};
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <div className="bg-red-500">
-      <h1 className="text-3xl font-bold underline text-white">
-        Hello world!
-      </h1>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/register" element={<RegisterRoute />} />
+
+          {/* Protected Routes for Users */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <ParticipantDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Route for Admins */}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute>
+                <AdminApp />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
