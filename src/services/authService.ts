@@ -52,7 +52,7 @@ export const loginUser = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
+  console.log(res);
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error?.message ?? "Login failed. Check your credentials.");

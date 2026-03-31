@@ -1,6 +1,7 @@
 import React from "react";
-import { Leaf } from "lucide-react";
+
 import { LoginForm } from "../../../components/auth/LoginForm";
+import heroBg from "../../../assets/logIn.png";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -12,27 +13,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateToRegister,
 }) => {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      {/* Animated Wrapper */}
-      <div className="w-full max-w-md animate-slide-up opacity-0">
-        {/* Header branding */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Leaf className="w-8 h-8 text-secondary" />
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">NEA - CleanTrack</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Welcome back</h1>
-          <p className="text-sm text-gray-500">
-            Sign in to continue your clean-up journey
-          </p>
+    <div className="min-h-screen bg-background flex lg:flex-row font-sans">
+      {/* Left Pane - Desktop Only */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative bg-primary-dark overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroBg})` }}
+        >
         </div>
+      </div>
 
-        {/* Form Container */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] border border-gray-100 p-7 sm:p-9">
-          <LoginForm
-            onSuccess={onLoginSuccess}
-            onNavigateToRegister={onNavigateToRegister}
-          />
+      {/* Right Pane (Form) */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 lg:p-12 xl:p-16 relative bg-white">
+        <div className="w-full max-w-sm animate-slide-up opacity-0">
+          <div className="text-center mb-8 lg:mb-10">
+            <h1 className="text-3xl xl:text-4xl font-extrabold text-[#1d7fc4] tracking-tight">
+              Log In
+            </h1>
+          </div>
+
+          <div className="bg-transparent w-full">
+            <LoginForm
+              onSuccess={onLoginSuccess}
+              onNavigateToRegister={onNavigateToRegister}
+            />
+          </div>
         </div>
       </div>
     </div>
