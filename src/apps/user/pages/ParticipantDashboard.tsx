@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { LogOut, Settings, Leaf, ScanLine, Clock, ChevronDown } from "lucide-react";
+import { LogOut, Settings, Leaf, ScanLine, Clock, StopCircle } from "lucide-react";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
 import { WelcomeSection } from "../../../components/dashboard/WelcomeSection";
@@ -39,7 +39,7 @@ export const ParticipantDashboard: React.FC = () => {
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return parts[0].substring(0, 2).toUpperCase();
+    return parts[0][0].toUpperCase();
   };
   const initials = getInitials(currentUser?.name || "Jane Doe");
 
@@ -93,12 +93,21 @@ export const ParticipantDashboard: React.FC = () => {
             )}
             
             {(state === 'active' || state === 'logging_off') && (
-              <div 
-                className="flex items-center gap-2 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm hover:bg-[#e6f4ea] transition-colors"
-              >
-                <Clock className="w-4 h-4" />
-                <span className="font-mono font-bold tabular-nums">{formatTime(remainingSeconds)}</span>
-              </div>
+              <>
+                <div 
+                  className="flex items-center gap-2 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2.5 rounded-full text-[#08351e] shadow-sm hover:bg-[#e6f4ea] transition-colors"
+                >
+                  <Clock className="w-4 h-4" />
+                  <span className="font-mono font-bold tabular-nums">{formatTime(remainingSeconds)}</span>
+                </div>
+                <button
+                  onClick={initiateLogOff}
+                  className="bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-2 transition-all hover:shadow-md active:scale-95"
+                >
+                  <StopCircle className="w-4 h-4" />
+                  Log Off & Submit
+                </button>
+              </>
             )}
           </div>
 
@@ -106,16 +115,10 @@ export const ParticipantDashboard: React.FC = () => {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 lg:pr-4 lg:py-1.5 bg-white lg:bg-gray-50 border border-gray-100 lg:border-gray-200 rounded-full hover:bg-gray-100 transition-colors shadow-sm"
+              className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#08351e] text-white flex items-center justify-center text-sm font-bold shadow-md hover:bg-[#0a4527] hover:shadow-lg transition-all active:scale-95 ring-2 ring-transparent hover:ring-secondary/20"
               title="Profile"
             >
-              <div className="w-8 h-8 rounded-full bg-[#08351e] text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                {initials}
-              </div>
-              <span className="hidden sm:block text-sm font-bold text-gray-800 tracking-tight pr-1">
-                {currentUser?.name || "Jane Doe"}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+              {initials}
             </button>
             
             {profileMenuOpen && (
@@ -186,17 +189,17 @@ export const ParticipantDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Desktop Footer */}
-      <footer className="hidden lg:block max-w-[1600px] mx-auto w-full px-6 lg:px-12 py-0 border-t border-gray-100 animate-slide-up">
-        <div className="flex justify-between items-center pt-8 border-t border-gray-100 text-[11px] text-gray-400 font-semibold tracking-wide">
+      {/* Global Footer */}
+      <footer className="max-w-[1600px] mx-auto w-full px-5 sm:px-8 lg:px-12 py-8 mt-4 border-t border-gray-100 animate-slide-up bg-white lg:bg-transparent">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-gray-400 font-semibold tracking-wide">
           <div className="flex items-center gap-2">
-            <Leaf className="w-8 h-8 text-secondary" />
-            <span className="font-extrabold text-gray-900 text-xl tracking-tight">
+            <Leaf className="w-6 h-6 lg:w-8 lg:h-8 text-secondary" />
+            <span className="font-extrabold text-gray-900 text-lg lg:text-xl tracking-tight">
               NEA - CleanTrack
             </span>
           </div>
 
-          <p className="text-xs font-semibold text-gray-400">
+          <p className="text-xs font-semibold text-gray-400 text-center sm:text-left">
             © 2026 Public Hygiene Council. All rights reserved.
           </p>
         </div>
