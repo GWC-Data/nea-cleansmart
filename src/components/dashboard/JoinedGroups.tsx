@@ -1,11 +1,13 @@
-import React from 'react';
-import { Waves, Leaf, Recycle, ChevronRight } from 'lucide-react';
+import React from "react";
+import { Waves, Leaf, Recycle, ChevronRight } from "lucide-react";
 
 export const JoinedGroups: React.FC = () => {
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4 px-2">
-        <h2 className="text-[1.35rem] font-bold text-gray-900 tracking-tight">Joined Groups</h2>
+        <h2 className="text-[1.35rem] font-bold text-gray-900 tracking-tight">
+          Joined Groups
+        </h2>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -24,7 +26,7 @@ export const JoinedGroups: React.FC = () => {
           <ChevronRight className="w-4 h-4 text-gray-400" />
         </div>
 
-        <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        {/* <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
           <div className="bg-[#a16207] text-white p-3 rounded-xl shrink-0">
             <Leaf className="w-5 h-5" />
           </div>
@@ -56,7 +58,7 @@ export const JoinedGroups: React.FC = () => {
 
         <button className="w-full py-4 mt-2 border-2 border-dashed border-gray-300 rounded-2xl text-[13px] font-bold text-gray-600 bg-transparent hover:bg-gray-50 transition-colors">
           Discover New Groups
-        </button>
+        </button> */}
       </div>
     </div>
   );

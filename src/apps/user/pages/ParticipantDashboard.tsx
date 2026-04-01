@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { LogOut, Settings, Leaf } from "lucide-react";
+import { LogOut, Settings, Leaf, ScanLine, Clock, ChevronDown } from "lucide-react";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
 import { WelcomeSection } from "../../../components/dashboard/WelcomeSection";
@@ -9,9 +9,9 @@ import { RewardsSection } from "../../../components/dashboard/RewardsSection";
 import { ActiveSessionCard } from "../../../components/dashboard/ActiveSessionCard";
 import { LogActivityForm } from "../../../components/dashboard/LogActivityForm";
 import { QRScannerModal } from "../../../components/dashboard/QRScannerModal";
+import { DurationSelectModal } from "../../../components/dashboard/DurationSelectModal";
 import { useAuth } from "../../../hooks/useAuth";
 import { DesktopDashboardView } from "../../../components/dashboard/DesktopDashboardView";
-// import { BottomNav } from "../../../components/navigation/BottomNav";
 
 export const ParticipantDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
@@ -21,10 +21,13 @@ export const ParticipantDashboard: React.FC = () => {
   const {
     state,
     elapsedSeconds,
+    remainingSeconds,
     location,
     startScanning,
+    handleScanSuccess,
     startSession,
     cancelScanning,
+    cancelDurationSelection,
     initiateLogOff,
     completeLogOff,
     cancelLogOff,
@@ -40,8 +43,11 @@ export const ParticipantDashboard: React.FC = () => {
   };
   const initials = getInitials(currentUser?.name || "Jane Doe");
 
-  const handleScanSuccess = () => {
-    startSession();
+  const formatTime = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleSubmitLog = () => {
@@ -64,7 +70,7 @@ export const ParticipantDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900 pb-24 lg:pb-8">
       {/* Unified Top Navigation */}
-      <header className="bg-[#f4fff5] lg:bg-white px-5 sm:px-8 lg:px-12 py-4 lg:py-5 sticky top-0 z-40 lg:border-b lg:border-gray-100 flex justify-between items-center transition-colors">
+      <header className="bg-[#f4fff5] lg:bg-white px-5 sm:px-8 lg:px-12 py-4 lg:py-4 sticky top-0 z-40 lg:border-b lg:border-gray-100 flex justify-between items-center transition-colors">
         <div className="flex items-center gap-2">
           <Leaf className="w-6 h-6 lg:w-7 lg:h-7 text-secondary" />
           <span className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
@@ -72,19 +78,46 @@ export const ParticipantDashboard: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex items-center gap-4 relative shrink-0">
+        <div className="flex items-center gap-3 relative shrink-0">
+          
+          {/* Desktop Only: Active Timer & Scan button */}
+          <div className="hidden lg:flex items-center gap-3 mr-2">
+            {state === 'idle' && (
+              <button
+                onClick={startScanning}
+                className="bg-[#08351e] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-md flex items-center gap-2 hover:bg-[#0a4527] transition-all hover:shadow-lg active:scale-95"
+              >
+                <ScanLine className="w-4 h-4" />
+                Scan QR
+              </button>
+            )}
+            
+            {(state === 'active' || state === 'logging_off') && (
+              <div 
+                className="flex items-center gap-2 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm hover:bg-[#e6f4ea] transition-colors"
+              >
+                <Clock className="w-4 h-4" />
+                <span className="font-mono font-bold tabular-nums">{formatTime(remainingSeconds)}</span>
+              </div>
+            )}
+          </div>
+
           {/* Profile Dropdown */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="w-10 h-10 lg:w-11 lg:h-11 bg-cover bg-center text-secondary rounded-full font-bold flex items-center justify-center transition-colors shadow-sm ring-2 ring-transparent hover:ring-secondary/20 overflow-hidden"
-              style={{
-                backgroundImage: `url(https://i.pravatar.cc/150?u=${currentUser?.email || "demo"})`,
-              }}
+              className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 lg:pr-4 lg:py-1.5 bg-white lg:bg-gray-50 border border-gray-100 lg:border-gray-200 rounded-full hover:bg-gray-100 transition-colors shadow-sm"
               title="Profile"
             >
-              {!currentUser?.email && initials}
+              <div className="w-8 h-8 rounded-full bg-[#08351e] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                {initials}
+              </div>
+              <span className="hidden sm:block text-sm font-bold text-gray-800 tracking-tight pr-1">
+                {currentUser?.name || "Jane Doe"}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
             </button>
+            
             {profileMenuOpen && (
               <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="px-4 py-2.5 border-b border-gray-50 mb-1">
@@ -130,7 +163,7 @@ export const ParticipantDashboard: React.FC = () => {
         {(state === "active" || state === "logging_off") && (
           <div className="w-full mt-2">
             <ActiveSessionCard
-              elapsedSeconds={elapsedSeconds}
+              remainingSeconds={remainingSeconds}
               location={location}
               onLogOff={initiateLogOff}
             />
@@ -169,13 +202,18 @@ export const ParticipantDashboard: React.FC = () => {
         </div>
       </footer>
 
-      {/* <BottomNav /> */}
-
       {/* Overlays / Modals */}
       {state === "scanning" && (
         <QRScannerModal
           onScanSuccess={handleScanSuccess}
           onClose={cancelScanning}
+        />
+      )}
+
+      {state === "selecting_duration" && (
+        <DurationSelectModal 
+          onSelect={startSession}
+          onCancel={cancelDurationSelection}
         />
       )}
 

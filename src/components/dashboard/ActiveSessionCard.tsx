@@ -2,13 +2,13 @@ import React from 'react';
 import { PlayCircle, MapPin, StopCircle } from 'lucide-react';
 
 interface ActiveSessionCardProps {
-  elapsedSeconds: number;
+  remainingSeconds: number;
   location: string;
   onLogOff: () => void;
 }
 
 export const ActiveSessionCard: React.FC<ActiveSessionCardProps> = ({
-  elapsedSeconds,
+  remainingSeconds,
   location,
   onLogOff,
 }) => {
@@ -31,7 +31,7 @@ export const ActiveSessionCard: React.FC<ActiveSessionCardProps> = ({
 
       <div className="flex flex-col items-center justify-center my-6 z-10 relative">
         <span className="text-5xl font-mono font-bold tracking-tight mb-3 drop-shadow-sm tabular-nums">
-          {formatTime(elapsedSeconds)}
+          {formatTime(remainingSeconds)}
         </span>
         <div className="flex items-center gap-1.5 text-green-50 text-sm font-medium bg-black/10 px-3 py-1.5 rounded-full border border-black/5">
           <MapPin className="w-4 h-4" />

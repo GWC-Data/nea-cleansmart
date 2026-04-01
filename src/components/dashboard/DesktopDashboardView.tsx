@@ -387,7 +387,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </div>
 
-              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+              {/* <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="bg-[#a16207] text-white p-3 rounded-xl shrink-0">
                   <Leaf className="w-5 h-5" />
                 </div>
@@ -419,7 +419,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
 
               <button className="w-full py-4 mt-2 border-2 border-dashed border-gray-300 rounded-2xl text-[13px] font-bold text-gray-600">
                 Discover New Groups
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

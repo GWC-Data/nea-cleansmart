@@ -78,7 +78,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
           <form id="logForm" onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-900">
-                Estimated Weight Collected <span className="text-gray-400 font-medium">(Optional)</span>
+                Estimated Weight Collected <span className="text-red-500 font-medium">*</span>
               </label>
               <div className="relative">
                 <input
@@ -125,7 +125,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-900">
-                Type of Waste <span className="text-gray-400 font-medium">(Optional)</span>
+                Type of Waste <span className="text-red-500 font-medium">*</span>
               </label>
               <div className="space-y-2.5">
                 {WASTE_TYPES.map(type => (
