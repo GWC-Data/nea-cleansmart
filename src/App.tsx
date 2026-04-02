@@ -5,7 +5,8 @@ import { LoginPage } from "./apps/user/pages/LoginPage";
 import { RegisterPage } from "./apps/user/pages/RegisterPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminApp } from "./apps/admin/AdminApp";
-import { ParticipantDashboard } from "./apps/user/pages/ParticipantDashboard";
+import { Dashboard } from "./apps/user/pages/Dashboard";
+import { Toaster } from 'sonner';
 
 // Wrapper component to provide navigation logic for the Login Page
 const LoginRoute = () => {
@@ -41,7 +42,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <ParticipantDashboard />
+                <Dashboard />
               </ProtectedRoute>
             }
           />
@@ -56,6 +57,7 @@ function App() {
             }
           />
         </Routes>
+        <Toaster richColors position="top-right" />
       </BrowserRouter>
     </AuthProvider>
   );

@@ -1,23 +1,30 @@
 import React from "react";
 import {
   Trash2,
-  TreePine,
   BarChart2,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
-  Waves,
-  Recycle,
+  // ChevronLeft,
+  // ChevronRight,
+  // Waves,
   Clock,
 } from "lucide-react";
-import { Leaf, Medal } from "lucide-react";
+import { Medal } from "lucide-react";
+import type { EventData } from "../../services/apiService";
 
 interface DesktopDashboardViewProps {
   name: string;
+  events: EventData[];
+  activeEventId: number | null;
+  onStartClick: (id: number) => void;
+  onSubmitClick: () => void;
 }
 
 export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   name,
+  events,
+  activeEventId,
+  onStartClick,
+  onSubmitClick,
 }) => {
   return (
     <div className="hidden lg:flex flex-col w-full min-h-screen bg-[#f4f7f6] pt-6 text-gray-900 pb-8">
@@ -169,134 +176,72 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
             <div className="flex flex-col gap-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-                  Upcoming Cleanups Events
+                  Active Events
                 </h2>
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <button className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 hover:bg-white transition-all bg-[#f4f7f6]">
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 hover:bg-white transition-all bg-[#f4f7f6]">
                     <ChevronRight className="w-4 h-4" />
                   </button>
-                </div>
+                </div> */}
               </div>
 
               <div className="grid grid-cols-3 gap-5 xl:gap-6">
-                {/* Cleanup Card 1 */}
-                <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full">
-                  <div className="h-40 relative shrink-0">
-                    <img
-                      src="https://picsum.photos/seed/beach/600/400"
-                      className="w-full h-full object-cover"
-                      alt="Beach"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-[10px] font-bold text-[#08351e]">
-                      Sat, Oct 12
-                    </div>
-                  </div>
-                  <div className="p-5 flex flex-col flex-1 pb-6">
-                    <h3 className="font-extrabold text-gray-900 mb-1 leading-snug tracking-tight">
-                      Coastal Revival Drive
-                    </h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 font-medium mb-4">
-                      <MapPin className="w-3 h-3" /> Pacifica State Beach
-                    </p>
-                    <div className="mt-auto flex justify-between items-center">
-                      <div className="flex -space-x-2">
-                        <img
-                          src="https://i.pravatar.cc/100?img=1"
-                          className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
-                          alt="User"
-                        />
-                        <img
-                          src="https://i.pravatar.cc/100?img=2"
-                          className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
-                          alt="User"
-                        />
-                        <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
-                          +18
-                        </div>
-                      </div>
-                      <button className="bg-[#08351e] hover:bg-[#0a4527] text-white text-xs font-bold px-5 py-2 rounded-full shadow-sm transition-colors">
-                        Join
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                {events.slice(0, 3).map((event, index) => {
+                  const isCheckedIn = activeEventId === event.eventId;
+                  const mockImage = index === 0 ? "beach" : index === 1 ? "forest" : "city";
+                  const eventDate = new Date(event.date);
+                  const formattedDate = eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-                {/* Cleanup Card 2 */}
-                <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full">
-                  <div className="h-40 relative shrink-0">
-                    <img
-                      src="https://picsum.photos/seed/forest/600/400"
-                      className="w-full h-full object-cover"
-                      alt="Forest"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-[10px] font-bold text-gray-800">
-                      Sun, Oct 13
-                    </div>
-                  </div>
-                  <div className="p-5 flex flex-col flex-1 pb-6">
-                    <h3 className="font-extrabold text-gray-900 mb-1 leading-snug tracking-tight">
-                      Muir Woods Saplings
-                    </h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 font-medium mb-4">
-                      <MapPin className="w-3 h-3" /> Redwood Valley
-                    </p>
-                    <div className="mt-auto flex justify-between items-center">
-                      <div className="flex -space-x-2">
+                  return (
+                    <div key={event.eventId} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full">
+                      <div className="h-40 relative shrink-0">
                         <img
-                          src="https://i.pravatar.cc/100?img=3"
-                          className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
-                          alt="User"
+                          src={`https://picsum.photos/seed/${mockImage}/600/400`}
+                          className="w-full h-full object-cover"
+                          alt={event.name}
                         />
-                        <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
-                          +42
+                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-[10px] font-bold text-[#08351e]">
+                          {formattedDate}
                         </div>
                       </div>
-                      <button className="bg-[#08351e] hover:bg-[#0a4527] text-white text-xs font-bold px-5 py-2 rounded-full shadow-sm transition-colors">
-                        Join
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cleanup Card 3 */}
-                <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full">
-                  <div className="h-40 relative shrink-0">
-                    <img
-                      src="https://picsum.photos/seed/city/600/400"
-                      className="w-full h-full object-cover"
-                      alt="City"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-[10px] font-bold text-[#08351e]">
-                      Wed, Oct 16
-                    </div>
-                  </div>
-                  <div className="p-5 flex flex-col flex-1 pb-6">
-                    <h3 className="font-extrabold text-gray-900 mb-1 leading-snug tracking-tight">
-                      Downtown Sweep
-                    </h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 font-medium mb-4">
-                      <MapPin className="w-3 h-3" /> Market Street
-                    </p>
-                    <div className="mt-auto flex justify-between items-center">
-                      <div className="flex -space-x-2">
-                        <img
-                          src="https://i.pravatar.cc/100?img=4"
-                          className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
-                          alt="User"
-                        />
-                        <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
-                          +5
+                      <div className="p-5 flex flex-col flex-1 pb-6">
+                        <h3 className="font-extrabold text-gray-900 mb-1 leading-snug tracking-tight">
+                          {event.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 flex items-center gap-1 font-medium mb-4">
+                          <MapPin className="w-3 h-3" /> {event.location}
+                        </p>
+                        <div className="mt-auto flex justify-between items-center">
+                          <div className="flex -space-x-2">
+                            <img src="https://i.pravatar.cc/100?img=1" className="w-7 h-7 rounded-full border-2 border-white shadow-sm" alt="User" />
+                            <img src="https://i.pravatar.cc/100?img=2" className="w-7 h-7 rounded-full border-2 border-white shadow-sm" alt="User" />
+                            <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
+                              +18
+                            </div>
+                          </div>
+                          {!isCheckedIn ? (
+                            <button 
+                              onClick={() => onStartClick(event.eventId)}
+                              className="bg-[#08351e] hover:bg-[#0a4527] cursor-pointer text-white text-xs font-bold px-5 py-2 rounded-full shadow-sm transition-colors"
+                            >
+                              Start
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={onSubmitClick}
+                              className="bg-secondary hover:bg-secondary-hover cursor-pointer text-white text-xs font-bold px-5 py-2 rounded-full shadow-md transition-colors animate-pulse"
+                            >
+                              Submit
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <button className="bg-[#08351e] hover:bg-[#0a4527] text-white text-xs font-bold px-5 py-2 rounded-full shadow-sm transition-colors">
-                        Join
-                      </button>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -367,7 +312,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
             </div>
 
             {/* Joined Groups List */}
-            <div className="flex flex-col group mt-2 gap-4">
+            {/* <div className="flex flex-col group mt-2 gap-4">
               <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight px-1 mb-2">
                 Joined Groups
               </h2>
@@ -387,7 +332,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </div>
 
-              {/* <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="bg-[#a16207] text-white p-3 rounded-xl shrink-0">
                   <Leaf className="w-5 h-5" />
                 </div>
@@ -419,8 +364,8 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
 
               <button className="w-full py-4 mt-2 border-2 border-dashed border-gray-300 rounded-2xl text-[13px] font-bold text-gray-600">
                 Discover New Groups
-              </button> */}
-            </div>
+              </button>
+            </div> */}
           </div>
         </div>
       </div>

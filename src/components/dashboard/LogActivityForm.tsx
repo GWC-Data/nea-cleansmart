@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Camera, X } from 'lucide-react';
 
 interface LogActivityFormProps {
-  durationSeconds: number;
+  checkInTime: string | null;
   location: string;
   onCancel: () => void;
-  onSubmit: () => void;
+  onSubmit: (weight: number, type: string) => void;
 }
 
 const WASTE_TYPES = [
@@ -18,7 +18,7 @@ const WASTE_TYPES = [
 ];
 
 export const LogActivityForm: React.FC<LogActivityFormProps> = ({
-  durationSeconds,
+  checkInTime,
   location,
   onCancel,
   onSubmit,
@@ -27,11 +27,12 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [photoMock, setPhotoMock] = useState<string | null>(null);
 
-  const formatTime = (totalSeconds: number) => {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  const getDurationText = () => {
+    if (!checkInTime) return '0h 00m';
+    const diff = Math.floor((new Date().getTime() - new Date(checkInTime).getTime()) / 1000);
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    return `${h.toString()}h ${m.toString().padStart(2, '0')}m`;
   };
 
   const handleToggleType = (type: string) => {
@@ -42,7 +43,9 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(); // Fields are optional per requirements, so submit directly
+    if (!weight) return; // Prevent submission without weight
+    const primaryType = selectedTypes.length > 0 ? selectedTypes[0] : 'mixed';
+    onSubmit(parseFloat(weight), primaryType);
   };
 
   return (
@@ -66,8 +69,8 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
               <span className="font-bold text-gray-900">{new Date().toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Duration</span>
-              <span className="font-bold text-secondary">{formatTime(durationSeconds)}</span>
+              <span className="text-gray-500 font-medium">Duration so far</span>
+              <span className="font-bold text-secondary">{getDurationText()}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 font-medium">Location</span>

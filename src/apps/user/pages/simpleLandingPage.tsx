@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { FaYoutube, FaTiktok, FaFacebook, FaInstagram } from "react-icons/fa6";
+import { FaYoutube, FaFacebook, FaInstagram } from "react-icons/fa6";
 import logo from "../../../assets/publicHygineCouncil.png";
 
 export const SimpleLandingPage: React.FC = () => {
@@ -21,7 +21,7 @@ export const SimpleLandingPage: React.FC = () => {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
           <button 
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/login')}
             className="bg-[#8cc63f] hover:bg-[#7abe31] cursor-pointer text-white px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-sm"
           >
             Join 15-Hours Cleanup Challenge
@@ -191,7 +191,7 @@ export const SimpleLandingPage: React.FC = () => {
       </main>
 
       {/* Footer Bar */}
-      <footer className="w-full bg-gradient-to-r from-[#1d7fc4] via-[#1d7fc4] to-[#8cc63f] py-4 md:py-5 mt-auto">
+      <footer className="w-full bg-linear-to-r from-[#1d7fc4] via-[#1d7fc4] to-[#8cc63f] py-4 md:py-5 mt-auto">
         <p className="text-center text-white text-xs lg:text-sm font-semibold tracking-wide px-4">
           Copyright © 2026 Public Hygiene Council. All rights reserved.
         </p>

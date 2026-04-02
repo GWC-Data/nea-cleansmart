@@ -45,6 +45,8 @@ export interface RegisterFormState {
   email: string;
   password: string;
   confirmPassword: string;
+  age?: string;
+  gender?: string;
 }
 
 /** Local state shape for the login form */

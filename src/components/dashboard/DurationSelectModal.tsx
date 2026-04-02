@@ -41,7 +41,7 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
             </h2>
             <button 
               onClick={onCancel}
-              className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="cursor-pointer w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -70,7 +70,7 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
           <button
             onClick={handleStart}
             disabled={!selectedSeconds}
-            className="w-full bg-[#96c93d] hover:bg-[#86b537] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-extrabold py-4 rounded-xl transition-colors shadow-sm"
+            className="cursor-pointer w-full bg-[#96c93d] hover:bg-[#86b537] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-extrabold py-4 rounded-xl transition-colors shadow-sm"
           >
             Start Session
           </button>

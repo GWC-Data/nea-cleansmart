@@ -1,5 +1,5 @@
 import React from "react";
-import { Waves, Leaf, Recycle, ChevronRight } from "lucide-react";
+import { Waves, ChevronRight } from "lucide-react";
 
 export const JoinedGroups: React.FC = () => {
   return (
