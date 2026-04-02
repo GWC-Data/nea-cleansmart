@@ -68,7 +68,7 @@ export const ParticipantDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900 pb-24 lg:pb-8">
+    <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
       {/* Unified Top Navigation */}
       <header className="bg-[#f4fff5] lg:bg-white px-5 sm:px-8 lg:px-12 py-4 lg:py-4 sticky top-0 z-40 lg:border-b lg:border-gray-100 flex justify-between items-center transition-colors">
         <div className="flex items-center gap-2">
