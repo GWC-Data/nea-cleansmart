@@ -12,6 +12,8 @@ export interface RegisterPayload {
   email: string;
   password: string;
   role: "user" | "admin"; // Default to "user" for the User App
+  age?: string;
+  gender?: string;
 }
 
 /** Payload sent to POST /auth/login */

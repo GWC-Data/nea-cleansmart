@@ -212,66 +212,73 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-age"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <Calendar className="w-3.5 h-3.5 text-[#1d7fc4]" />
-          </div>
-          Age
-        </label>
-        <input
-          id="reg-age"
-          name="age"
-          type="number"
-          autoComplete="age"
-          value={form.age}
-          onChange={handleChange}
-          className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-gender"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <VenusAndMars className="w-3.5 h-3.5 text-[#1d7fc4]" />
-          </div>
-          Gender
-        </label>
-        <div className="relative" ref={genderDropdownRef}>
-          <button
-            type="button"
-            onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
-            className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all text-left flex justify-between items-center text-gray-700"
+      {/* Age & Gender — single row on all screens */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Age */}
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="reg-age"
+            className="flex items-center gap-1.5 text-sm font-semibold text-gray-500"
           >
-            <span className={form.gender ? "text-gray-900" : "text-gray-400"}>
-              {form.gender || "Select Options"}
-            </span>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
-          </button>
-
-          {isGenderDropdownOpen && (
-            <div className="absolute z-10 w-full mt-1.5 bg-white border border-gray-100 rounded-lg shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-200">
-              {["Male", "Female", "Other"].map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => {
-                    setForm((prev) => ({ ...prev, gender: option }));
-                    setIsGenderDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#1d7fc4]/5 transition-colors ${form.gender === option ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5" : "text-gray-700 font-medium"}`}
-                >
-                  {option}
-                </button>
-              ))}
+            <div className="bg-[#1d7fc4]/10 p-1 rounded-full shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-[#1d7fc4]" />
             </div>
-          )}
+            Age
+          </label>
+          <input
+            id="reg-age"
+            name="age"
+            type="number"
+            autoComplete="off"
+            value={form.age}
+            onChange={handleChange}
+            placeholder="e.g. 25"
+            className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
+          />
+        </div>
+
+        {/* Gender */}
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="reg-gender"
+            className="flex items-center gap-1.5 text-sm font-semibold text-gray-500"
+          >
+            <div className="bg-[#1d7fc4]/10 p-1 rounded-full shrink-0">
+              <VenusAndMars className="w-3.5 h-3.5 text-[#1d7fc4]" />
+            </div>
+            Gender
+          </label>
+          <div className="relative" ref={genderDropdownRef}>
+            <button
+              type="button"
+              id="reg-gender"
+              onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+              className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all text-left flex justify-between items-center"
+            >
+              <span className={form.gender ? "text-gray-900" : "text-gray-400 truncate"}>
+                {form.gender || "Select"}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isGenderDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isGenderDropdownOpen && (
+              <div className="absolute z-20 w-full mt-1.5 bg-white border border-gray-100 rounded-lg shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-200">
+                {["Male", "Female", "Prefer not to say"].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, gender: option }));
+                      setIsGenderDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#1d7fc4]/5 transition-colors ${form.gender === option ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5" : "text-gray-700 font-medium"}`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -50,9 +50,7 @@ export const Dashboard: React.FC = () => {
 
   const handleStartClicked = async (eventId: number) => {
     // Call api to log POST
-    const userId = 3; // Assuming 1 per instructions
-    console.log("eventId", eventId);
-    console.log("userId", userId);
+    const userId = JSON.parse(localStorage.getItem("nea_user_profile") || "{}").id;
     const resultId = await apiService.checkInEvent({
       eventId,
       userId,
@@ -67,9 +65,6 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSubmitReport = async (weight: number, type: string) => {
-    console.log("activeLogId", 3);
-    console.log("weight", weight);
-    console.log("type", type);
     if (!activeLogId) return;
     const checkoutSuccess = await apiService.checkOutEvent(20, {
       checkOutTime: new Date().toISOString(),

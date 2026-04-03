@@ -33,6 +33,8 @@ export const useAuth = () => {
         email: formData.email,
         password: formData.password,
         role: "user", // Users registering via the User App are always "user" role
+        age: formData.age,
+        gender: formData.gender,
       });
       onSuccess();
     } catch (err: unknown) {
