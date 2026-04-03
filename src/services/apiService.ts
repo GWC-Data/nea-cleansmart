@@ -1,3 +1,5 @@
+import { ENV } from "../config/env";
+
 export interface EventData {
   eventId: number;
   date: string;
@@ -19,7 +21,7 @@ export interface CheckOutPayload {
   garbageType: string;
 }
 
-const API_BASE_URL = "http://localhost:6060";
+const BASE = ENV.API_BASE_URL;
 
 export const apiService = {
   /**
@@ -27,7 +29,7 @@ export const apiService = {
    */
   async getEvents(): Promise<EventData[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/events`);
+      const response = await fetch(`${BASE}/events`);
       if (!response.ok) {
         throw new Error(`Failed to fetch events: ${response.statusText}`);
       }
@@ -46,7 +48,7 @@ export const apiService = {
    */
   async checkInEvent(payload: CheckInPayload): Promise<number | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/event-logs`, {
+      const response = await fetch(`${BASE}/event-logs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +89,7 @@ export const apiService = {
   ): Promise<boolean> {
     try {
       // User specifies PUT or PATCH. Using PUT as default for updating the record
-      const response = await fetch(`${API_BASE_URL}/event-logs/${logId}`, {
+      const response = await fetch(`${BASE}/event-logs/${logId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +100,7 @@ export const apiService = {
         // Fallback to PATCH if PUT fails
         if (response.status === 404 || response.status === 405) {
           const patchResponse = await fetch(
-            `${API_BASE_URL}/event-logs/${logId}`,
+            `${BASE}/event-logs/${logId}`,
             {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
