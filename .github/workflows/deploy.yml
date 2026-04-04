@@ -9,6 +9,9 @@ jobs:
   deploy:
     runs-on: [self-hosted, frontend]
 
+    env:
+      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
+
     steps:
       - name: Clone or Update Frontend
         run: |
