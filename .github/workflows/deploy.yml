@@ -12,8 +12,9 @@ jobs:
     steps:
       - name: Clone or Update Frontend
         run: |
-          if [ ! -d "/home/shanmugavel/frontend" ]; then
-            git clone https://github.com/GWC-Data/nea-cleansmart /home/shanmugavel/frontend
+          if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
+            rm -rf /home/shanmugavel/frontend
+            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
           fi
 
           cd /home/shanmugavel/frontend
@@ -25,17 +26,16 @@ jobs:
           cd /home/shanmugavel/frontend
           npm install
 
-      # - name: Build Frontend
-      #   run: |
-      #     cd /home/shanmugavel/frontend
-      #     npm run build
-
-      - name: Run Frontend (Background)
+      - name: Restart Frontend with PM2
         run: |
           cd /home/shanmugavel/frontend
 
-          # Kill existing dev server if running
-          pkill -f "npm run dev" || true
+          pm2 describe frontend > /dev/null 2>&1
 
-          # Start frontend in background
-          nohup npm run dev -- --host > frontend.log 2>&1 &
+          if [ $? -eq 0 ]; then
+            pm2 restart frontend
+          else
+            pm2 start npm --name "frontend" -- run dev -- --host
+          fi
+
+          pm2 save
