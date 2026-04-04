@@ -1,0 +1,41 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, frontend]
+
+    steps:
+      - name: Clone or Update Frontend
+        run: |
+          if [ ! -d "/home/shanmugavel/frontend" ]; then
+            git clone https://github.com/GWC-Data/nea-cleansmart /home/shanmugavel/frontend
+          fi
+
+          cd /home/shanmugavel/frontend
+          git fetch origin
+          git reset --hard origin/main
+
+      - name: Install Dependencies
+        run: |
+          cd /home/shanmugavel/frontend
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd /home/shanmugavel/frontend
+          npm run build
+
+      - name: Run Frontend (Background)
+        run: |
+          cd /home/shanmugavel/frontend
+
+          # Kill existing dev server if running
+          pkill -f "npm run dev" || true
+
+          # Start frontend in background
+          nohup npm run dev -- --host > frontend.log 2>&1 &
