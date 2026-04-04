@@ -25,10 +25,10 @@ jobs:
           cd /home/shanmugavel/frontend
           npm install
 
-      - name: Build Frontend
-        run: |
-          cd /home/shanmugavel/frontend
-          npm run build
+      # - name: Build Frontend
+      #   run: |
+      #     cd /home/shanmugavel/frontend
+      #     npm run build
 
       - name: Run Frontend (Background)
         run: |
