@@ -121,4 +121,29 @@ export const apiService = {
       return false;
     }
   },
+
+  /**
+   * Request a password-reset OTP for the given email.
+   * TODO: Replace the URL/method once the backend endpoint is finalised.
+   *
+   * @param email  The address the user entered in the "Forgot Password" modal.
+   * @returns      true  → OTP sent successfully
+   *               false → request failed (network error / unknown email / etc.)
+   */
+  async requestPasswordReset(email: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        throw new Error(`Password reset request failed: ${response.statusText}`);
+      }
+      return true;
+    } catch (error) {
+      console.error("requestPasswordReset error:", error);
+      return false;
+    }
+  },
 };

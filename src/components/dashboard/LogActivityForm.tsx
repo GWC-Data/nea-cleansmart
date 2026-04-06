@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Camera, X } from 'lucide-react';
 
 interface LogActivityFormProps {
-  checkInTime: string | null;
+  elapsedSeconds: number;
   location: string;
   onCancel: () => void;
   onSubmit: (weight: number, type: string) => void;
@@ -18,7 +18,7 @@ const WASTE_TYPES = [
 ];
 
 export const LogActivityForm: React.FC<LogActivityFormProps> = ({
-  checkInTime,
+  elapsedSeconds,
   location,
   onCancel,
   onSubmit,
@@ -28,11 +28,11 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   const [photoMock, setPhotoMock] = useState<string | null>(null);
 
   const getDurationText = () => {
-    if (!checkInTime) return '0h 00m';
-    const diff = Math.floor((new Date().getTime() - new Date(checkInTime).getTime()) / 1000);
-    const h = Math.floor(diff / 3600);
-    const m = Math.floor((diff % 3600) / 60);
-    return `${h.toString()}h ${m.toString().padStart(2, '0')}m`;
+    const h = Math.floor(elapsedSeconds / 3600);
+    const m = Math.floor((elapsedSeconds % 3600) / 60);
+    const s = elapsedSeconds % 60;
+    if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m`;
+    return `${m}m ${s.toString().padStart(2, '0')}s`;
   };
 
   const handleToggleType = (type: string) => {
@@ -56,7 +56,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
             <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
             <p className="text-xs text-gray-500 font-medium">Session Report Checkout</p>
           </div>
-          <button onClick={onCancel} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+          <button onClick={onCancel} className="cursor-pointer p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Users, Calendar } from 'lucide-react';
+import React from "react";
+import { Users, Calendar } from "lucide-react";
 
 export const CommunitySection: React.FC = () => {
   return (
@@ -10,8 +10,12 @@ export const CommunitySection: React.FC = () => {
           <Calendar className="w-5 h-5 text-secondary" /> Active Events
         </h2>
         <div className="border-l-2 border-secondary pl-4 py-1">
-          <p className="text-sm font-bold text-gray-900">Beach Clean-up Drive</p>
-          <p className="text-[13px] text-gray-500 mt-1">Saturday, 9:00 AM • East Coast Park</p>
+          <p className="text-sm font-bold text-gray-900">
+            Beach Clean-up Drive
+          </p>
+          <p className="text-[13px] text-gray-500 mt-1">
+            Saturday, 9:00 AM • East Coast Park
+          </p>
         </div>
       </div>
 

@@ -1,12 +1,12 @@
 import React from "react";
 import {
   Trash2,
-  BarChart2,
   MapPin,
   // ChevronLeft,
   // ChevronRight,
   // Waves,
   Clock,
+  Wind,
 } from "lucide-react";
 import { Medal } from "lucide-react";
 import type { EventData } from "../../services/apiService";
@@ -14,17 +14,13 @@ import type { EventData } from "../../services/apiService";
 interface DesktopDashboardViewProps {
   name: string;
   events: EventData[];
-  activeEventId: number | null;
-  onStartClick: (id: number) => void;
-  onSubmitClick: () => void;
+  onJoinClick?: (event: EventData) => void;
 }
 
 export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   name,
   events,
-  activeEventId,
-  onStartClick,
-  onSubmitClick,
+  onJoinClick,
 }) => {
   return (
     <div className="hidden lg:flex flex-col w-full min-h-screen bg-[#f4f7f6] pt-6 text-gray-900 pb-8">
@@ -37,8 +33,8 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               Welcome back, {name}!
             </h1>
             <p className="text-gray-500 font-medium leading-relaxed">
-              Your contributions last week helped restore 12 hectares of local
-              woodland. Let's keep the pulse strong.
+              Your contribution helped to create a cleaner and more hygienic
+              environment for all Singapore residents to enjoy.
             </p>
           </div>
 
@@ -99,6 +95,21 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
           <div className="col-span-8 flex flex-col gap-10">
             {/* Stat Pills */}
             <div className="flex flex-wrap items-center gap-4 shrink-0">
+              {/* Stat Pill: Clean-up hours */}
+              <div className="bg-[#f9f5f0] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#efdfc6] flex-1 min-w-[200px]">
+                <div className="bg-[#eab308] text-white p-2.5 rounded-full shrink-0 shadow-[0_2px_10px_rgba(234,179,8,0.3)]">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold mb-0.5">
+                    Clean-up Hours
+                  </p>
+                  <div className="text-xl font-extrabold tracking-tight leading-none text-gray-900">
+                    12.5 <span className="text-sm font-semibold">hrs</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Stat Pill: Waste Collected */}
               <div className="bg-[#f0f8f4] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#e2efe8] flex-1 min-w-[200px]">
                 <div className="bg-[#9bf8b7] text-[#08351e] p-2.5 rounded-full shrink-0">
@@ -114,32 +125,17 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* Stat Pill: Trees Planted */}
-              <div className="bg-[#f9f5f0] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#efdfc6] flex-1 min-w-[200px]">
-                <div className="bg-[#eab308] text-white p-2.5 rounded-full shrink-0 shadow-[0_2px_10px_rgba(234,179,8,0.3)]">
-                  <Clock className="w-5 h-5" />
+              {/* Stat Pill: Carbon Reduced */}
+              <div className="bg-[#f0f6ff] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#d6e4ff] flex-1 min-w-[200px]">
+                <div className="bg-[#bfdbfe] text-[#1e40af] p-2.5 rounded-full shrink-0 shadow-[0_2px_10px_rgba(59,130,246,0.2)]">
+                  <Wind className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-bold mb-0.5">
-                    Time logged
+                  <p className="text-xs text-gray-500 font-bold mb-0.5 leading-tight">
+                    Carbon Reduced
                   </p>
                   <div className="text-xl font-extrabold tracking-tight leading-none text-gray-900">
-                    12.5 <span className="text-sm font-semibold">hrs</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stat Pill: Global Rank */}
-              <div className="bg-[#f0f9f4] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#e2efe8] flex-1 min-w-[200px]">
-                <div className="bg-[#c2f2d1] text-[#08351e] p-2.5 rounded-full shrink-0">
-                  <BarChart2 className="w-5 h-5 fill-current" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-bold mb-0.5">
-                    Ranking
-                  </p>
-                  <div className="text-xl font-extrabold tracking-tight leading-none text-gray-900">
-                    #25
+                    3.2 <span className="text-sm font-semibold">kg CO₂</span>
                   </div>
                 </div>
               </div>
@@ -190,13 +186,20 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
 
               <div className="grid grid-cols-3 gap-5 xl:gap-6">
                 {events.slice(0, 3).map((event, index) => {
-                  const isCheckedIn = activeEventId === event.eventId;
-                  const mockImage = index === 0 ? "beach" : index === 1 ? "forest" : "city";
+                  const mockImage =
+                    index === 0 ? "beach" : index === 1 ? "forest" : "city";
                   const eventDate = new Date(event.date);
-                  const formattedDate = eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                  const formattedDate = eventDate.toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  });
 
                   return (
-                    <div key={event.eventId} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full">
+                    <div
+                      key={event.eventId}
+                      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100 h-full"
+                    >
                       <div className="h-40 relative shrink-0">
                         <img
                           src={`https://picsum.photos/seed/${mockImage}/600/400`}
@@ -216,25 +219,26 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                         </p>
                         <div className="mt-auto flex justify-between items-center">
                           <div className="flex -space-x-2">
-                            <img src="https://i.pravatar.cc/100?img=1" className="w-7 h-7 rounded-full border-2 border-white shadow-sm" alt="User" />
-                            <img src="https://i.pravatar.cc/100?img=2" className="w-7 h-7 rounded-full border-2 border-white shadow-sm" alt="User" />
+                            <img
+                              src="https://i.pravatar.cc/100?img=1"
+                              className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
+                              alt="User"
+                            />
+                            <img
+                              src="https://i.pravatar.cc/100?img=2"
+                              className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
+                              alt="User"
+                            />
                             <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
                               +18
                             </div>
                           </div>
-                          {!isCheckedIn ? (
-                            <button 
-                              onClick={() => onStartClick(event.eventId)}
-                              className="bg-[#08351e] hover:bg-[#0a4527] cursor-pointer text-white text-xs font-bold px-5 py-2 rounded-full shadow-sm transition-colors"
+                          {onJoinClick && (
+                            <button
+                              onClick={() => onJoinClick(event)}
+                              className="bg-[#08351e] hover:bg-[#0a4527] cursor-pointer text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-sm transition-colors"
                             >
-                              Start
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={onSubmitClick}
-                              className="bg-secondary hover:bg-secondary-hover cursor-pointer text-white text-xs font-bold px-5 py-2 rounded-full shadow-md transition-colors animate-pulse"
-                            >
-                              Submit
+                              Join
                             </button>
                           )}
                         </div>

@@ -26,12 +26,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       {/* Right Pane (Form) */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 lg:p-12 xl:p-16 relative bg-white">
         <div className="w-full max-w-sm animate-slide-up opacity-0">
-          <div className="text-center mb-8 lg:mb-10">
-            <h1 className="text-3xl xl:text-4xl font-extrabold text-[#1d7fc4] tracking-tight">
-              Log In
-            </h1>
-          </div>
-
           <div className="bg-transparent w-full">
             <LoginForm
               onSuccess={onLoginSuccess}
