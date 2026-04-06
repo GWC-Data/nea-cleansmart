@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, QrCode, ChevronRight } from 'lucide-react';
+import { QrCode, ChevronRight } from 'lucide-react';
 
 interface WelcomeSectionProps {
   name: string;
@@ -11,7 +11,6 @@ interface WelcomeSectionProps {
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   name,
   points,
-  level,
   onScanClick,
 }) => {
   return (

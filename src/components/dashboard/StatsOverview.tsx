@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Recycle, BarChart2, Plus } from "lucide-react";
+import { Clock, Recycle, BarChart2 } from "lucide-react";
 
 export const StatsOverview: React.FC = () => {
   return (

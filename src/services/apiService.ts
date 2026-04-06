@@ -34,6 +34,7 @@ export const apiService = {
         throw new Error(`Failed to fetch events: ${response.statusText}`);
       }
       const data = await response.json();
+      console.log("events", data);
       // Depending on API structure, it could be the array directly or wrapped in an object
       return Array.isArray(data) ? data : data.events || data.data || [];
     } catch (error) {
@@ -48,6 +49,7 @@ export const apiService = {
    */
   async checkInEvent(payload: CheckInPayload): Promise<number | null> {
     try {
+      console.log("checkin payload", payload);
       const response = await fetch(`${BASE}/event-logs`, {
         method: "POST",
         headers: {
@@ -59,7 +61,7 @@ export const apiService = {
         throw new Error(`Failed to check in: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log("event-logs", data);
+      console.log("checkin response", data);
       
       // The backend wraps the payload inside "eventLog" or "eventlog"
       const logRecord = data.eventLog || data.eventlog || data;
@@ -88,6 +90,7 @@ export const apiService = {
     payload: CheckOutPayload,
   ): Promise<boolean> {
     try {
+      console.log("checkout payload", payload);
       // User specifies PUT or PATCH. Using PUT as default for updating the record
       const response = await fetch(`${BASE}/event-logs/${logId}`, {
         method: "PUT",
@@ -107,6 +110,7 @@ export const apiService = {
               body: JSON.stringify(payload),
             },
           );
+          console.log("checkout response", patchResponse);
           return patchResponse.ok;
         }
         throw new Error(`Failed to check out: ${response.statusText}`);

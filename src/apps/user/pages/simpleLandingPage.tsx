@@ -20,18 +20,18 @@ export const SimpleLandingPage: React.FC = () => {
         
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/login')}
-            className="bg-[#8cc63f] hover:bg-[#7abe31] cursor-pointer text-white px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-sm"
-          >
-            Join 15-Hours Cleanup Challenge
-          </button>
           <a
             href="#"
             className="text-sm md:text-base font-bold text-[#1d7fc4] tracking-wide hover:underline underline-offset-4"
           >
             KEEP SINGAPORE CLEAN
           </a>
+          <button 
+            onClick={() => navigate('/main')}
+            className="bg-[#8cc63f] hover:bg-[#7abe31] cursor-pointer text-white px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-sm"
+          >
+            Cleanliness Champions
+          </button>
         </div>
 
         {/* Mobile Hamburger */}

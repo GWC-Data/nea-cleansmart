@@ -1,17 +1,9 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  User,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Calendar,
-  VenusAndMars,
-  ChevronDown,
-} from "lucide-react";
+import { User, Mail, Lock, Calendar, VenusAndMars, ChevronDown } from "lucide-react";
 import type { RegisterFormState } from "../../types/auth.types";
 import { toast } from "sonner";
+import { FloatingInput } from "../ui/FloatingInput";
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -34,9 +26,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const { handleRegister, isSubmitting, error } = useAuth();
   const [form, setForm] = useState<RegisterFormState>(INITIAL_STATE);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
+  const [genderFocused, setGenderFocused] = useState(false);
   const genderDropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -46,6 +37,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         !genderDropdownRef.current.contains(event.target as Node)
       ) {
         setIsGenderDropdownOpen(false);
+        setGenderFocused(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -96,173 +88,140 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     handleRegister(form, onSuccess);
   };
 
+  /* Gender floating-label helpers */
+  const genderIsFloating =
+    genderFocused || isGenderDropdownOpen || !!form.gender;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-name"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <User className="w-3.5 h-3.5 text-[#1d7fc4]" />
-          </div>
-          Full Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="reg-name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          value={form.name}
+    <form onSubmit={handleSubmit} className="space-y-5 md:space-y-7">
+      {/* Full Name */}
+      <FloatingInput
+        id="reg-name"
+        name="name"
+        type="text"
+        label="Full Name"
+        value={form.name}
+        onChange={handleChange}
+        autoComplete="name"
+        required
+        icon={<User className="w-5 h-5" />}
+      />
+
+      {/* Email */}
+      <FloatingInput
+        id="reg-email"
+        name="email"
+        type="email"
+        label="Email Address"
+        value={form.email}
+        onChange={handleChange}
+        autoComplete="email"
+        required
+        icon={<Mail className="w-5 h-5" />}
+      />
+
+      {/* Password */}
+      <FloatingInput
+        id="reg-password"
+        name="password"
+        label="Password"
+        value={form.password}
+        onChange={handleChange}
+        autoComplete="new-password"
+        required
+        showToggle
+        icon={<Lock className="w-5 h-5" />}
+      />
+
+      {/* Confirm Password */}
+      <FloatingInput
+        id="reg-confirm-password"
+        name="confirmPassword"
+        label="Confirm Password"
+        value={form.confirmPassword}
+        onChange={handleChange}
+        autoComplete="new-password"
+        required
+        showToggle
+        icon={<Lock className="w-5 h-5" />}
+      />
+
+      {/* Age & Gender — single row */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+        {/* Age — icon + FloatingInput in the same row */}
+        <FloatingInput
+          id="reg-age"
+          name="age"
+          type="number"
+          label="Age"
+          value={String(form.age)}
           onChange={handleChange}
-          required
-          className="bg-white border-2 border-[#6aa9e9] rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
+          autoComplete="off"
+          icon={<Calendar className="w-5 h-5" />}
         />
-      </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-email"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <Mail className="w-3.5 h-3.5 text-[#1d7fc4]" />
+        {/* Gender — custom floating outlined dropdown with left icon */}
+        <div className="flex items-center gap-2.5">
+          {/* Left icon */}
+          <div className="shrink-0 text-[#1d7fc4] w-5 flex justify-center">
+            <VenusAndMars className="w-5 h-5" />
           </div>
-          Email Address <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="reg-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          className="bg-white border-2 border-[#6aa9e9] rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
-        />
-      </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-password"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <Lock className="w-3.5 h-3.5 text-[#1d7fc4]" />
-          </div>
-          Password <span className="text-red-500">*</span>
-        </label>
-        <div className="relative">
-          <input
-            id="reg-password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="new-password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg pl-3.5 pr-10 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1d7fc4] hover:text-[#0b4d7c] transition-colors focus:outline-none"
-          >
-            {showPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
+          {/* Dropdown wrapper */}
+          <div className="relative flex-1" ref={genderDropdownRef}>
+            {/* Floating label */}
+            <label
+              htmlFor="reg-gender"
+              className={[
+                "absolute left-3.5 pointer-events-none select-none z-10",
+                "transition-all duration-150 ease-out origin-left",
+                genderIsFloating
+                  ? "-top-2 text-[11px] font-semibold bg-white px-1 leading-none"
+                  : "top-1/2 -translate-y-1/2 text-sm font-medium",
+                genderFocused || isGenderDropdownOpen
+                  ? "text-[#1d7fc4]"
+                  : "text-gray-500",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              Gender
+            </label>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="reg-confirm-password"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500"
-        >
-          <div className="bg-[#1d7fc4]/10 p-1 rounded-full">
-            <Lock className="w-3.5 h-3.5 text-[#1d7fc4]" />
-          </div>
-          Confirm Password <span className="text-red-500">*</span>
-        </label>
-        <div className="relative">
-          <input
-            id="reg-confirm-password"
-            name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            autoComplete="new-password"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-            className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg pl-3.5 pr-10 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1d7fc4] hover:text-[#0b4d7c] transition-colors focus:outline-none"
-          >
-            {showConfirmPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Age & Gender — single row on all screens */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Age */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="reg-age"
-            className="flex items-center gap-1.5 text-sm font-semibold text-gray-500"
-          >
-            <div className="bg-[#1d7fc4]/10 p-1 rounded-full shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-[#1d7fc4]" />
-            </div>
-            Age
-          </label>
-          <input
-            id="reg-age"
-            name="age"
-            type="number"
-            autoComplete="off"
-            value={form.age}
-            onChange={handleChange}
-            placeholder="e.g. 25"
-            className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Gender */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="reg-gender"
-            className="flex items-center gap-1.5 text-sm font-semibold text-gray-500"
-          >
-            <div className="bg-[#1d7fc4]/10 p-1 rounded-full shrink-0">
-              <VenusAndMars className="w-3.5 h-3.5 text-[#1d7fc4]" />
-            </div>
-            Gender
-          </label>
-          <div className="relative" ref={genderDropdownRef}>
+            {/* Trigger button */}
             <button
               type="button"
               id="reg-gender"
-              onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
-              className="w-full bg-white border-2 border-[#6aa9e9] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1d7fc4] focus:ring-1 focus:ring-[#1d7fc4] transition-all text-left flex justify-between items-center"
+              onClick={() => {
+                setIsGenderDropdownOpen((o) => !o);
+                setGenderFocused(true);
+              }}
+              className={[
+                "w-full bg-white rounded-lg px-3.5 pt-5 pb-2.5 text-sm text-left",
+                "border-2 transition-all outline-none flex items-center justify-between",
+                isGenderDropdownOpen || genderFocused
+                  ? "border-[#1d7fc4] ring-1 ring-[#1d7fc4]/30"
+                  : "border-gray-300 hover:border-gray-400",
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
-              <span className={form.gender ? "text-gray-900" : "text-gray-400 truncate"}>
-                {form.gender || "Select"}
+              {/* Show selected value or empty (not a dash) */}
+              <span className={form.gender ? "text-gray-900 text-sm" : "text-transparent text-sm"}>
+                {form.gender || "placeholder"}
               </span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isGenderDropdownOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                  isGenderDropdownOpen
+                    ? "rotate-180 text-[#1d7fc4]"
+                    : "text-gray-400"
+                }`}
+              />
             </button>
 
+            {/* Dropdown options */}
             {isGenderDropdownOpen && (
-              <div className="absolute z-20 w-full mt-1.5 bg-white border border-gray-100 rounded-lg shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-200">
+              <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-150">
                 {["Male", "Female", "Prefer not to say"].map((option) => (
                   <button
                     key={option}
@@ -270,8 +229,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                     onClick={() => {
                       setForm((prev) => ({ ...prev, gender: option }));
                       setIsGenderDropdownOpen(false);
+                      setGenderFocused(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#1d7fc4]/5 transition-colors ${form.gender === option ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5" : "text-gray-700 font-medium"}`}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                      form.gender === option
+                        ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5"
+                        : "text-gray-700 font-medium hover:bg-gray-50"
+                    }`}
                   >
                     {option}
                   </button>
@@ -282,15 +246,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         </div>
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="cursor-pointer w-full bg-[#96c93d] hover:bg-[#86b537] disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors shadow-sm mt-5"
+        className="mb-4 cursor-pointer w-full bg-[#96c93d] hover:bg-[#86b537] disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors shadow-sm"
       >
         {isSubmitting ? "Creating..." : "Create Account"}
       </button>
 
-      <div className="text-center text-sm text-gray-500 mt-2">
+      <div className="text-center text-sm text-gray-500">
         Already have an account?{" "}
         <button
           type="button"
