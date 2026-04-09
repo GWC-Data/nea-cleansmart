@@ -5,13 +5,17 @@
  */
 
 const TOKEN_KEY = "nea_access_token";
+const TOKEN_EXPIRY_KEY = "nea_token_expiry";
 const USER_KEY = "nea_user_profile";
 
 import type { UserProfile } from "../types/auth.types";
 
 /** Persist the JWT token after a successful login */
-export const saveToken = (token: string): void => {
+export const saveToken = (token: string, expiry?: number): void => {
   localStorage.setItem(TOKEN_KEY, token);
+  if (expiry) {
+    localStorage.setItem(TOKEN_EXPIRY_KEY, expiry.toString());
+  }
 };
 
 /** Retrieve the stored JWT token, or null if not present */
@@ -22,6 +26,7 @@ export const getToken = (): string | null => {
 /** Remove the JWT token (used on logout) */
 export const clearToken = (): void => {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
 };
 
 /** Persist the logged-in user's profile */

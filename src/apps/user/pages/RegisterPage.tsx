@@ -54,7 +54,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 </p>
                 <button
                   onClick={onNavigateToLogin}
-                  className="mt-8 w-full bg-secondary hover:bg-secondary-hover text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm text-lg"
+                  className="cursor-pointer mt-8 w-full bg-secondary hover:bg-secondary-hover text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm text-lg"
                 >
                   Log In Now
                 </button>

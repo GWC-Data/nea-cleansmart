@@ -27,7 +27,7 @@ interface AuthContextValue {
   isLoading: boolean;
 
   /** Call after a successful login to persist auth state */
-  onLoginSuccess: (token: string, user: UserProfile) => void;
+  onLoginSuccess: (token: string, user: UserProfile, expiry?: number) => void;
 
   /** Clears all auth data and resets state */
   logout: () => void;
@@ -67,8 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   /** Persist and set auth state after successful login */
-  const onLoginSuccess = (newToken: string, user: UserProfile) => {
-    saveToken(newToken);
+  const onLoginSuccess = (newToken: string, user: UserProfile, expiry?: number) => {
+    saveToken(newToken, expiry);
     saveUserProfile(user);
     setToken(newToken);
     setCurrentUser(user);

@@ -23,7 +23,7 @@ export const useAuth = () => {
    */
   const handleRegister = async (
     formData: RegisterFormState,
-    onSuccess: () => void
+    onSuccess: () => void,
   ) => {
     setError(null);
     setIsSubmitting(true);
@@ -33,8 +33,8 @@ export const useAuth = () => {
         email: formData.email,
         password: formData.password,
         role: "user", // Users registering via the User App are always "user" role
-        age: formData.age,
-        gender: formData.gender,
+        ...(formData.age && { age: Number(formData.age) }), // only include if filled
+        ...(formData.gender && { gender: formData.gender }), // only include if filled
       });
       onSuccess();
     } catch (err: unknown) {
@@ -52,13 +52,13 @@ export const useAuth = () => {
    */
   const handleLogin = async (
     formData: LoginFormState,
-    onSuccess: () => void
+    onSuccess: () => void,
   ) => {
     setError(null);
     setIsSubmitting(true);
     try {
-      const { token: newToken, user } = await loginUser(formData);
-      onLoginSuccess(newToken, user);
+      const { accessToken, tokenExpiry, user } = await loginUser(formData);
+      onLoginSuccess(accessToken, user, tokenExpiry);
       onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

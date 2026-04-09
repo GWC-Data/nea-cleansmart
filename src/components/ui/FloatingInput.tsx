@@ -34,7 +34,7 @@ if (typeof document !== "undefined" && !document.getElementById("fi-autofill-kf"
 }
 
 interface FloatingInputProps {
-  label: string;
+  label: React.ReactNode;
   name: string;
   type?: string;
   value: string;

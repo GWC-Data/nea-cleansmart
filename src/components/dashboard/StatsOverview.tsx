@@ -1,19 +1,37 @@
 import React from "react";
 import { Clock, Trash2, Wind } from "lucide-react";
+import type { UserStats } from "../../services/apiService";
 
-export const StatsOverview: React.FC = () => {
+function formatCleanupHours(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (mins === 0) return hours === 0 ? "0" : `${hours}`;
+  if (mins === 30) return hours === 0 ? "½" : `${hours} ½`;
+  // fallback for other values
+  return (totalMinutes / 60).toFixed(1);
+}
+
+interface StatsOverviewProps {
+  stats: UserStats | null;
+}
+
+export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats }) => {
+  const hoursDisplay = stats ? formatCleanupHours(stats.totalMinutes) : "—";
+  const wasteDisplay = stats ? stats.totalWeight : "—";
+  const carbonDisplay = stats ? (stats.totalWeight * 0.5).toFixed(1) : "—";
   return (
     <div className="flex flex-col gap-3 w-full">
-
       {/* Stat Pill: Clean-up Hours */}
       <div className="bg-[#f9f5f0] px-5 py-4 rounded-3xl flex items-center gap-4 shadow-sm border border-[#efdfc6]">
         <div className="bg-[#eab308] text-white p-3 rounded-full shrink-0 shadow-[0_2px_10px_rgba(234,179,8,0.3)]">
           <Clock className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <p className="text-xs text-gray-500 font-bold mb-0.5">Clean-up Hours</p>
+          <p className="text-xs text-gray-500 font-bold mb-0.5">
+            Clean-up Hours
+          </p>
           <div className="text-2xl font-extrabold tracking-tight leading-none text-gray-900">
-            12.5 <span className="text-sm font-semibold">hrs</span>
+            {hoursDisplay} <span className="text-sm font-semibold">hrs</span>
           </div>
         </div>
       </div>
@@ -24,9 +42,11 @@ export const StatsOverview: React.FC = () => {
           <Trash2 className="w-5 h-5 fill-current" />
         </div>
         <div className="flex-1">
-          <p className="text-xs text-gray-500 font-bold mb-0.5">Waste Collected</p>
+          <p className="text-xs text-gray-500 font-bold mb-0.5">
+            Waste Collected
+          </p>
           <div className="text-2xl font-extrabold tracking-tight leading-none text-gray-900">
-            9 <span className="text-sm font-semibold">kg</span>
+            {wasteDisplay} <span className="text-sm font-semibold">kg</span>
           </div>
         </div>
       </div>
@@ -37,13 +57,15 @@ export const StatsOverview: React.FC = () => {
           <Wind className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <p className="text-xs text-gray-500 font-bold mb-0.5">Carbon Reduced</p>
+          <p className="text-xs text-gray-500 font-bold mb-0.5">
+            Carbon Reduced
+          </p>
           <div className="text-2xl font-extrabold tracking-tight leading-none text-gray-900">
-            3.2 <span className="text-sm font-semibold">kg CO₂</span>
+            {carbonDisplay}{" "}
+            <span className="text-sm font-semibold">kg CO₂</span>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

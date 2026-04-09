@@ -7,15 +7,23 @@ import { RegisterPage } from "./apps/user/pages/RegisterPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminApp } from "./apps/admin/AdminApp";
 import { Dashboard } from "./apps/user/pages/Dashboard";
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
+import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
 
 // Wrapper component to provide navigation logic for the Login Page
 const LoginRoute = () => {
   const navigate = useNavigate();
   return (
     <LoginPage
-      onLoginSuccess={() => navigate("/dashboard")}
-      onNavigateToRegister={() => navigate("/register")}
+      onLoginSuccess={() => {
+        const redirectTo = sessionStorage.getItem("redirect_after_login");
+        sessionStorage.removeItem("redirect_after_login");
+        navigate(redirectTo || "/dashboard");
+      }}
+      onNavigateToRegister={() => {
+        // Preserve the redirect path when going to register too
+        navigate("/register");
+      }}
     />
   );
 };
@@ -45,6 +53,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:eventId"
+            element={
+              <ProtectedRoute>
+                <EventDetailPage />
               </ProtectedRoute>
             }
           />

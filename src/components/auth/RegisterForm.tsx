@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { User, Mail, Lock, Calendar, VenusAndMars, ChevronDown } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Calendar,
+  VenusAndMars,
+  ChevronDown,
+} from "lucide-react";
 import type { RegisterFormState } from "../../types/auth.types";
 import { toast } from "sonner";
 import { FloatingInput } from "../ui/FloatingInput";
@@ -99,7 +106,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         id="reg-name"
         name="name"
         type="text"
-        label="Full Name"
+        label={
+          <>
+            Full Name <span className="text-red-500">*</span>
+          </>
+        }
         value={form.name}
         onChange={handleChange}
         autoComplete="name"
@@ -112,7 +123,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         id="reg-email"
         name="email"
         type="email"
-        label="Email Address"
+        label={
+          <>
+            Email Address <span className="text-red-500">*</span>
+          </>
+        }
         value={form.email}
         onChange={handleChange}
         autoComplete="email"
@@ -124,7 +139,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       <FloatingInput
         id="reg-password"
         name="password"
-        label="Password"
+        label={
+          <>
+            Password <span className="text-red-500">*</span>
+          </>
+        }
         value={form.password}
         onChange={handleChange}
         autoComplete="new-password"
@@ -137,7 +156,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       <FloatingInput
         id="reg-confirm-password"
         name="confirmPassword"
-        label="Confirm Password"
+        label={
+          <>
+            Confirm Password <span className="text-red-500">*</span>
+          </>
+        }
         value={form.confirmPassword}
         onChange={handleChange}
         autoComplete="new-password"
@@ -154,7 +177,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           name="age"
           type="number"
           label="Age"
-          value={String(form.age)}
+          value={form.age ?? ""}
           onChange={handleChange}
           autoComplete="off"
           icon={<Calendar className="w-5 h-5" />}
@@ -207,7 +230,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 .join(" ")}
             >
               {/* Show selected value or empty (not a dash) */}
-              <span className={form.gender ? "text-gray-900 text-sm" : "text-transparent text-sm"}>
+              <span
+                className={
+                  form.gender
+                    ? "text-gray-900 text-sm"
+                    : "text-transparent text-sm"
+                }
+              >
                 {form.gender || "placeholder"}
               </span>
               <ChevronDown

@@ -12,7 +12,7 @@ export interface RegisterPayload {
   email: string;
   password: string;
   role: "user" | "admin"; // Default to "user" for the User App
-  age?: string;
+  age?: number;
   gender?: string;
 }
 
@@ -31,11 +31,13 @@ export interface UserProfile {
   email: string;
   role: "user" | "admin";
   createdAt: string;
+  joinedEvents?: number[];
 }
 
 /** Successful login response containing JWT token */
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  tokenExpiry: number;
   user: UserProfile;
 }
 
