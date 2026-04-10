@@ -42,9 +42,9 @@ jobs:
 
       - name: Deploy to Nginx
         run: |
-          if [ -d "/home/shanmugavel/frontend/build" ]; then
+          if [ -d "/home/shanmugavel/frontend/dist" ]; then
             sudo rm -rf /var/www/frontend/*
-            sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
+            sudo cp -r /home/shanmugavel/frontend/dist/* /var/www/frontend/
           else
             echo "Build folder not found!"
             exit 1
