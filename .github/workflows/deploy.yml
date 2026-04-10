@@ -38,20 +38,16 @@ steps:
   - name: Ensure Nginx Folder Exists
     run: |
       if [ ! -d "/var/www/frontend" ]; then
-        echo "Creating /var/www/frontend..."
         sudo mkdir -p /var/www/frontend
-      else
-        echo "Directory already exists"
       fi
 
   - name: Deploy to Nginx
     run: |
       if [ -d "/home/shanmugavel/frontend/build" ]; then
-        echo "Deploying build files..."
         sudo rm -rf /var/www/frontend/*
         sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
       else
-        echo "Build folder not found! Deployment failed."
+        echo "Build folder not found!"
         exit 1
       fi
 
