@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { apiService } from "../services/apiService";
+// import { apiService } from "../services/apiService";
 
 export type SessionState =
   | "idle"
@@ -59,13 +59,19 @@ export const useCleanUpSession = () => {
         const remaining = parsed.durationSeconds - elapsed;
 
         if (remaining <= 0) {
-          // Timer expired in background — auto checkout
-          apiService.checkOutEvent(parsed.activeLogId, {
-            checkOutTime: new Date().toISOString(),
-            garbageWeight: 0,
-            garbageType: "",
-          });
+          // Timer expired in background — save as pending report instead of auto-checkout
+          localStorage.setItem(
+            PENDING_KEY,
+            JSON.stringify({
+              activeEventId: parsed.activeEventId,
+              activeLogId: parsed.activeLogId,
+              checkInTime: parsed.checkInTime,
+              durationSeconds: parsed.durationSeconds,
+              elapsedSeconds: parsed.durationSeconds, // full duration elapsed
+            }),
+          );
           localStorage.removeItem("nea_session");
+          // Don't auto-checkout — let user submit the form
         } else {
           // Restore active session
           setSession({
@@ -90,24 +96,26 @@ export const useCleanUpSession = () => {
       intervalRef.current = setInterval(() => {
         setSession((prev) => {
           if (prev.remainingSeconds <= 1) {
-            // Time's up natively — auto checkout & bypass form
             if (intervalRef.current) clearInterval(intervalRef.current);
-            if (prev.activeLogId) {
-              apiService.checkOutEvent(prev.activeLogId, {
-                checkOutTime: new Date().toISOString(),
-                garbageWeight: 0,
-                garbageType: "",
-              });
-            }
+
+            // Save pending report — user must submit form on next login
+            localStorage.setItem(
+              PENDING_KEY,
+              JSON.stringify({
+                activeEventId: prev.activeEventId,
+                activeLogId: prev.activeLogId,
+                checkInTime: prev.checkInTime,
+                durationSeconds: prev.durationSeconds,
+                elapsedSeconds: prev.durationSeconds, // full duration
+              }),
+            );
             localStorage.removeItem("nea_session");
+
             return {
-              state: "idle",
-              activeEventId: null,
-              activeLogId: null,
-              checkInTime: null,
-              durationSeconds: 0,
+              ...prev,
+              state: "logging_activity", // show form immediately
               remainingSeconds: 0,
-              elapsedSeconds: 0,
+              elapsedSeconds: prev.durationSeconds,
             };
           }
           return {
@@ -149,18 +157,6 @@ export const useCleanUpSession = () => {
       }),
     );
 
-    // 👈 Also save as pending in case browser closes
-    localStorage.setItem(
-      PENDING_KEY,
-      JSON.stringify({
-        activeEventId: session.activeEventId,
-        activeLogId: logId,
-        checkInTime: timeNow,
-        durationSeconds: durationSecs,
-        elapsedSeconds: 0,
-      }),
-    );
-
     setSession((prev) => ({
       ...prev,
       state: "checked_in",
@@ -182,18 +178,17 @@ export const useCleanUpSession = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     const elapsed = session.durationSeconds - session.remainingSeconds;
 
-    // 👈 Update pending with latest elapsed
-    const pending = localStorage.getItem(PENDING_KEY);
-    if (pending) {
-      const parsed = JSON.parse(pending);
-      localStorage.setItem(
-        PENDING_KEY,
-        JSON.stringify({
-          ...parsed,
-          elapsedSeconds: elapsed,
-        }),
-      );
-    }
+    // Save pending report for the first time here
+    localStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({
+        activeEventId: session.activeEventId,
+        activeLogId: session.activeLogId,
+        checkInTime: session.checkInTime,
+        durationSeconds: session.durationSeconds,
+        elapsedSeconds: elapsed,
+      }),
+    );
 
     setSession((prev) => ({
       ...prev,

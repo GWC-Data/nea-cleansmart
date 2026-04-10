@@ -75,22 +75,22 @@ export const apiService = {
    * Fetch active events
    */
   async getEvents(): Promise<EventData[]> {
-    const fallbackData: EventData[] = [
-      {
-        eventId: 1,
-        date: "2026-04-20T00:00:00.000Z",
-        location: "Remote",
-        name: "15-Hour Clean-up Challenge",
-        details: "1 clean-up (minimum 30 minutes to maximum 2 hours)",
-        description: "We all have a hand in keeping Singapore clean.",
-        rewards:
-          "All members who complete 15 hours of clean-up activities in 2026 will receive an attractive premium from PHC. Terms and conditions apply.",
-        joinsCount: 1,
-        participants: [1],
-        createdAt: "2026-04-07T12:11:46.000Z",
-        updatedAt: "2026-04-07T12:11:46.000Z",
-      },
-    ];
+    // const fallbackData: EventData[] = [
+    //   {
+    //     eventId: 1,
+    //     date: "2026-04-20T00:00:00.000Z",
+    //     location: "Remote",
+    //     name: "15-Hour Clean-up Challenge",
+    //     details: "1 clean-up (minimum 30 minutes to maximum 2 hours)",
+    //     description: "We all have a hand in keeping Singapore clean.",
+    //     rewards:
+    //       "All members who complete 15 hours of clean-up activities in 2026 will receive an attractive premium from PHC. Terms and conditions apply.",
+    //     joinsCount: 1,
+    //     participants: [1],
+    //     createdAt: "2026-04-07T12:11:46.000Z",
+    //     updatedAt: "2026-04-07T12:11:46.000Z",
+    //   },
+    // ];
     try {
       const response = await fetch(`${BASE}/events`, {
         headers: getAuthHeaders(),
@@ -102,10 +102,10 @@ export const apiService = {
       const fetchedEvents = Array.isArray(data)
         ? data
         : data.events || data.data || [];
-      return fetchedEvents.length > 0 ? fetchedEvents : fallbackData;
+      return fetchedEvents.length > 0 ? fetchedEvents : [];
     } catch (error) {
       console.error("getEvents error:", error);
-      return fallbackData;
+      return [];
     }
   },
 
