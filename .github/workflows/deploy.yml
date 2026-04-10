@@ -9,7 +9,6 @@ jobs:
 deploy:
 runs-on: [self-hosted, frontend]
 
-```
 env:
   PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
 
@@ -60,4 +59,4 @@ steps:
     run: |
       sudo nginx -t
       sudo systemctl restart nginx
-```
+
