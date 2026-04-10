@@ -1,62 +1,61 @@
 name: Deploy Frontend
 
 on:
-push:
-branches:
-- main
+  push:
+    branches:
+      - main
 
 jobs:
-deploy:
-runs-on: [self-hosted, frontend]
+  deploy:
+    runs-on: [self-hosted, frontend]
 
-env:
-  PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
+    env:
+      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
 
-steps:
-  - name: Clone or Update Frontend
-    run: |
-      if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
-        rm -rf /home/shanmugavel/frontend
-        git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
-      fi
+    steps:
+      - name: Clone or Update Frontend
+        run: |
+          if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
+            rm -rf /home/shanmugavel/frontend
+            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
+          fi
 
-      cd /home/shanmugavel/frontend
-      git fetch origin
-      git reset --hard origin/main
+          cd /home/shanmugavel/frontend
+          git fetch origin
+          git reset --hard origin/main
 
-  - name: Install Dependencies
-    run: |
-      cd /home/shanmugavel/frontend
-      npm install
+      - name: Install Dependencies
+        run: |
+          cd /home/shanmugavel/frontend
+          npm install
 
-  - name: Build React App
-    run: |
-      cd /home/shanmugavel/frontend
-      npm run build
+      - name: Build React App
+        run: |
+          cd /home/shanmugavel/frontend
+          npm run build
 
-  - name: Ensure Nginx Folder Exists
-    run: |
-      if [ ! -d "/var/www/frontend" ]; then
-        sudo mkdir -p /var/www/frontend
-      fi
+      - name: Ensure Nginx Folder Exists
+        run: |
+          if [ ! -d "/var/www/frontend" ]; then
+            sudo mkdir -p /var/www/frontend
+          fi
 
-  - name: Deploy to Nginx
-    run: |
-      if [ -d "/home/shanmugavel/frontend/build" ]; then
-        sudo rm -rf /var/www/frontend/*
-        sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
-      else
-        echo "Build folder not found!"
-        exit 1
-      fi
+      - name: Deploy to Nginx
+        run: |
+          if [ -d "/home/shanmugavel/frontend/build" ]; then
+            sudo rm -rf /var/www/frontend/*
+            sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
+          else
+            echo "Build folder not found!"
+            exit 1
+          fi
 
-  - name: Set Permissions
-    run: |
-      sudo chown -R www-data:www-data /var/www/frontend
-      sudo chmod -R 755 /var/www/frontend
+      - name: Set Permissions
+        run: |
+          sudo chown -R www-data:www-data /var/www/frontend
+          sudo chmod -R 755 /var/www/frontend
 
-  - name: Restart Nginx
-    run: |
-      sudo nginx -t
-      sudo systemctl restart nginx
-
+      - name: Restart Nginx
+        run: |
+          sudo nginx -t
+          sudo systemctl restart nginx
