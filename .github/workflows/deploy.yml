@@ -35,10 +35,25 @@ steps:
       cd /home/shanmugavel/frontend
       npm run build
 
-  - name: Deploy to Nginx Folder
+  - name: Ensure Nginx Folder Exists
     run: |
-      sudo rm -rf /var/www/frontend/*
-      sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
+      if [ ! -d "/var/www/frontend" ]; then
+        echo "Creating /var/www/frontend..."
+        sudo mkdir -p /var/www/frontend
+      else
+        echo "Directory already exists"
+      fi
+
+  - name: Deploy to Nginx
+    run: |
+      if [ -d "/home/shanmugavel/frontend/build" ]; then
+        echo "Deploying build files..."
+        sudo rm -rf /var/www/frontend/*
+        sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
+      else
+        echo "Build folder not found! Deployment failed."
+        exit 1
+      fi
 
   - name: Set Permissions
     run: |
@@ -47,5 +62,6 @@ steps:
 
   - name: Restart Nginx
     run: |
+      sudo nginx -t
       sudo systemctl restart nginx
 ```
