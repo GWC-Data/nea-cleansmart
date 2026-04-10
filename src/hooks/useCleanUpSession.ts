@@ -1,21 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
-import { apiService } from '../services/apiService';
+import { useState, useEffect, useRef } from "react";
+import { apiService } from "../services/apiService";
 
-export type SessionState = 'idle' | 'selecting_duration' | 'checked_in' | 'logging_activity';
+export type SessionState =
+  | "idle"
+  | "selecting_duration"
+  | "checked_in"
+  | "logging_activity";
 
 export interface CleanUpSession {
   state: SessionState;
   activeEventId: number | null;
   activeLogId: number | null;
   checkInTime: string | null;
-  durationSeconds: number;    // Selected countdown duration
-  remainingSeconds: number;   // Live countdown value
-  elapsedSeconds: number;     // How long they actually ran
+  durationSeconds: number; // Selected countdown duration
+  remainingSeconds: number; // Live countdown value
+  elapsedSeconds: number; // How long they actually ran
 }
 
 export const useCleanUpSession = () => {
   const [session, setSession] = useState<CleanUpSession>({
-    state: 'idle',
+    state: "idle",
     activeEventId: null,
     activeLogId: null,
     checkInTime: null,
@@ -25,10 +29,27 @@ export const useCleanUpSession = () => {
   });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const PENDING_KEY = "nea_pending_report";
 
   // Initialize from LocalStorage
   useEffect(() => {
-    const saved = localStorage.getItem('nea_session');
+    const pending = localStorage.getItem(PENDING_KEY);
+    if (pending) {
+      // There's an incomplete report — set state to logging_activity
+      const parsed = JSON.parse(pending);
+      setSession({
+        state: "logging_activity",
+        activeEventId: parsed.activeEventId,
+        activeLogId: parsed.activeLogId,
+        checkInTime: parsed.checkInTime,
+        durationSeconds: parsed.durationSeconds,
+        remainingSeconds: 0,
+        elapsedSeconds: parsed.elapsedSeconds,
+      });
+      return; // Don't process nea_session if pending exists
+    }
+
+    const saved = localStorage.getItem("nea_session");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -42,13 +63,13 @@ export const useCleanUpSession = () => {
           apiService.checkOutEvent(parsed.activeLogId, {
             checkOutTime: new Date().toISOString(),
             garbageWeight: 0,
-            garbageType: ""
+            garbageType: "",
           });
-          localStorage.removeItem('nea_session');
+          localStorage.removeItem("nea_session");
         } else {
           // Restore active session
           setSession({
-            state: 'checked_in',
+            state: "checked_in",
             activeEventId: parsed.activeEventId,
             activeLogId: parsed.activeLogId,
             checkInTime: parsed.checkInTime,
@@ -58,16 +79,16 @@ export const useCleanUpSession = () => {
           });
         }
       } catch (e) {
-        localStorage.removeItem('nea_session');
+        localStorage.removeItem("nea_session");
       }
     }
   }, []);
 
   // Start / stop timer whenever state changes
   useEffect(() => {
-    if (session.state === 'checked_in' && session.remainingSeconds > 0) {
+    if (session.state === "checked_in" && session.remainingSeconds > 0) {
       intervalRef.current = setInterval(() => {
-        setSession(prev => {
+        setSession((prev) => {
           if (prev.remainingSeconds <= 1) {
             // Time's up natively — auto checkout & bypass form
             if (intervalRef.current) clearInterval(intervalRef.current);
@@ -75,12 +96,12 @@ export const useCleanUpSession = () => {
               apiService.checkOutEvent(prev.activeLogId, {
                 checkOutTime: new Date().toISOString(),
                 garbageWeight: 0,
-                garbageType: ""
+                garbageType: "",
               });
             }
-            localStorage.removeItem('nea_session');
+            localStorage.removeItem("nea_session");
             return {
-              state: 'idle',
+              state: "idle",
               activeEventId: null,
               activeLogId: null,
               checkInTime: null,
@@ -107,24 +128,42 @@ export const useCleanUpSession = () => {
 
   /** Open the duration picker for an event */
   const openDurationPicker = (eventId: number) => {
-    setSession(prev => ({ ...prev, state: 'selecting_duration', activeEventId: eventId }));
+    setSession((prev) => ({
+      ...prev,
+      state: "selecting_duration",
+      activeEventId: eventId,
+    }));
   };
 
   /** Called after user selects duration AND api check-in succeeds */
   const handleCheckIn = (logId: number, durationSecs: number) => {
     const timeNow = new Date().toISOString();
-    
-    // Persist to storage
-    localStorage.setItem('nea_session', JSON.stringify({
-      activeEventId: session.activeEventId,
-      activeLogId: logId,
-      checkInTime: timeNow,
-      durationSeconds: durationSecs
-    }));
 
-    setSession(prev => ({
+    localStorage.setItem(
+      "nea_session",
+      JSON.stringify({
+        activeEventId: session.activeEventId,
+        activeLogId: logId,
+        checkInTime: timeNow,
+        durationSeconds: durationSecs,
+      }),
+    );
+
+    // 👈 Also save as pending in case browser closes
+    localStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({
+        activeEventId: session.activeEventId,
+        activeLogId: logId,
+        checkInTime: timeNow,
+        durationSeconds: durationSecs,
+        elapsedSeconds: 0,
+      }),
+    );
+
+    setSession((prev) => ({
       ...prev,
-      state: 'checked_in',
+      state: "checked_in",
       activeLogId: logId,
       checkInTime: timeNow,
       durationSeconds: durationSecs,
@@ -135,32 +174,47 @@ export const useCleanUpSession = () => {
 
   /** User cancelled the duration picker */
   const cancelDurationPicker = () => {
-    setSession(prev => ({ ...prev, state: 'idle', activeEventId: null }));
+    setSession((prev) => ({ ...prev, state: "idle", activeEventId: null }));
   };
 
   /** User clicks "Stop Clean-up" */
   const initiateCheckout = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    setSession(prev => ({
+    const elapsed = session.durationSeconds - session.remainingSeconds;
+
+    // 👈 Update pending with latest elapsed
+    const pending = localStorage.getItem(PENDING_KEY);
+    if (pending) {
+      const parsed = JSON.parse(pending);
+      localStorage.setItem(
+        PENDING_KEY,
+        JSON.stringify({
+          ...parsed,
+          elapsedSeconds: elapsed,
+        }),
+      );
+    }
+
+    setSession((prev) => ({
       ...prev,
-      state: 'logging_activity',
-      // capture elapsed before stopping
-      elapsedSeconds: prev.durationSeconds - prev.remainingSeconds,
+      state: "logging_activity",
+      elapsedSeconds: elapsed,
     }));
   };
 
   /** User cancels the log activity form */
   const cancelCheckout = () => {
     // Resume timer
-    setSession(prev => ({ ...prev, state: 'checked_in' }));
+    setSession((prev) => ({ ...prev, state: "checked_in" }));
   };
 
   /** Submitted the report — reset everything */
   const completeSession = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    localStorage.removeItem('nea_session');
+    localStorage.removeItem("nea_session");
+    localStorage.removeItem(PENDING_KEY);
     setSession({
-      state: 'idle',
+      state: "idle",
       activeEventId: null,
       activeLogId: null,
       checkInTime: null,

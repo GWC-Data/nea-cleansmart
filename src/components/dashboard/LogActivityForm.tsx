@@ -4,8 +4,9 @@ import { Camera, X } from "lucide-react";
 interface LogActivityFormProps {
   elapsedSeconds: number;
   location: string;
-  onCancel: () => void;
+  onCancel?: () => void;
   onSubmit: (weight: number, type: string) => void;
+  isMandatory?: boolean;
 }
 
 const WASTE_TYPES = [
@@ -22,6 +23,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   location,
   onCancel,
   onSubmit,
+  isMandatory,
 }) => {
   const [weight, setWeight] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -37,9 +39,13 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   };
 
   const handleToggleType = (type: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
-    );
+    setSelectedTypes((prev) => {
+      if (prev.includes(type)) {
+        return prev.filter((t) => t !== type); // always allow uncheck
+      }
+      if (prev.length >= 3) return prev; // 👈 block if already 3 selected
+      return [...prev, type];
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,15 +62,19 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
           <div>
             <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
             <p className="text-xs text-gray-500 font-medium">
-              Session Report Checkout
+              {isMandatory
+                ? "⚠️ Please complete your previous session report" // 👈
+                : "Session Report Checkout"}
             </p>
           </div>
-          <button
-            onClick={onCancel}
-            className="cursor-pointer p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!isMandatory && ( // 👈 hide X when mandatory
+            <button
+              onClick={onCancel}
+              className="cursor-pointer p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <div className="overflow-y-auto p-5 pb-8 space-y-6">
@@ -172,7 +182,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-900">
-                Type of Waste{" "}
+                Select up to 3 waste types{" "}
                 <span className="text-red-500 font-medium">*</span>
               </label>
               <div className="space-y-2.5">

@@ -5,7 +5,7 @@ import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
 import { WelcomeSection } from "../../../components/dashboard/WelcomeSection";
 import { CommunityEvents } from "../../../components/dashboard/CommunityEvents";
-import { RewardsSection } from "../../../components/dashboard/RewardsSection";
+// import { RewardsSection } from "../../../components/dashboard/RewardsSection";
 import { LogActivityForm } from "../../../components/dashboard/LogActivityForm";
 import { DurationSelectModal } from "../../../components/modal/DurationSelectModal";
 // import { EventDetailsModal } from "../../../components/modal/EventDetailsModal";
@@ -21,8 +21,8 @@ export const Dashboard: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [events, setEvents] = useState<EventData[]>([]);
   const [dashboardLocation, setDashboardLocation] = useState<string>("");
-  const [selectedEventToJoin, setSelectedEventToJoin] =
-    useState<EventData | null>(null);
+  // const [selectedEventToJoin, setSelectedEventToJoin] =
+  //   useState<EventData | null>(null);
   const [localJoinedEventIds, setLocalJoinedEventIds] = useState<number[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
 
@@ -62,6 +62,10 @@ export const Dashboard: React.FC = () => {
     cancelCheckout,
     completeSession,
   } = useCleanUpSession();
+
+  const hasPendingReport =
+    state === "logging_activity" &&
+    !!localStorage.getItem("nea_pending_report");
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -266,6 +270,7 @@ export const Dashboard: React.FC = () => {
           name={currentUser?.name?.split(" ")[0] || "Sarah"}
           points={userStats?.totalPoints ?? 0}
           level={4}
+          stats={userStats}
         />
 
         {/* Mobile Active Session Banner */}
@@ -301,7 +306,7 @@ export const Dashboard: React.FC = () => {
           <CommunityEvents
             activeEvents={activeEvents}
             upcomingEvents={upcomingEvents}
-            onJoinClick={setSelectedEventToJoin}
+            // onJoinClick={setSelectedEventToJoin}
           />
         </div>
       </main>
@@ -312,7 +317,7 @@ export const Dashboard: React.FC = () => {
           name={currentUser?.name?.split(" ")[0] || "Alex"}
           activeEvents={activeEvents}
           upcomingEvents={upcomingEvents}
-          onJoinClick={setSelectedEventToJoin}
+          // onJoinClick={setSelectedEventToJoin}
           stats={userStats}
         />
       </div>
@@ -348,8 +353,9 @@ export const Dashboard: React.FC = () => {
         <LogActivityForm
           elapsedSeconds={elapsedSeconds}
           location={dashboardLocation}
-          onCancel={cancelCheckout}
+          onCancel={hasPendingReport ? undefined : cancelCheckout}
           onSubmit={handleSubmitReport}
+          isMandatory={hasPendingReport}
         />
       )}
 

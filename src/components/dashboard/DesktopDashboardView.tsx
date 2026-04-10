@@ -98,11 +98,11 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   <h3 className="font-extrabold text-gray-900 mb-1 leading-snug tracking-tight">
                     {event.name}
                   </h3>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 font-medium mb-4">
+                  <p className="text-xs text-gray-500 flex items-center gap-1 font-medium">
                     <MapPin className="w-3 h-3" /> {event.location}
                   </p>
                   <div className="mt-auto flex justify-between items-center">
-                    <div className="flex -space-x-2">
+                    {/* <div className="flex -space-x-2">
                       <img
                         src="https://i.pravatar.cc/100?img=1"
                         className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
@@ -116,7 +116,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                       <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
                         +18
                       </div>
-                    </div>
+                    </div> */}
                     {!hideJoin && onJoinClick && (
                       <button
                         onClick={(e) => {
