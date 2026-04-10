@@ -1,44 +1,51 @@
 name: Deploy Frontend
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  deploy:
-    runs-on: [self-hosted, frontend]
+deploy:
+runs-on: [self-hosted, frontend]
 
-    env:
-      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
+```
+env:
+  PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
 
-    steps:
-      - name: Clone or Update Frontend
-        run: |
-          if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
-            rm -rf /home/shanmugavel/frontend
-            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
-          fi
+steps:
+  - name: Clone or Update Frontend
+    run: |
+      if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
+        rm -rf /home/shanmugavel/frontend
+        git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
+      fi
 
-          cd /home/shanmugavel/frontend
-          git fetch origin
-          git reset --hard origin/main
+      cd /home/shanmugavel/frontend
+      git fetch origin
+      git reset --hard origin/main
 
-      - name: Install Dependencies
-        run: |
-          cd /home/shanmugavel/frontend
-          npm install
+  - name: Install Dependencies
+    run: |
+      cd /home/shanmugavel/frontend
+      npm install
 
-      - name: Restart Frontend with PM2
-        run: |
-          cd /home/shanmugavel/frontend
+  - name: Build React App
+    run: |
+      cd /home/shanmugavel/frontend
+      npm run build
 
-          pm2 describe frontend > /dev/null 2>&1
+  - name: Deploy to Nginx Folder
+    run: |
+      sudo rm -rf /var/www/frontend/*
+      sudo cp -r /home/shanmugavel/frontend/build/* /var/www/frontend/
 
-          if [ $? -eq 0 ]; then
-            pm2 restart frontend
-          else
-            pm2 start npm --name "frontend" -- run dev -- --host
-          fi
+  - name: Set Permissions
+    run: |
+      sudo chown -R www-data:www-data /var/www/frontend
+      sudo chmod -R 755 /var/www/frontend
 
-          pm2 save
+  - name: Restart Nginx
+    run: |
+      sudo systemctl restart nginx
+```
