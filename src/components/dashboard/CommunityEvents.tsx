@@ -2,6 +2,7 @@ import React from "react";
 import { MapPin, CalendarX, Clock4 } from "lucide-react";
 import type { EventData } from "../../services/apiService";
 import { useNavigate } from "react-router-dom";
+import { getEventImageUrl } from "../../utils/imageUtils";
 
 interface CommunityEventsProps {
   activeEvents: EventData[];
@@ -41,9 +42,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
         ) : (
           <div className="w-full overflow-x-auto snap-x hide-scrollbar scroll-smooth">
             <div className="flex gap-4 min-w-max pb-2">
-              {eventList.map((event, index) => {
-                const mockImage =
-                  index === 0 ? "beach" : index === 1 ? "forest" : "city";
+              {eventList.map((event) => {
                 const eventDate = new Date(event.date);
                 const formattedDate = eventDate.toLocaleDateString("en-US", {
                   weekday: "short",
@@ -58,7 +57,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
                     className="relative w-[300px] h-[200px] rounded-[2.5rem] overflow-hidden shadow-md snap-start shrink-0 group hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
                   >
                     <img
-                      src={`https://picsum.photos/seed/${mockImage}/600/400`}
+                      src={getEventImageUrl(event.eventImage)}
                       alt={event.name}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

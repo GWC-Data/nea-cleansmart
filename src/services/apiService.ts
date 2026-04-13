@@ -19,6 +19,7 @@ export interface EventData {
     email: string;
     joinedAt: string;
   }>;
+  eventImage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -228,7 +229,11 @@ export const apiService = {
         throw new Error(`Failed to fetch events: ${response.statusText}`);
       }
       const data = await response.json();
-      return data.events || [];
+      const events = data.events || [];
+      return events.map((e: any) => ({
+        ...e,
+        eventImage: e.eventImage || e.event_image || null
+      }));
     } catch (error) {
       console.error("getEvents error:", error);
       return [];
@@ -251,7 +256,11 @@ export const apiService = {
         );
       }
       const data = await response.json();
-      return data.events || [];
+      const events = data.events || [];
+      return events.map((e: any) => ({
+        ...e,
+        eventImage: e.eventImage || e.event_image || null
+      }));
     } catch (error) {
       console.error("getUpcomingEvents error:", error);
       return [];
@@ -275,6 +284,9 @@ export const apiService = {
         );
       }
       const data = await response.json();
+      if (data.event) {
+        data.event.eventImage = data.event.eventImage || data.event.event_image || null;
+      }
       return data.event || null;
     } catch (error) {
       console.error("getEventById error:", error);
@@ -767,6 +779,33 @@ export const apiService = {
       return true;
     } catch (error) {
       console.error("requestPasswordReset error:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Reset user password using token
+   * @param token The reset token from email link
+   * @param password The new password
+   * @returns Success status
+   */
+  async resetPassword(token: string, password: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE}/auth/reset-password/${token}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Password reset failed: ${response.statusText}`,
+        );
+      }
+      return true;
+    } catch (error) {
+      console.error("resetPassword error:", error);
       return false;
     }
   },

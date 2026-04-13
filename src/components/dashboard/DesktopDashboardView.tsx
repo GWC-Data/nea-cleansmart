@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { EventData, UserStats } from "../../services/apiService";
+import { getEventImageUrl } from "../../utils/imageUtils";
 
 function formatCleanupHours(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
@@ -178,7 +179,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                       >
                         <div className="h-44 relative overflow-hidden">
                           <img
-                            src={`https://picsum.photos/seed/${event.eventId}/600/400`}
+                            src={getEventImageUrl(event.eventImage)}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             alt={event.name}
                           />
@@ -256,7 +257,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                         {/* Thumbnail */}
                         <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
                           <img
-                            src={`https://picsum.photos/seed/${event.eventId + 10}/200/200`}
+                            src={getEventImageUrl(event.eventImage)}
                             className="w-full h-full object-cover"
                             alt={event.name}
                           />

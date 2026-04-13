@@ -20,6 +20,7 @@ import type {
 } from "../../../services/apiService";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { toast } from "sonner";
+import { getEventImageUrl } from "../../../utils/imageUtils";
 
 const BADGES = [
   {
@@ -416,7 +417,7 @@ export const EventDetailPage: React.FC = () => {
     navigate(-1);
   };
 
-  // ── Event Info Card (shared between mobile/desktop) ──────────────────────
+  // Event Info Card (shared between mobile/desktop)
   const EventInfoCard: React.FC<{ compact?: boolean }> = ({ compact }) => (
     <div
       className={`bg-white ${compact ? "rounded-[1.5rem] p-6" : "rounded-[2rem] p-8"} shadow-sm border border-gray-100 flex flex-col gap-5`}
@@ -480,7 +481,7 @@ export const EventDetailPage: React.FC = () => {
       {/* Header */}
       <header className="bg-white px-5 sm:px-8 lg:px-12 py-4 sticky top-0 z-40 border-b border-gray-100 flex items-center">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/dashboard")}
           className="cursor-pointer flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back
@@ -492,11 +493,11 @@ export const EventDetailPage: React.FC = () => {
         />
       </header>
 
-      {/* ── Mobile & Tablet ──────────────────────────────────────────────── */}
+      {/* Mobile & Tablet */}
       <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
         <div className="w-full h-52 sm:h-64 rounded-[1.5rem] overflow-hidden shadow-sm">
           <img
-            src={`https://picsum.photos/seed/${event.eventId}/900/400`}
+            src={getEventImageUrl(event.eventImage)}
             className="w-full h-full object-cover"
             alt={event.name}
           />
@@ -524,7 +525,7 @@ export const EventDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Desktop ──────────────────────────────────────────────────────── */}
+      {/* Desktop */}
       <div className="hidden lg:block">
         <div className="max-w-full mx-auto px-8 xl:px-12 py-10">
           <div className="grid grid-cols-12 gap-8 xl:gap-10 items-start">
@@ -532,7 +533,7 @@ export const EventDetailPage: React.FC = () => {
             <div className="col-span-7 flex flex-col gap-6">
               <div className="w-full h-64 xl:h-72 rounded-[2rem] overflow-hidden shadow-sm">
                 <img
-                  src={`https://picsum.photos/seed/${event.eventId}/900/400`}
+                  src={getEventImageUrl(event.eventImage)}
                   className="w-full h-full object-cover"
                   alt={event.name}
                 />

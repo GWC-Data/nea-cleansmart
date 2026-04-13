@@ -9,6 +9,7 @@ import { AdminApp } from "./apps/admin/AdminApp";
 import { Dashboard } from "./apps/user/pages/Dashboard";
 import { Toaster } from "sonner";
 import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
+import { ResetPasswordPage } from "./apps/user/pages/ResetPasswordPage";
 
 // Wrapper component to provide navigation logic for the Login Page
 const LoginRoute = () => {
@@ -46,6 +47,7 @@ function App() {
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/register" element={<RegisterRoute />} />
           <Route path="/main" element={<MainPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
           {/* Protected Routes for Users */}
           <Route

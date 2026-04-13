@@ -59,6 +59,7 @@ export const useAuth = () => {
     try {
       const { accessToken, tokenExpiry, user } = await loginUser(formData);
       onLoginSuccess(accessToken, user, tokenExpiry);
+      await refreshUserProfile(); // it refreshes the user profile
       onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
