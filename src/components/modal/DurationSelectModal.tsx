@@ -56,7 +56,7 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
               <button
                 key={option.value}
                 onClick={() => setSelectedSeconds(option.value)}
-                className={`flex flex-col items-center justify-center py-4 px-6 rounded-2xl border-2 transition-all font-bold ${
+                className={`cursor-pointer flex flex-col items-center justify-center py-4 px-6 rounded-2xl border-2 transition-all font-bold ${
                   selectedSeconds === option.value
                     ? 'border-[#08351e] bg-[#e6f4ea] text-[#08351e] shadow-md'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'

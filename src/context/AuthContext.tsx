@@ -2,17 +2,21 @@
  * AuthContext.tsx
  * Provides global authentication state accessible to all components.
  * Wrap the app root with <AuthProvider> to enable context.
+ *
+ * Note: User profile is NOT persisted in localStorage.
+ * It is fetched dynamically from the backend when needed.
  */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import type { UserProfile } from "../types/auth.types";
-import {
-  getToken,
-  getUserProfile,
-  saveToken,
-  saveUserProfile,
-  clearAuthData,
-} from "../utils/tokenUtils";
+import { getToken, saveToken, clearAuthData } from "../utils/tokenUtils";
+import { apiService } from "../services/apiService";
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 
@@ -28,6 +32,9 @@ interface AuthContextValue {
 
   /** Call after a successful login to persist auth state */
   onLoginSuccess: (token: string, user: UserProfile, expiry?: number) => void;
+
+  /** Refresh user profile from backend */
+  refreshUserProfile: () => Promise<void>;
 
   /** Clears all auth data and resets state */
   logout: () => void;
@@ -55,21 +62,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  /** Rehydrate auth state from localStorage on first mount */
-  useEffect(() => {
-    const storedToken = getToken();
-    const storedUser = getUserProfile();
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setCurrentUser(storedUser);
+  /** Fetch and update user profile from backend */
+  const refreshUserProfile = useCallback(async () => {
+    try {
+      const profile = await apiService.getUserProfile();
+      if (profile) {
+        setCurrentUser(profile);
+      }
+    } catch (error) {
+      console.error("Failed to refresh user profile:", error);
     }
-    setIsLoading(false);
   }, []);
 
+  /** Restore auth state on app mount */
+  useEffect(() => {
+    const restore = async () => {
+      const storedToken = getToken();
+      if (storedToken) {
+        setToken(storedToken);
+        await refreshUserProfile(); // await it
+      }
+      setIsLoading(false); // runs after profile is loaded
+    };
+    restore();
+  }, [refreshUserProfile]);
+
   /** Persist and set auth state after successful login */
-  const onLoginSuccess = (newToken: string, user: UserProfile, expiry?: number) => {
+  const onLoginSuccess = (
+    newToken: string,
+    user: UserProfile,
+    expiry?: number,
+  ) => {
     saveToken(newToken, expiry);
-    saveUserProfile(user);
     setToken(newToken);
     setCurrentUser(user);
   };
@@ -83,7 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ currentUser, token, isLoading, onLoginSuccess, logout }}
+      value={{
+        currentUser,
+        token,
+        isLoading,
+        onLoginSuccess,
+        refreshUserProfile,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

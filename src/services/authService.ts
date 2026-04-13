@@ -60,3 +60,4 @@ export const loginUser = async (
 
   return res.json() as Promise<AuthResponse>;
 };
+

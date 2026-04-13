@@ -16,9 +16,9 @@ interface StatsOverviewProps {
 }
 
 export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats }) => {
-  const hoursDisplay = stats ? formatCleanupHours(stats.totalMinutes) : "—";
-  const wasteDisplay = stats ? stats.totalWeight : "—";
-  const carbonDisplay = stats ? (stats.totalWeight * 0.5).toFixed(1) : "—";
+  const hoursDisplay = stats ? formatCleanupHours(stats.totalMinutesLogged) : "0";
+  const wasteDisplay = stats ? stats.totalWeight : "0";
+  const carbonDisplay = stats ? stats.co2Collected.toFixed(1) : "0";
   return (
     <div className="flex flex-col gap-3 w-full">
       {/* Stat Pill: Clean-up Hours */}

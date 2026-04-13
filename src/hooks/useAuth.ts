@@ -10,7 +10,7 @@ import { useAuthContext } from "../context/AuthContext";
 import type { LoginFormState, RegisterFormState } from "../types/auth.types";
 
 export const useAuth = () => {
-  const { onLoginSuccess, logout, currentUser, token } = useAuthContext();
+  const { onLoginSuccess, logout, currentUser, token, isLoading, refreshUserProfile } = useAuthContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +72,10 @@ export const useAuth = () => {
     token,
     isSubmitting,
     error,
+    isLoading,
     handleLogin,
     handleRegister,
     logout,
+    refreshUserProfile,
   };
 };

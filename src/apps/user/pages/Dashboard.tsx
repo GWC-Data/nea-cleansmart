@@ -6,12 +6,17 @@ import { StatsOverview } from "../../../components/dashboard/StatsOverview";
 import { WelcomeSection } from "../../../components/dashboard/WelcomeSection";
 import { CommunityEvents } from "../../../components/dashboard/CommunityEvents";
 // import { RewardsSection } from "../../../components/dashboard/RewardsSection";
+import { EventGuidelines } from "../../../components/dashboard/EventGuidelines";
 import { LogActivityForm } from "../../../components/dashboard/LogActivityForm";
 import { DurationSelectModal } from "../../../components/modal/DurationSelectModal";
 // import { EventDetailsModal } from "../../../components/modal/EventDetailsModal";
 import { DesktopDashboardView } from "../../../components/dashboard/DesktopDashboardView";
 import { apiService } from "../../../services/apiService";
-import type { EventData, UserStats } from "../../../services/apiService";
+import type {
+  EventData,
+  UserStats,
+  DashboardEvent,
+} from "../../../services/apiService";
 import { toast } from "sonner";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -19,35 +24,41 @@ export const Dashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // All events from /events (for Upcoming section)
   const [events, setEvents] = useState<EventData[]>([]);
+  // Joined events from /dashboard (active events the user already joined)
+  const [activeEvents, setActiveEvents] = useState<DashboardEvent[]>([]);
+
   const [dashboardLocation, setDashboardLocation] = useState<string>("");
-  // const [selectedEventToJoin, setSelectedEventToJoin] =
-  //   useState<EventData | null>(null);
-  const [localJoinedEventIds, setLocalJoinedEventIds] = useState<number[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [userName, setUserName] = useState<string>(
+    currentUser?.name?.split(" ")[0] || "",
+  );
 
+  // Load dashboard data: stats + joined events
   useEffect(() => {
-    if (currentUser?.joinedEvents) {
-      setLocalJoinedEventIds(currentUser.joinedEvents);
-    }
-    async function loadUserStats() {
-      if (!currentUser?.id) return;
-      const data = await apiService.getUserEventLogs(currentUser.id);
-      if (data?.stats) setUserStats(data.stats);
-    }
-    loadUserStats();
-
-    const syncFromStorage = () => {
-      const profStr = localStorage.getItem("nea_user_profile");
-      if (profStr) {
-        setLocalJoinedEventIds(JSON.parse(profStr).joinedEvents || []);
+    async function loadDashboard() {
+      const data = await apiService.getDashboard();
+      if (data) {
+        setUserStats(data.stats);
+        setActiveEvents(data.eventsJoined);
+        if (data.profile?.name) {
+          setUserName(data.profile.name.split(" ")[0]);
+        }
       }
-    };
+    }
+    loadDashboard();
+  }, []);
 
-    syncFromStorage(); // run on mount
-    window.addEventListener("storage", syncFromStorage); // run on update
-    return () => window.removeEventListener("storage", syncFromStorage);
-  }, [currentUser]);
+  // Load all events from /events for the Upcoming Events section
+  useEffect(() => {
+    async function loadEvents() {
+      const data = await apiService.getEvents();
+      setEvents(data);
+    }
+    loadEvents();
+  }, []);
 
   const {
     state,
@@ -77,13 +88,7 @@ export const Dashboard: React.FC = () => {
   };
   const initials = getInitials(currentUser?.name || "Jane Doe");
 
-  useEffect(() => {
-    async function loadEvents() {
-      const data = await apiService.getEvents();
-      setEvents(data);
-    }
-    loadEvents();
-  }, []);
+  // keep events load (already done above in separate useEffect)
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -123,12 +128,9 @@ export const Dashboard: React.FC = () => {
   // ── Step 2: User selects duration → call checkInEvent API ───────────────
   const handleDurationSelected = async (durationSecs: number) => {
     if (!activeEventId) return;
-    const userId = JSON.parse(
-      localStorage.getItem("nea_user_profile") || "{}",
-    ).id;
+    // User ID is extracted from JWT token by the backend
     const resultId = await apiService.checkInEvent({
       eventId: activeEventId,
-      userId,
       checkInTime: new Date().toISOString(),
     });
     if (resultId) {
@@ -141,13 +143,20 @@ export const Dashboard: React.FC = () => {
   };
 
   // ── Step 4: User submits the log activity form → checkOutEvent API ──────
-  const handleSubmitReport = async (weight: number, type: string) => {
+  const handleSubmitReport = async (
+    weight: number,
+    type: string,
+    photo?: File,
+  ) => {
     if (!activeLogId) return;
+
     const checkoutSuccess = await apiService.checkOutEvent(activeLogId, {
       checkOutTime: new Date().toISOString(),
       garbageWeight: weight,
       garbageType: type,
+      wasteImage: photo, // 👈 pass file directly — sent as multipart
     });
+
     if (checkoutSuccess) {
       completeSession();
       toast.success("Report submitted! Great job 🌿");
@@ -166,11 +175,25 @@ export const Dashboard: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const joinedEventIds = localJoinedEventIds;
-  const activeEvents = events.filter((e) => joinedEventIds.includes(e.eventId));
-  const upcomingEvents = events.filter(
-    (e) => !joinedEventIds.includes(e.eventId),
-  );
+  // Active events = joined events from /dashboard.
+  // Upcoming events = events from /events NOT already in active list.
+  const activeEventIds = new Set(activeEvents.map((e) => e.eventId));
+  const upcomingEvents = events.filter((e) => !activeEventIds.has(e.eventId));
+
+  // Convert DashboardEvent to EventData shape for components that need it
+  const activeEventsAsEventData: EventData[] = activeEvents.map((e) => ({
+    eventId: e.eventId,
+    date: e.eventDate,
+    location: e.location,
+    name: e.eventName,
+    details: "",
+    description: "",
+    rewards: "",
+    joinsCount: e.joinedCount,
+    participants: [],
+    createdAt: "",
+    updatedAt: "",
+  }));
 
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
@@ -187,7 +210,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex items-center gap-3 relative shrink-0">
           {/* Session controls: shown on ALL screen sizes */}
           <div className="flex items-center gap-2 mr-1">
-            {state === "idle" && joinedEventIds.length > 0 && (
+            {state === "idle" && activeEvents.length > 0 && (
               /* Start Clean-up — visible on both mobile and desktop */
               <button
                 onClick={() =>
@@ -195,7 +218,7 @@ export const Dashboard: React.FC = () => {
                   openDurationPicker(activeEvents[0].eventId)
                 }
                 disabled={activeEvents.length === 0}
-                className="bg-[#96c93d] hover:bg-[#86b537] disabled:opacity-50 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md flex items-center gap-2 transition-all active:scale-95"
+                className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] disabled:opacity-50 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md flex items-center gap-2 transition-all active:scale-95"
               >
                 Start Clean-up
               </button>
@@ -213,7 +236,7 @@ export const Dashboard: React.FC = () => {
                 {/* Stop Clean-up */}
                 <button
                   onClick={initiateCheckout}
-                  className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                  className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
                 >
                   <StopCircle className="w-4 h-4" />
                   <span>Stop Clean-up</span>
@@ -226,7 +249,7 @@ export const Dashboard: React.FC = () => {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#08351e] text-white flex items-center justify-center text-sm font-bold shadow-md hover:bg-[#0a4527] hover:shadow-lg transition-all active:scale-95 ring-2 ring-transparent hover:ring-secondary/20"
+              className="cursor-pointer w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#08351e] text-white flex items-center justify-center text-sm font-bold shadow-md hover:bg-[#0a4527] hover:shadow-lg transition-all active:scale-95 ring-2 ring-transparent hover:ring-secondary/20"
               title="Profile"
             >
               {initials}
@@ -254,7 +277,7 @@ export const Dashboard: React.FC = () => {
                 <div className="h-px bg-gray-50 my-1 w-full" />
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
+                  className="cursor-pointer   w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
                 >
                   <LogOut className="w-4 h-4" /> Logout
                 </button>
@@ -267,7 +290,7 @@ export const Dashboard: React.FC = () => {
       {/* ── Mobile Layout ───────────────────────────────────────────────────── */}
       <main className="flex lg:hidden px-5 sm:px-8 pt-6 max-w-xl mx-auto w-full animate-slide-up flex-col gap-6 pb-8">
         <WelcomeSection
-          name={currentUser?.name?.split(" ")[0] || "Sarah"}
+          name={userName || currentUser?.name?.split(" ")[0] || "Sarah"}
           points={userStats?.totalPoints ?? 0}
           level={4}
           stats={userStats}
@@ -304,19 +327,22 @@ export const Dashboard: React.FC = () => {
         <div className="flex flex-col gap-8 mt-2 min-w-0">
           {/* <RewardsSection /> */}
           <CommunityEvents
-            activeEvents={activeEvents}
+            activeEvents={activeEventsAsEventData}
             upcomingEvents={upcomingEvents}
+            // currentUserId={currentUser?.id ?? null}
             // onJoinClick={setSelectedEventToJoin}
           />
+          <EventGuidelines />
         </div>
       </main>
 
       {/* ── Desktop Layout ──────────────────────────────────────────────────── */}
       <div className="hidden lg:block">
         <DesktopDashboardView
-          name={currentUser?.name?.split(" ")[0] || "Alex"}
-          activeEvents={activeEvents}
+          name={userName || currentUser?.name?.split(" ")[0] || "Alex"}
+          activeEvents={activeEventsAsEventData}
           upcomingEvents={upcomingEvents}
+          // currentUserId={currentUser?.id ?? null}
           // onJoinClick={setSelectedEventToJoin}
           stats={userStats}
         />

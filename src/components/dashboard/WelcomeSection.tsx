@@ -13,6 +13,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   points,
   stats,
 }) => {
+  // ── Badge / progress calculation (unchanged) ──────────────────────────────
   const totalPoints = stats?.totalPoints ?? points;
   const start =
     totalPoints < 50
@@ -24,7 +25,22 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           : 150;
   const end = totalPoints < 50 ? 50 : totalPoints < 100 ? 100 : 150;
   const progress = Math.min((totalPoints - start) / (end - start), 1);
-  const offset = 276 - progress * 276;
+
+  // SVG circle: r=44 → circumference ≈ 276.46
+  const CIRC = 2 * Math.PI * 44;
+  const offset = CIRC - progress * CIRC;
+
+  // Badge: users only earn one at 50+ points
+  const hasBadge = totalPoints >= 50;
+  const badgeName = !hasBadge
+    ? null
+    : totalPoints < 100
+      ? "Silver"
+      : totalPoints < 150
+        ? "Gold"
+        : "Diamond";
+
+  const levelLabel = badgeName ? `${badgeName} Guardian Level` : null;
 
   const nextBadge =
     totalPoints < 50
@@ -39,11 +55,36 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
     : null;
 
   return (
-    <div className="flex flex-col gap-4 w-full relative z-10">
-      {/* Green Hero Card */}
-      <div className="relative bg-[#08351e] rounded-[2rem] p-6 lg:p-8 overflow-hidden shadow-lg border border-[#0a4527]">
-        {/* Decorative faint abstract blob */}
-        <div className="absolute -bottom-10 -right-10 w-64 h-64 opacity-10 pointer-events-none">
+    <div className="flex flex-col gap-3 w-full relative z-10">
+      {/* ── Greeting (outside the card) ─────────────────────────────────── */}
+      <div className="col-span-12 lg:col-span-8 xl:col-span-6 flex flex-col gap-2">
+        <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">
+          Welcome back, {name}!
+        </h1>
+        <p className="text-gray-500 font-medium text-sm leading-relaxed">
+          Your contribution helped to create a cleaner and more hygienic
+          environment for all Singapore residents to enjoy.
+        </p>
+      </div>
+      {/* <div>
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          Welcome back, {name}!
+        </h1>
+        <p className="text-gray-500 text-sm font-medium mt-0.5">
+          Your contribution helped to create a cleaner and more hygienic
+          environment for all Singapore residents to enjoy.
+        </p>
+      </div> */}
+
+      {/* ── Green Hero Card ──────────────────────────────────────────────── */}
+      <div
+        className="relative rounded-[2rem] py-8 px-6 overflow-hidden shadow-lg"
+        style={{
+          background: "linear-gradient(145deg, #2d7a50 0%, #1e5c3a 100%)",
+        }}
+      >
+        {/* Decorative blob */}
+        {/* <div className="absolute -bottom-10 -right-10 w-64 h-64 opacity-[0.07] pointer-events-none">
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <path
               fill="#ffffff"
@@ -51,62 +92,66 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
               transform="translate(100 100) scale(1.1)"
             />
           </svg>
-        </div>
+        </div> */}
 
-        <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold text-white mb-1 tracking-tight">
-            Hi, {name}!
-          </h1>
-          <p className="text-[#a7d0b8] text-sm mb-6 font-medium">
-            Ready to make an impact today?
-          </p>
+        {/* ── Circular badge (centred) ─────────────────────────────────── */}
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="relative w-36 h-36">
+            <svg
+              className="w-full h-full transform -rotate-90"
+              viewBox="0 0 100 100"
+            >
+              {/* Track */}
+              <circle
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth="6"
+                fill="transparent"
+                r="44"
+                cx="50"
+                cy="50"
+              />
+              {/* Progress */}
+              <circle
+                stroke="#9bf8b7"
+                strokeWidth="6"
+                strokeDasharray={CIRC}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                fill="transparent"
+                r="44"
+                cx="50"
+                cy="50"
+                style={{ transition: "stroke-dashoffset 0.6s ease" }}
+              />
+            </svg>
 
-          <div className="flex items-center gap-6 mt-4">
-            {/* Circular Progress */}
-            <div className="relative w-28 h-28 shrink-0">
-              <svg
-                className="w-full h-full transform -rotate-90"
-                viewBox="0 0 100 100"
-              >
-                <circle
-                  className="text-white/10"
-                  strokeWidth="6"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="44"
-                  cx="50"
-                  cy="50"
-                />
-                <circle
-                  className="text-white"
-                  strokeWidth="6"
-                  strokeDasharray="276"
-                  strokeDashoffset={offset}
-                  strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="44"
-                  cx="50"
-                  cy="50"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-extrabold text-white tracking-tight leading-none mt-1">
-                  {points.toLocaleString()}
-                </span>
-                <span className="text-[9px] font-black text-white/70 uppercase tracking-widest mt-1">
-                  Points
-                </span>
-              </div>
+            {/* Centre label */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+              <span className="text-3xl font-extrabold text-white tracking-tight leading-none">
+                {totalPoints.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">
+                Points
+              </span>
             </div>
+          </div>
 
-            <div className="flex flex-col justify-center">
-              <p className="text-[#a7d0b8] text-xs font-medium leading-relaxed max-w-[120px]">
-                {pointsNeeded !== null
-                  ? `${pointsNeeded} points until your ${nextBadge} badge!`
-                  : "🎉 You've earned all badges!"}
+          {/* Badge name / no-badge state */}
+          <div className="text-center">
+            {levelLabel ? (
+              <p className="text-white font-extrabold text-base tracking-tight">
+                {levelLabel}
               </p>
-            </div>
+            ) : (
+              <p className="text-white/70 text-sm font-semibold tracking-tight">
+                No Badge Yet
+              </p>
+            )}
+            <p className="text-[#a7d0b8] text-xs font-medium mt-1">
+              {pointsNeeded !== null
+                ? `${pointsNeeded} points until next ${nextBadge} Badge`
+                : "🎉 You've earned all badges!"}
+            </p>
           </div>
         </div>
       </div>

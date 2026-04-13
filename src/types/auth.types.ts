@@ -26,12 +26,23 @@ export interface LoginPayload {
 
 /** User object returned from the backend */
 export interface UserProfile {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  role: "user" | "admin";
+  role: string;
+  age?: number;
+  gender?: string;
+  joinedEvents?: Array<{
+    eventId: number;
+    eventName: string;
+    joinedAt: string;
+  }>;
+  group?: {
+    groupId: number;
+    groupName: string;
+  };
   createdAt: string;
-  joinedEvents?: number[];
+  updatedAt: string;
 }
 
 /** Successful login response containing JWT token */

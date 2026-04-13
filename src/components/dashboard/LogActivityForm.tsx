@@ -5,7 +5,7 @@ interface LogActivityFormProps {
   elapsedSeconds: number;
   location: string;
   onCancel?: () => void;
-  onSubmit: (weight: number, type: string) => void;
+  onSubmit: (weight: number, type: string, photo?: File) => void;
   isMandatory?: boolean;
 }
 
@@ -27,8 +27,10 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 }) => {
   const [weight, setWeight] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [photoMock, setPhotoMock] = useState<string | null>(null);
   const [manualLocation, setManualLocation] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const getDurationText = () => {
     const h = Math.floor(elapsedSeconds / 3600);
@@ -48,11 +50,18 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weight) return; // Prevent submission without weight
+    if (!weight) return;
     const primaryType = selectedTypes.length > 0 ? selectedTypes[0] : "mixed";
-    onSubmit(parseFloat(weight), primaryType);
+    onSubmit(parseFloat(weight), primaryType, photoFile ?? undefined);
   };
 
   return (
@@ -148,33 +157,54 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                 Photo Evidence{" "}
                 <span className="text-gray-400 font-medium">(Optional)</span>
               </label>
-              {photoMock ? (
+
+              {/* Hidden real file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
+              {photoPreview ? (
                 <div className="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-medium border border-gray-300 px-3 py-1.5 rounded-lg bg-white shadow-sm flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-secondary" />{" "}
-                      AttachedPhoto.jpg
-                    </span>
-                  </div>
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     type="button"
-                    onClick={() => setPhotoMock(null)}
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
                     className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white hover:bg-black/80 backdrop-blur-sm transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
+                  <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg">
+                    <span className="text-white text-[10px] font-medium truncate max-w-[200px] block">
+                      {photoFile?.name}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <button
                   type="button"
-                  onClick={() => setPhotoMock("mocked")}
-                  className="w-full border-2 border-dashed border-gray-300 hover:border-secondary hover:bg-green-50/50 hover:text-secondary p-6 rounded-xl text-center flex flex-col items-center gap-3 transition-all group"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-gray-300 hover:border-secondary hover:bg-green-50/50 p-6 rounded-xl text-center flex flex-col items-center gap-3 transition-all group"
                 >
                   <div className="bg-gray-100 group-hover:bg-soft p-3 rounded-full transition-colors">
                     <Camera className="w-6 h-6 text-gray-400 group-hover:text-secondary" />
                   </div>
                   <span className="text-sm text-gray-500 group-hover:text-secondary font-semibold">
                     Tap to upload a photo
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    JPG, PNG, WEBP supported
                   </span>
                 </button>
               )}
