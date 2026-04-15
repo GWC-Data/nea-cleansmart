@@ -270,7 +270,7 @@ export const Dashboard: React.FC = () => {
                     {currentUser?.email || "jane@example.com"}
                   </p>
                 </div>
-                <button
+                {/* <button
                   onClick={() => {
                     setProfileMenuOpen(false);
                     alert("Settings coming soon");
@@ -278,7 +278,7 @@ export const Dashboard: React.FC = () => {
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium flex items-center gap-2"
                 >
                   <Settings className="w-4 h-4 text-gray-400" /> Settings
-                </button>
+                </button> */}
                 <div className="h-px bg-gray-50 my-1 w-full" />
                 <button
                   onClick={handleLogout}
