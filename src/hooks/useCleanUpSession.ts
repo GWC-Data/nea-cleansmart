@@ -29,24 +29,47 @@ export const useCleanUpSession = () => {
   });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const restoredFromStorage = useRef<boolean>(false);
   const PENDING_KEY = "nea_pending_report";
 
   // Initialize from LocalStorage
   useEffect(() => {
     const pending = localStorage.getItem(PENDING_KEY);
     if (pending) {
-      // There's an incomplete report — set state to logging_activity
-      const parsed = JSON.parse(pending);
-      setSession({
-        state: "logging_activity",
-        activeEventId: parsed.activeEventId,
-        activeLogId: parsed.activeLogId,
-        checkInTime: parsed.checkInTime,
-        durationSeconds: parsed.durationSeconds,
-        remainingSeconds: 0,
-        elapsedSeconds: parsed.elapsedSeconds,
-      });
-      return; // Don't process nea_session if pending exists
+      try {
+        const parsed = JSON.parse(pending);
+        const checkInTimeMs = new Date(parsed.checkInTime).getTime();
+        const nowMs = Date.now();
+        const elapsedSinceStart = Math.floor((nowMs - checkInTimeMs) / 1000);
+
+        // Timer is considered completed if the real time elapsed from check-in 
+        // is >= target duration, or if it was saved with full elapsedSeconds.
+        const isTimerCompleted = 
+          elapsedSinceStart >= parsed.durationSeconds || 
+          parsed.elapsedSeconds >= parsed.durationSeconds;
+
+        if (isTimerCompleted) {
+          // Conditions met: show the Log Activity form
+          // Mark as restored from storage — X icon should be hidden
+          restoredFromStorage.current = true;
+          setSession({
+            state: "logging_activity",
+            activeEventId: parsed.activeEventId,
+            activeLogId: parsed.activeLogId,
+            checkInTime: parsed.checkInTime,
+            durationSeconds: parsed.durationSeconds,
+            remainingSeconds: 0,
+            elapsedSeconds: parsed.elapsedSeconds,
+          });
+          return; // Don't process nea_session if pending exists and is valid
+        } else {
+          // Timer not actually completed, remove the pending lock 
+          // so it falls back to parsing `nea_session` and resuming the timer.
+          localStorage.removeItem(PENDING_KEY);
+        }
+      } catch (e) {
+        localStorage.removeItem(PENDING_KEY);
+      }
     }
 
     const saved = localStorage.getItem("nea_session");
@@ -221,6 +244,7 @@ export const useCleanUpSession = () => {
 
   return {
     ...session,
+    restoredFromStorage: restoredFromStorage.current,
     openDurationPicker,
     cancelDurationPicker,
     handleCheckIn,

@@ -27,7 +27,7 @@ export const SimpleLandingPage: React.FC = () => {
             KEEP SINGAPORE CLEAN
           </a>
           <button 
-            onClick={() => navigate('/main')}
+            onClick={() => navigate('/welcome')}
             className="bg-[#8cc63f] hover:bg-[#7abe31] cursor-pointer text-white px-5 py-2.5 rounded-full font-bold text-sm transition-colors shadow-sm"
           >
             Cleanliness Champions

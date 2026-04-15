@@ -46,7 +46,7 @@ function App() {
           {/* Public Auth Routes */}
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/register" element={<RegisterRoute />} />
-          <Route path="/main" element={<MainPage />} />
+          <Route path="/welcome" element={<MainPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
           {/* Protected Routes for Users */}

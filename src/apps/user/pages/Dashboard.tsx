@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { LogOut, Settings, Clock, StopCircle } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
@@ -37,19 +37,20 @@ export const Dashboard: React.FC = () => {
   );
 
   // Load dashboard data: stats + joined events
-  useEffect(() => {
-    async function loadDashboard() {
-      const data = await apiService.getDashboard();
-      if (data) {
-        setUserStats(data.stats);
-        setActiveEvents(data.eventsJoined);
-        if (data.profile?.name) {
-          setUserName(data.profile.name.split(" ")[0]);
-        }
+  const loadDashboard = useCallback(async () => {
+    const data = await apiService.getDashboard();
+    if (data) {
+      setUserStats(data.stats);
+      setActiveEvents(data.eventsJoined);
+      if (data.profile?.name) {
+        setUserName(data.profile.name.split(" ")[0]);
       }
     }
-    loadDashboard();
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   // Load all events from /events for the Upcoming Events section
   useEffect(() => {
@@ -66,6 +67,7 @@ export const Dashboard: React.FC = () => {
     activeLogId,
     remainingSeconds,
     elapsedSeconds,
+    restoredFromStorage,
     openDurationPicker,
     cancelDurationPicker,
     handleCheckIn,
@@ -74,9 +76,9 @@ export const Dashboard: React.FC = () => {
     completeSession,
   } = useCleanUpSession();
 
-  const hasPendingReport =
-    state === "logging_activity" &&
-    !!localStorage.getItem("nea_pending_report");
+  // True only when the session was restored from localStorage on login/refresh
+  // (timer had already completed). Used to force the form with no X dismiss button.
+  const isMandatory = state === "logging_activity" && restoredFromStorage;
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -154,12 +156,14 @@ export const Dashboard: React.FC = () => {
       checkOutTime: new Date().toISOString(),
       garbageWeight: weight,
       garbageType: type,
-      wasteImage: photo, // 👈 pass file directly — sent as multipart
+      wasteImage: photo, // pass file directly — sent as multipart
     });
 
     if (checkoutSuccess) {
       completeSession();
       toast.success("Report submitted! Great job 🌿");
+      // Re-fetch dashboard to show updated hours, weight, carbon & points
+      await loadDashboard();
     } else {
       toast.error("Failed to submit report. Please try again.");
     }
@@ -190,6 +194,7 @@ export const Dashboard: React.FC = () => {
     description: "",
     rewards: "",
     joinsCount: e.joinedCount,
+    eventImage: e.eventImage ?? null,
     participants: [],
     createdAt: "",
     updatedAt: "",
@@ -379,9 +384,9 @@ export const Dashboard: React.FC = () => {
         <LogActivityForm
           elapsedSeconds={elapsedSeconds}
           location={dashboardLocation}
-          onCancel={hasPendingReport ? undefined : cancelCheckout}
+          onCancel={isMandatory ? undefined : cancelCheckout}
           onSubmit={handleSubmitReport}
-          isMandatory={hasPendingReport}
+          isMandatory={isMandatory}
         />
       )}
 

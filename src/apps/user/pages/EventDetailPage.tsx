@@ -55,73 +55,100 @@ const BADGES = [
 // ── Rewards & Badges Card ────────────────────────────────────────────────────
 const RewardsBadgesCard: React.FC<{
   rewards: string;
-  earnedPoints: number;
-}> = ({ rewards, earnedPoints }) => (
-  <div className="bg-[#fcf8f2] rounded-[2rem] p-6 shadow-sm border border-orange-50/50">
-    <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-1">
-      Rewards & Badges
-    </h3>
-    <p className="text-xs text-gray-400 font-medium mb-5 leading-relaxed">
-      Complete clean-up hours to unlock badges and rewards.
-    </p>
-    <div className="flex flex-col gap-3">
-      {BADGES.map((badge) => {
-        const isEarned = earnedPoints >= badge.points;
-        return (
-          <div
-            key={badge.label}
-            className={`flex items-center gap-4 rounded-2xl px-4 py-3 border shadow-sm transition-all
-    ${
-      isEarned
-        ? `${badge.color} border-transparent ring-2 ${badge.ring}`
-        : "bg-white border-gray-100"
-    }`}
-          >
-            <div
-              className={`p-3 rounded-full border shrink-0
-    ${
-      isEarned
-        ? "bg-white/60 " + badge.border
-        : badge.color + " " + badge.border
-    }`}
-            >
-              <Medal className={`w-5 h-5 ${badge.icon}`} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-extrabold text-gray-800 text-sm">
-                  {badge.label}
-                </p>
-                {isEarned && (
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.border} ${badge.icon} bg-white/70`}
-                  >
-                    ✓ Earned
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium">
-                {badge.points} points · {badge.hours} hrs
-              </p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-    <div className="mt-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
-      <p className="text-xs text-gray-500 font-medium leading-relaxed">
-        🎁 <span className="font-bold text-gray-700">Rewards: </span>
-        {rewards}
+  userTotalHours: number;
+}> = ({ rewards, userTotalHours }) => {
+  const highestEarned = [...BADGES]
+    .reverse()
+    .find((b) => userTotalHours >= b.hours);
+  const nextBadge = BADGES.find((b) => userTotalHours < b.hours);
+  return (
+    <div className="bg-[#fcf8f2] rounded-[2rem] p-6 shadow-sm border border-orange-50/50">
+      <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-1">
+        Rewards & Badges
+      </h3>
+      <p className="text-xs text-gray-400 font-medium mb-5 leading-relaxed">
+        Complete clean-up hours to unlock badges and rewards.
       </p>
+      {nextBadge && (
+        <div className="mb-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
+          <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1.5">
+            <span>Progress to {nextBadge.label}</span>
+            <span className="text-[#08351e]">
+              {userTotalHours.toFixed(1)}h / {nextBadge.hours}h
+            </span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-2 rounded-full bg-[#08351e] transition-all duration-500"
+              style={{
+                width: `${Math.min((userTotalHours / nextBadge.hours) * 100, 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+      <div className="flex flex-col gap-3">
+        {BADGES.map((badge) => {
+          const isEarned = userTotalHours >= badge.hours;
+          const isCurrent = highestEarned?.label === badge.label;
+          return (
+            <div
+              key={badge.label}
+              className={`flex items-center gap-4 rounded-2xl px-4 py-3 border shadow-sm transition-all ${isCurrent ? `${badge.color} border-transparent ring-2 ${badge.ring} scale-[1.02]` : isEarned ? `${badge.color} border-transparent opacity-70` : "bg-white border-gray-100"}`}
+            >
+              <div
+                className={`p-3 rounded-full border shrink-0
+                ${
+                  isEarned
+                    ? "bg-white/60 " + badge.border
+                    : badge.color + " " + badge.border
+                }`}
+              >
+                <Medal className={`w-5 h-5 ${badge.icon}`} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-extrabold text-gray-800 text-sm">
+                    {badge.label}
+                  </p>
+                  {isCurrent && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.border} ${badge.icon} bg-white/70`}
+                    >
+                      ✓ Current
+                    </span>
+                  )}
+                  {isEarned && !isCurrent && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 text-gray-400 bg-white/70">
+                      ✓ Earned
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  {badge.points} points · {badge.hours} hrs
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
+        <p className="text-xs text-gray-500 font-medium leading-relaxed">
+          🎁 <span className="font-bold text-gray-700">Rewards: </span>
+          {rewards}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Leaderboard Card ─────────────────────────────────────────────────────────
 const LeaderboardCard: React.FC<{
   leaderboard: LeaderboardEntry[];
   currentUserId: number | null;
-}> = ({ leaderboard, currentUserId }) => {
+  /** Tailwind classes applied to the scrollable entries wrapper */
+  scrollClass?: string;
+}> = ({ leaderboard, currentUserId, scrollClass = "" }) => {
   if (leaderboard.length === 0) {
     return (
       <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
@@ -142,7 +169,9 @@ const LeaderboardCard: React.FC<{
       <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-4 flex items-center gap-2">
         <Trophy className="w-4 h-4 text-yellow-500" /> Leaderboard
       </h3>
-      <div className="flex flex-col gap-2">
+      <div
+        className={`flex flex-col gap-2 overflow-y-auto pr-1 ${scrollClass}`}
+      >
         {leaderboard.map((entry) => {
           const isCurrentUser = entry.userId === currentUserId;
           // const hours = Math.floor(entry.totalHours);
@@ -297,38 +326,33 @@ export const EventDetailPage: React.FC = () => {
   const [event, setEvent] = useState<EventData | null>(null);
   const [leaderboardData, setLeaderboardData] =
     useState<EventLeaderboard | null>(null);
+  const [eventsJoined, setEventsJoined] = useState<number[]>([]);
   const [modalView, setModalView] = useState<"none" | "confirm" | "success">(
     "none",
   );
   const [isJoining, setIsJoining] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
 
-  //  Single combined effect — waits for auth before fetching
-  // 1. Inside the useEffect — check what currentUser looks like when effect runs:
+  // Fetch event details + dashboard joined-events list in parallel
   useEffect(() => {
     if (isLoading) return;
-
-    console.log("=== loadAll triggered ===");
-    console.log("isLoading:", isLoading);
-    console.log("currentUser:", currentUser);
-    console.log("currentUser.joinedEvents:", currentUser?.joinedEvents);
-    console.log("eventId param:", eventId);
 
     async function loadAll() {
       setDataLoading(true);
       try {
-        const found = await apiService.getEventById(Number(eventId));
+        const [found, dashboard] = await Promise.all([
+          apiService.getEventById(Number(eventId)),
+          apiService.getDashboard(),
+        ]);
+
         setEvent(found);
 
-        const userHasJoined =
-          currentUser?.joinedEvents?.some((e: any) => {
-            const id = typeof e === "number" ? e : e.eventId;
-            return id === Number(eventId);
-          }) ?? false;
+        // Build a flat list of joined eventIds from the dashboard response
+        const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
+        setEventsJoined(joinedIds);
 
-        console.log("userHasJoined result:", userHasJoined);
-
-        if (userHasJoined) {
+        // Fetch leaderboard only if this event is in the joined list
+        if (joinedIds.includes(Number(eventId))) {
           const lb = await apiService.getEventLeaderboard(Number(eventId));
           setLeaderboardData(lb);
         }
@@ -338,7 +362,7 @@ export const EventDetailPage: React.FC = () => {
     }
 
     loadAll();
-  }, [eventId, isLoading, currentUser]);
+  }, [eventId, isLoading]);
 
   //  Loading guard — BEFORE any derivations
   if (dataLoading || isLoading || !event)
@@ -348,27 +372,13 @@ export const EventDetailPage: React.FC = () => {
       </div>
     );
 
-  //  Safe to derive now — auth and event are both loaded
-  const isActiveEvent =
-    currentUser?.joinedEvents?.some((e: any) => {
-      const id = typeof e === "number" ? e : e.eventId;
-      return id === Number(eventId);
-    }) ?? false;
-  console.log(isActiveEvent);
+  // Derived from dashboard eventsJoined — true when this event is in the joined list
+  const isActiveEvent = eventsJoined.includes(Number(eventId));
 
-  const earnedPoints = currentUser
-    ? (() => {
-        // Derive points from leaderboard entry for current user
-        const myEntry = leaderboardData?.leaderboard.find(
-          (e) => e.userId === currentUser.id,
-        );
-        // Approximate: each badge tier maps to hours
-        if (!myEntry) return 0;
-        if (myEntry.totalHours >= 15) return 150;
-        if (myEntry.totalHours >= 10) return 100;
-        if (myEntry.totalHours >= 5) return 50;
-        return Math.floor(myEntry.totalHours * 10); // rough estimate
-      })()
+  // Total hours for the current user from the leaderboard entry
+  const userTotalHours = currentUser
+    ? (leaderboardData?.leaderboard.find((e) => e.userId === currentUser.id)
+        ?.totalHours ?? 0)
     : 0;
 
   const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
@@ -378,13 +388,42 @@ export const EventDetailPage: React.FC = () => {
     year: "numeric",
   });
 
-  const handleShare = () => {
+  const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
-      navigator.share({ title: event.name, url });
+      try {
+        await navigator.share({ title: event.name, url });
+      } catch (err) {
+        console.error("Share failed", err);
+      }
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy link.");
+      }
     } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
+      // Old-school fallback for insecure contexts (HTTP)
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const success = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        if (success) {
+          toast.success("Link copied to clipboard!");
+        } else {
+          toast.error("Cannot copy link in this environment.");
+        }
+      } catch (err) {
+        toast.error("Cannot copy link in this environment.");
+      }
     }
   };
 
@@ -394,7 +433,10 @@ export const EventDetailPage: React.FC = () => {
       // Leave any currently active event first
       const currentActiveEvent = currentUser?.joinedEvents?.[0];
       if (currentActiveEvent) {
-        const activeEventId = typeof currentActiveEvent === "number" ? currentActiveEvent : (currentActiveEvent as any).eventId;
+        const activeEventId =
+          typeof currentActiveEvent === "number"
+            ? currentActiveEvent
+            : (currentActiveEvent as any).eventId;
         if (activeEventId !== event.eventId) {
           await apiService.leaveEvent(activeEventId);
         }
@@ -430,7 +472,7 @@ export const EventDetailPage: React.FC = () => {
         </h1>
         <button
           onClick={handleShare}
-          className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-full transition-colors hover:bg-gray-50"
+          className="cursor-pointer shrink-0 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-full transition-colors hover:bg-gray-50"
         >
           <Share2 className="w-3.5 h-3.5" /> Share
         </button>
@@ -468,7 +510,7 @@ export const EventDetailPage: React.FC = () => {
       {!isActiveEvent && (
         <button
           onClick={() => setModalView("confirm")}
-          className="mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
+          className="cursor-pointer mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
         >
           Yes, Join Event
         </button>
@@ -508,20 +550,22 @@ export const EventDetailPage: React.FC = () => {
         {/* Active event extras — leaderboard + badges */}
         {isActiveEvent && (
           <>
+            {/* Mobile: show 5 rows, scroll from 6th (~4.5rem per row) */}
             <LeaderboardCard
               leaderboard={leaderboardData?.leaderboard ?? []}
               currentUserId={currentUser?.id ?? null}
+              scrollClass="max-h-[calc(5*4.75rem)]"
             />
             <RewardsBadgesCard
               rewards={event.rewards}
-              earnedPoints={earnedPoints}
+              userTotalHours={userTotalHours}
             />
           </>
         )}
 
         {/* Upcoming event — show rewards but no leaderboard */}
         {!isActiveEvent && (
-          <RewardsBadgesCard rewards={event.rewards} earnedPoints={0} />
+          <RewardsBadgesCard rewards={event.rewards} userTotalHours={0} />
         )}
       </div>
 
@@ -544,18 +588,17 @@ export const EventDetailPage: React.FC = () => {
             {/* RIGHT */}
             <div className="col-span-5">
               <div className="sticky top-24 flex flex-col gap-6">
-                {" "}
-                {/* 👈 add flex flex-col gap-6 */}
                 {/* Leaderboard — active events only, moved here from left column */}
                 {isActiveEvent && (
                   <LeaderboardCard
                     leaderboard={leaderboardData?.leaderboard ?? []}
                     currentUserId={currentUser?.id ?? null}
+                    scrollClass="min-h-[12.7rem] max-h-[12.7rem]"
                   />
                 )}
                 <RewardsBadgesCard
                   rewards={event.rewards}
-                  earnedPoints={isActiveEvent ? earnedPoints : 0}
+                  userTotalHours={isActiveEvent ? userTotalHours : 0}
                 />
               </div>
             </div>

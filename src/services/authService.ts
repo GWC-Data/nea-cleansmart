@@ -22,7 +22,7 @@ const BASE = ENV.API_BASE_URL;
  * Maps to: POST /users
  */
 export const registerUser = async (
-  payload: RegisterPayload
+  payload: RegisterPayload,
 ): Promise<UserProfile> => {
   const res = await fetch(`${BASE}/users`, {
     method: "POST",
@@ -45,14 +45,13 @@ export const registerUser = async (
  * Maps to: POST /auth/login  (update path once confirmed with backend)
  */
 export const loginUser = async (
-  payload: LoginPayload
+  payload: LoginPayload,
 ): Promise<AuthResponse> => {
   const res = await fetch(`${BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  console.log(res);
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error?.message ?? "Login failed. Check your credentials.");
@@ -60,4 +59,3 @@ export const loginUser = async (
 
   return res.json() as Promise<AuthResponse>;
 };
-
