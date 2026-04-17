@@ -1,11 +1,16 @@
 import { ENV } from "../config/env";
 import { getToken } from "../utils/tokenUtils";
+import bcrypt from "bcryptjs";
+
+// We use a fixed salt so the frontend always generates the exact same hash for the same password.
+// Be aware that frontend hashing is not a replacement for HTTPS.
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 
 /**
  * Event Data Interface
  */
 export interface EventData {
-  eventId: number;
+  eventId: string;
   date: string;
   location: string;
   name: string;
@@ -13,12 +18,7 @@ export interface EventData {
   description: string;
   rewards: string;
   joinsCount: number;
-  participants: Array<{
-    userId: number;
-    name: string;
-    email: string;
-    joinedAt: string;
-  }>;
+  participants: string[];
   eventImage?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -29,11 +29,12 @@ export interface EventData {
  * userId and other user data are extracted from JWT token on backend
  */
 export interface CheckInPayload {
-  eventId: number;
+  eventId: string;
   checkInTime?: string;
   groupId?: number;
   garbageWeight?: number;
   garbageType?: string;
+  hoursEnrolled?: string;
 }
 
 /**
@@ -44,6 +45,7 @@ export interface CheckOutPayload {
   checkOutTime: string;
   garbageWeight: number;
   garbageType: string;
+  eventLocation?: string;
   wasteImage?: File;
 }
 
@@ -55,13 +57,14 @@ export interface UserStats {
   co2Collected: number;
   totalMinutesLogged: number;
   totalWeight: number;
+  todayHours?: number;
 }
 
 /**
  * A single joined event entry from /dashboard eventsJoined
  */
 export interface DashboardEvent {
-  eventId: number;
+  eventId: string;
   eventName: string;
   location: string;
   eventDate: string;
@@ -75,7 +78,7 @@ export interface DashboardEvent {
 export interface DashboardData {
   message: string;
   profile: {
-    userId: number;
+    userId: string;
     name: string;
     email: string;
     role: string;
@@ -88,9 +91,9 @@ export interface DashboardData {
  * Event Log with associations
  */
 export interface EventLog {
-  id: number;
-  eventId: number;
-  userId: number;
+  id: string;
+  eventId: string;
+  userId: string;
   groupId: number | null;
   checkInTime: string;
   checkOutTime: string | null;
@@ -101,13 +104,13 @@ export interface EventLog {
   createdAt: string;
   updatedAt: string;
   event: {
-    eventId: number;
+    eventId: string;
     name: string;
     location: string;
     date: string;
   };
   group: {
-    groupId: number;
+    groupId: string;
     groupName: string;
   } | null;
 }
@@ -116,19 +119,15 @@ export interface EventLog {
  * User Profile returned from backend
  */
 export interface UserProfile {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
   age?: number;
   gender?: string;
-  joinedEvents?: Array<{
-    eventId: number;
-    eventName: string;
-    joinedAt: string;
-  }>;
+  joinedEvents?: string[];
   group?: {
-    groupId: number;
+    groupId: string;
     groupName: string;
   };
   createdAt: string;
@@ -148,7 +147,7 @@ export interface UserEventLogsResponse {
  */
 export interface RewardsSummary {
   user: {
-    id: number;
+    id: string;
     name: string;
     email: string;
   };
@@ -176,7 +175,7 @@ export interface RewardsSummary {
  */
 export interface LeaderboardEntry {
   rank: number;
-  userId: number;
+  userId: string;
   userName: string;
   userEmail: string;
   totalHours: number;
@@ -190,7 +189,7 @@ export interface LeaderboardEntry {
 export interface EventLeaderboard {
   message: string;
   eventDetails: {
-    eventId: number;
+    eventId: string;
     eventName: string;
     eventDate: string;
     location: string;
@@ -272,7 +271,7 @@ export const apiService = {
    * @param eventId The event ID
    * @returns Event details with participants
    */
-  async getEventById(eventId: number): Promise<EventData | null> {
+  async getEventById(eventId: string): Promise<EventData | null> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}`, {
         method: "GET",
@@ -300,7 +299,7 @@ export const apiService = {
    * @param eventId The event ID to join
    * @returns Success status
    */
-  async joinEvent(eventId: number): Promise<boolean> {
+  async joinEvent(eventId: string): Promise<boolean> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/join`, {
         method: "POST",
@@ -324,7 +323,7 @@ export const apiService = {
    * @param eventId The event ID to leave
    * @returns Success status
    */
-  async leaveEvent(eventId: number): Promise<boolean> {
+  async leaveEvent(eventId: string): Promise<boolean> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/leave`, {
         method: "POST",
@@ -347,7 +346,7 @@ export const apiService = {
    * @param eventId The event ID
    * @returns List of participants
    */
-  async getEventParticipants(eventId: number): Promise<any> {
+  async getEventParticipants(eventId: string): Promise<any> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/participants`, {
         method: "GET",
@@ -389,6 +388,37 @@ export const apiService = {
   // ============================================================
   // EVENT LOGS (CHECK-IN/CHECK-OUT) ENDPOINTS
   // ============================================================
+
+  /**
+   * Get active timer for the current user
+   * @returns Active timer info or null
+   */
+  async getTimer(): Promise<{
+    checkInTime: string;
+    hoursEnrolled: string;
+    eventId: string;
+    logId: number;
+  } | null> {
+    try {
+      const response = await fetch(`${BASE}/timer`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error(`Failed to fetch timer: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.message === "No active timer found for this user") {
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error("getTimer error:", error);
+      return null;
+    }
+  },
 
   /**
    * Check in to an event
@@ -434,6 +464,9 @@ export const apiService = {
       formData.append("checkOutTime", payload.checkOutTime);
       formData.append("garbageWeight", String(payload.garbageWeight));
       formData.append("garbageType", payload.garbageType);
+      if (payload.eventLocation) {
+        formData.append("eventLocation", payload.eventLocation);
+      }
       if (payload.wasteImage) {
         formData.append("wasteImage", payload.wasteImage); // field name must match multer
       }
@@ -461,7 +494,7 @@ export const apiService = {
    * @returns Success status
    */
   async updateEventLog(
-    logId: number,
+    logId: string,
     payload: Partial<CheckOutPayload>,
   ): Promise<boolean> {
     try {
@@ -557,7 +590,7 @@ export const apiService = {
    * @param eventId The event ID
    * @returns Event logs for that event with stats
    */
-  async getEventLogsByEvent(eventId: number): Promise<any | null> {
+  async getEventLogsByEvent(eventId: string): Promise<any | null> {
     try {
       const response = await fetch(`${BASE}/event-logs/event/${eventId}`, {
         method: "GET",
@@ -736,7 +769,7 @@ export const apiService = {
    * @param eventId The event ID
    * @returns Event leaderboard with stats
    */
-  async getEventLeaderboard(eventId: number): Promise<EventLeaderboard | null> {
+  async getEventLeaderboard(eventId: string): Promise<EventLeaderboard | null> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/leaderboard`, {
         method: "GET",
@@ -791,12 +824,15 @@ export const apiService = {
    */
   async resetPassword(token: string, password: string): Promise<boolean> {
     try {
+      // Hash password before sending
+      const hashedPassword = bcrypt.hashSync(password, FRONTEND_SALT);
+
       const response = await fetch(`${BASE}/auth/reset-password/${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: hashedPassword }),
       });
       if (!response.ok) {
         throw new Error(

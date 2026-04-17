@@ -3,12 +3,11 @@ import { Clock, Trash2, Wind } from "lucide-react";
 import type { UserStats } from "../../services/apiService";
 
 function formatCleanupHours(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
-  if (mins === 0) return hours === 0 ? "0" : `${hours}`;
-  if (mins === 30) return hours === 0 ? "½" : `${hours} ½`;
-  // fallback for other values
-  return (totalMinutes / 60).toFixed(1);
+  if (totalMinutes === 0) return "0";
+  const hours = totalMinutes / 60;
+  // Floor to 1 decimal place (e.g. 11min → 0.1h, not 0.2h)
+  const floored = Math.floor(hours * 10) / 10;
+  return floored.toFixed(1);
 }
 
 interface StatsOverviewProps {
@@ -16,9 +15,11 @@ interface StatsOverviewProps {
 }
 
 export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats }) => {
-  const hoursDisplay = stats ? formatCleanupHours(stats.totalMinutesLogged) : "0";
+  const hoursDisplay = stats
+    ? formatCleanupHours(stats.totalMinutesLogged)
+    : "0";
   const wasteDisplay = stats ? stats.totalWeight : "0";
-  const carbonDisplay = stats ? stats.co2Collected.toFixed(1) : "0";
+  const carbonDisplay = stats ? Math.floor(stats.co2Collected).toString() : "0";
   return (
     <div className="flex flex-col gap-3 w-full">
       {/* Stat Pill: Clean-up Hours */}

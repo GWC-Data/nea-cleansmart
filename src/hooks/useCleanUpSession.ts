@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-// import { apiService } from "../services/apiService";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export type SessionState =
   | "idle"
@@ -9,7 +8,7 @@ export type SessionState =
 
 export interface CleanUpSession {
   state: SessionState;
-  activeEventId: number | null;
+  activeEventId: string | null;
   activeLogId: number | null;
   checkInTime: string | null;
   durationSeconds: number; // Selected countdown duration
@@ -29,87 +28,54 @@ export const useCleanUpSession = () => {
   });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const restoredFromStorage = useRef<boolean>(false);
-  const PENDING_KEY = "nea_pending_report";
 
-  // Initialize from LocalStorage
-  useEffect(() => {
-    const pending = localStorage.getItem(PENDING_KEY);
-    if (pending) {
-      try {
-        const parsed = JSON.parse(pending);
-        const checkInTimeMs = new Date(parsed.checkInTime).getTime();
-        const nowMs = Date.now();
-        const elapsedSinceStart = Math.floor((nowMs - checkInTimeMs) / 1000);
-
-        // Timer is considered completed if the real time elapsed from check-in 
-        // is >= target duration, or if it was saved with full elapsedSeconds.
-        const isTimerCompleted = 
-          elapsedSinceStart >= parsed.durationSeconds || 
-          parsed.elapsedSeconds >= parsed.durationSeconds;
-
-        if (isTimerCompleted) {
-          // Conditions met: show the Log Activity form
-          // Mark as restored from storage — X icon should be hidden
-          restoredFromStorage.current = true;
-          setSession({
-            state: "logging_activity",
-            activeEventId: parsed.activeEventId,
-            activeLogId: parsed.activeLogId,
-            checkInTime: parsed.checkInTime,
-            durationSeconds: parsed.durationSeconds,
-            remainingSeconds: 0,
-            elapsedSeconds: parsed.elapsedSeconds,
-          });
-          return; // Don't process nea_session if pending exists and is valid
-        } else {
-          // Timer not actually completed, remove the pending lock 
-          // so it falls back to parsing `nea_session` and resuming the timer.
-          localStorage.removeItem(PENDING_KEY);
-        }
-      } catch (e) {
-        localStorage.removeItem(PENDING_KEY);
+// Initialize from server
+  const initializeTimer = useCallback((serverData: {
+    checkInTime: string;
+    hoursEnrolled: string;
+    eventId: string;
+    logId: number;
+  }) => {
+    try {
+      const checkInTimeMs = new Date(serverData.checkInTime).getTime();
+      const nowMs = Date.now();
+      const elapsed = Math.floor((nowMs - checkInTimeMs) / 1000);
+      
+      let durationSeconds = 0;
+      const hoursStr = serverData.hoursEnrolled.toLowerCase();
+      if (hoursStr.endsWith("min")) {
+         durationSeconds = parseFloat(hoursStr) * 60;
+      } else if (hoursStr.endsWith("hours") || hoursStr.endsWith("hour")) {
+         durationSeconds = parseFloat(hoursStr) * 3600;
+      } else {
+         durationSeconds = parseFloat(hoursStr) * 3600; // default treating as hours or parse error
       }
-    }
+      
+      const remaining = durationSeconds - elapsed;
 
-    const saved = localStorage.getItem("nea_session");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const checkInTime = new Date(parsed.checkInTime).getTime();
-        const now = Date.now();
-        const elapsed = Math.floor((now - checkInTime) / 1000);
-        const remaining = parsed.durationSeconds - elapsed;
-
-        if (remaining <= 0) {
-          // Timer expired in background — save as pending report instead of auto-checkout
-          localStorage.setItem(
-            PENDING_KEY,
-            JSON.stringify({
-              activeEventId: parsed.activeEventId,
-              activeLogId: parsed.activeLogId,
-              checkInTime: parsed.checkInTime,
-              durationSeconds: parsed.durationSeconds,
-              elapsedSeconds: parsed.durationSeconds, // full duration elapsed
-            }),
-          );
-          localStorage.removeItem("nea_session");
-          // Don't auto-checkout — let user submit the form
-        } else {
-          // Restore active session
-          setSession({
-            state: "checked_in",
-            activeEventId: parsed.activeEventId,
-            activeLogId: parsed.activeLogId,
-            checkInTime: parsed.checkInTime,
-            durationSeconds: parsed.durationSeconds,
-            remainingSeconds: remaining,
-            elapsedSeconds: elapsed,
-          });
-        }
-      } catch (e) {
-        localStorage.removeItem("nea_session");
+      if (remaining <= 0) {
+        setSession({
+          state: "logging_activity",
+          activeEventId: serverData.eventId,
+          activeLogId: serverData.logId,
+          checkInTime: serverData.checkInTime,
+          durationSeconds: durationSeconds,
+          remainingSeconds: 0,
+          elapsedSeconds: durationSeconds, // mark as full duration
+        });
+      } else {
+        setSession({
+          state: "checked_in",
+          activeEventId: serverData.eventId,
+          activeLogId: serverData.logId,
+          checkInTime: serverData.checkInTime,
+          durationSeconds: durationSeconds,
+          remainingSeconds: remaining,
+          elapsedSeconds: elapsed,
+        });
       }
+    } catch (e) {
+      console.error("Failed to initialize timer from server", e);
     }
   }, []);
 
@@ -120,19 +86,6 @@ export const useCleanUpSession = () => {
         setSession((prev) => {
           if (prev.remainingSeconds <= 1) {
             if (intervalRef.current) clearInterval(intervalRef.current);
-
-            // Save pending report — user must submit form on next login
-            localStorage.setItem(
-              PENDING_KEY,
-              JSON.stringify({
-                activeEventId: prev.activeEventId,
-                activeLogId: prev.activeLogId,
-                checkInTime: prev.checkInTime,
-                durationSeconds: prev.durationSeconds,
-                elapsedSeconds: prev.durationSeconds, // full duration
-              }),
-            );
-            localStorage.removeItem("nea_session");
 
             return {
               ...prev,
@@ -158,7 +111,7 @@ export const useCleanUpSession = () => {
   }, [session.state]);
 
   /** Open the duration picker for an event */
-  const openDurationPicker = (eventId: number) => {
+  const openDurationPicker = (eventId: string) => {
     setSession((prev) => ({
       ...prev,
       state: "selecting_duration",
@@ -169,16 +122,6 @@ export const useCleanUpSession = () => {
   /** Called after user selects duration AND api check-in succeeds */
   const handleCheckIn = (logId: number, durationSecs: number) => {
     const timeNow = new Date().toISOString();
-
-    localStorage.setItem(
-      "nea_session",
-      JSON.stringify({
-        activeEventId: session.activeEventId,
-        activeLogId: logId,
-        checkInTime: timeNow,
-        durationSeconds: durationSecs,
-      }),
-    );
 
     setSession((prev) => ({
       ...prev,
@@ -201,18 +144,6 @@ export const useCleanUpSession = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     const elapsed = session.durationSeconds - session.remainingSeconds;
 
-    // Save pending report for the first time here
-    localStorage.setItem(
-      PENDING_KEY,
-      JSON.stringify({
-        activeEventId: session.activeEventId,
-        activeLogId: session.activeLogId,
-        checkInTime: session.checkInTime,
-        durationSeconds: session.durationSeconds,
-        elapsedSeconds: elapsed,
-      }),
-    );
-
     setSession((prev) => ({
       ...prev,
       state: "logging_activity",
@@ -229,8 +160,6 @@ export const useCleanUpSession = () => {
   /** Submitted the report — reset everything */
   const completeSession = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    localStorage.removeItem("nea_session");
-    localStorage.removeItem(PENDING_KEY);
     setSession({
       state: "idle",
       activeEventId: null,
@@ -244,7 +173,8 @@ export const useCleanUpSession = () => {
 
   return {
     ...session,
-    restoredFromStorage: restoredFromStorage.current,
+    restoredFromStorage: false,
+    initializeTimer,
     openDurationPicker,
     cancelDurationPicker,
     handleCheckIn,

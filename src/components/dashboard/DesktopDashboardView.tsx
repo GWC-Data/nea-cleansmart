@@ -7,17 +7,18 @@ import {
   CalendarDays,
   Users,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { EventData, UserStats } from "../../services/apiService";
 import { getEventImageUrl } from "../../utils/imageUtils";
 
 function formatCleanupHours(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
-  if (mins === 0) return hours === 0 ? "0" : `${hours}`;
-  if (mins === 30) return hours === 0 ? "½" : `${hours} ½`;
-  return (totalMinutes / 60).toFixed(1);
+  if (totalMinutes === 0) return "0";
+  const hours = totalMinutes / 60;
+  // Floor to 1 decimal place (e.g. 11min → 0.1h, not 0.2h)
+  const floored = Math.floor(hours * 10) / 10;
+  return floored.toFixed(1);
 }
 
 function getNextBadgeInfo(
@@ -51,9 +52,17 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   const totalMinutes = stats?.totalMinutesLogged ?? 0;
   const totalWeight = stats?.totalWeight ?? 0;
   const totalPoints = stats?.totalPoints ?? 0;
-  const carbonReduced = (totalWeight * 0.5).toFixed(1);
+  const carbonReduced = stats ? Math.floor(stats.co2Collected).toString() : "0";
   const hoursDisplay = formatCleanupHours(totalMinutes);
   const nextBadge = getNextBadgeInfo(totalPoints);
+  const hasBadge = totalPoints >= 50;
+  const badgeName = !hasBadge
+    ? null
+    : totalPoints < 100
+      ? "Silver"
+      : totalPoints < 150
+        ? "Gold"
+        : "Diamond";
 
   // XP ring progress
   const start =
@@ -286,9 +295,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
           <div className="col-span-4 flex flex-col gap-6 sticky top-24">
             {/* XP Ring */}
             <div className="col-span-3 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-3">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+              {/* <p className="text-xs font-black uppercase tracking-widest text-gray-400">
                 Impact Points
-              </p>
+              </p> */}
               <div className="relative w-36 h-36">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle
@@ -320,22 +329,31 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 font-medium text-center leading-relaxed max-w-[160px]">
+              {/* Display the user earned badge */}
+              <p className="text-xs text-gray-500 font-medium text-center leading-relaxed max-w-[180px]">
+                {badgeName ? `Earned ${badgeName} Badge` : "No Badge Yet"}
+              </p>
+              <p className="text-xs text-gray-500 font-medium text-center leading-relaxed max-w-[180px]">
                 {nextBadge ? (
                   <>
                     <span className="font-black text-gray-800">
-                      {nextBadge.pointsNeeded} pts
+                      {" "}
+                      {nextBadge.pointsNeeded} pts{" "}
                     </span>{" "}
-                    until your{" "}
+                    until your
                     <span className="font-black text-[#08351e]">
-                      {nextBadge.label}
+                      {" "}
+                      {nextBadge.label}{" "}
                     </span>{" "}
                     badge!
                   </>
                 ) : (
-                  <span className="font-black text-[#08351e]">
-                    🎉 All badges earned!
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="font-black text-[#08351e]">
+                      All badges earned!
+                    </span>
+                  </div>
                 )}
               </p>
             </div>

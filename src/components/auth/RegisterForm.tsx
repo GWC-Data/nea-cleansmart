@@ -91,6 +91,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent multiple rapid clicks/submits
     if (!validate()) return;
     handleRegister(form, onSuccess);
   };

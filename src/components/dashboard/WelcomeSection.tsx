@@ -40,7 +40,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         ? "Gold"
         : "Diamond";
 
-  const levelLabel = badgeName ? `${badgeName} Guardian Level` : null;
+  const levelLabel = badgeName ? `Earned ${badgeName} Badge` : null;
 
   const nextBadge =
     totalPoints < 50

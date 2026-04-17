@@ -10,6 +10,7 @@ import {
   Trophy,
   // Clock,
   Trash2,
+  Gift,
 } from "lucide-react";
 import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
@@ -56,7 +57,8 @@ const BADGES = [
 const RewardsBadgesCard: React.FC<{
   rewards: string;
   userTotalHours: number;
-}> = ({ rewards, userTotalHours }) => {
+  isActiveEvent?: boolean;
+}> = ({ rewards, userTotalHours, isActiveEvent = true }) => {
   const highestEarned = [...BADGES]
     .reverse()
     .find((b) => userTotalHours >= b.hours);
@@ -69,12 +71,13 @@ const RewardsBadgesCard: React.FC<{
       <p className="text-xs text-gray-400 font-medium mb-5 leading-relaxed">
         Complete clean-up hours to unlock badges and rewards.
       </p>
-      {nextBadge && (
+      {isActiveEvent && nextBadge && (
         <div className="mb-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
           <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1.5">
             <span>Progress to {nextBadge.label}</span>
             <span className="text-[#08351e]">
-              {userTotalHours.toFixed(1)}h / {nextBadge.hours}h
+              {(Math.floor(userTotalHours * 10) / 10).toFixed(1)}h /{" "}
+              {nextBadge.hours}h
             </span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -133,8 +136,12 @@ const RewardsBadgesCard: React.FC<{
         })}
       </div>
       <div className="mt-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
+        {/* Gift icons and Reward title should in single line */}
+        <div className="flex items-center gap-2">
+          <Gift className="w-4 h-4 text-yellow-500" />
+          <p className="font-bold text-[14px] text-gray-700">Rewards: </p>
+        </div>
         <p className="text-xs text-gray-500 font-medium leading-relaxed">
-          🎁 <span className="font-bold text-gray-700">Rewards: </span>
           {rewards}
         </p>
       </div>
@@ -145,7 +152,7 @@ const RewardsBadgesCard: React.FC<{
 // ── Leaderboard Card ─────────────────────────────────────────────────────────
 const LeaderboardCard: React.FC<{
   leaderboard: LeaderboardEntry[];
-  currentUserId: number | null;
+  currentUserId: string | null;
   /** Tailwind classes applied to the scrollable entries wrapper */
   scrollClass?: string;
 }> = ({ leaderboard, currentUserId, scrollClass = "" }) => {
@@ -319,14 +326,15 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ eventName, onClose }) => (
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export const EventDetailPage: React.FC = () => {
-  const { eventId } = useParams();
+  // It was throwing a mismatch error because operations like includes() strict-check type values.
+  const { eventId = "" } = useParams(); // Added = "" to prevent type mismatch error
   const navigate = useNavigate();
   const { currentUser, isLoading, refreshUserProfile } = useAuth();
 
   const [event, setEvent] = useState<EventData | null>(null);
   const [leaderboardData, setLeaderboardData] =
     useState<EventLeaderboard | null>(null);
-  const [eventsJoined, setEventsJoined] = useState<number[]>([]);
+  const [eventsJoined, setEventsJoined] = useState<string[]>([]);
   const [modalView, setModalView] = useState<"none" | "confirm" | "success">(
     "none",
   );
@@ -340,8 +348,9 @@ export const EventDetailPage: React.FC = () => {
     async function loadAll() {
       setDataLoading(true);
       try {
+        if (!eventId) return;
         const [found, dashboard] = await Promise.all([
-          apiService.getEventById(Number(eventId)),
+          apiService.getEventById(eventId),
           apiService.getDashboard(),
         ]);
 
@@ -352,8 +361,8 @@ export const EventDetailPage: React.FC = () => {
         setEventsJoined(joinedIds);
 
         // Fetch leaderboard only if this event is in the joined list
-        if (joinedIds.includes(Number(eventId))) {
-          const lb = await apiService.getEventLeaderboard(Number(eventId));
+        if (joinedIds.includes(eventId)) {
+          const lb = await apiService.getEventLeaderboard(eventId);
           setLeaderboardData(lb);
         }
       } finally {
@@ -373,7 +382,7 @@ export const EventDetailPage: React.FC = () => {
     );
 
   // Derived from dashboard eventsJoined — true when this event is in the joined list
-  const isActiveEvent = eventsJoined.includes(Number(eventId));
+  const isActiveEvent = eventsJoined.includes(eventId);
 
   // Total hours for the current user from the leaderboard entry
   const userTotalHours = currentUser
@@ -565,7 +574,7 @@ export const EventDetailPage: React.FC = () => {
 
         {/* Upcoming event — show rewards but no leaderboard */}
         {!isActiveEvent && (
-          <RewardsBadgesCard rewards={event.rewards} userTotalHours={0} />
+          <RewardsBadgesCard rewards={event.rewards} userTotalHours={0} isActiveEvent={false} />
         )}
       </div>
 
@@ -593,12 +602,13 @@ export const EventDetailPage: React.FC = () => {
                   <LeaderboardCard
                     leaderboard={leaderboardData?.leaderboard ?? []}
                     currentUserId={currentUser?.id ?? null}
-                    scrollClass="min-h-[12.7rem] max-h-[12.7rem]"
+                    scrollClass="min-h-[12.74rem] max-h-[12.74rem]"
                   />
                 )}
                 <RewardsBadgesCard
                   rewards={event.rewards}
                   userTotalHours={isActiveEvent ? userTotalHours : 0}
+                  isActiveEvent={isActiveEvent}
                 />
               </div>
             </div>

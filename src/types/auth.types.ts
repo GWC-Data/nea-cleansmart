@@ -26,19 +26,15 @@ export interface LoginPayload {
 
 /** User object returned from the backend */
 export interface UserProfile {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
   age?: number;
   gender?: string;
-  joinedEvents?: Array<{
-    eventId: number;
-    eventName: string;
-    joinedAt: string;
-  }>;
+  joinedEvents?: string[];
   group?: {
-    groupId: number;
+    groupId: string;
     groupName: string;
   };
   createdAt: string;

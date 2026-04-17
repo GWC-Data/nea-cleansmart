@@ -1,11 +1,5 @@
-/**
- * authService.ts
- * All API calls related to authentication.
- * Uses the base URL from the typed env config.
- * In the future, replace fetch() with axios or a shared API client as needed.
- */
-
 import { ENV } from "../config/env";
+import bcrypt from "bcryptjs";
 import type {
   LoginPayload,
   RegisterPayload,
@@ -14,6 +8,9 @@ import type {
 } from "../types/auth.types";
 
 const BASE = ENV.API_BASE_URL;
+// We use a fixed salt so the frontend always generates the exact same hash for the same password.
+// Be aware that frontend hashing is not a replacement for HTTPS.
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx"; 
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
@@ -24,10 +21,14 @@ const BASE = ENV.API_BASE_URL;
 export const registerUser = async (
   payload: RegisterPayload,
 ): Promise<UserProfile> => {
+  // Hash password before sending
+  const hashedPassword = bcrypt.hashSync(payload.password, FRONTEND_SALT);
+  const securePayload = { ...payload, password: hashedPassword };
+
   const res = await fetch(`${BASE}/users`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(securePayload),
   });
 
   if (!res.ok) {
@@ -42,15 +43,19 @@ export const registerUser = async (
 
 /**
  * Authenticates an existing user and returns a JWT token.
- * Maps to: POST /auth/login  (update path once confirmed with backend)
+ * Maps to: POST /auth/login
  */
 export const loginUser = async (
   payload: LoginPayload,
 ): Promise<AuthResponse> => {
+  // Hash password before sending
+  const hashedPassword = bcrypt.hashSync(payload.password, FRONTEND_SALT);
+  const securePayload = { ...payload, password: hashedPassword };
+
   const res = await fetch(`${BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(securePayload),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
