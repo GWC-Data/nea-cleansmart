@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, Settings, Clock, StopCircle } from "lucide-react";
+import { LogOut, Clock, StopCircle } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
@@ -48,9 +48,37 @@ export const Dashboard: React.FC = () => {
     }
   }, []);
 
+  const {
+    state,
+    activeEventId,
+    activeLogId,
+    remainingSeconds,
+    elapsedSeconds,
+    restoredFromStorage,
+    initializeTimer,
+    openDurationPicker,
+    cancelDurationPicker,
+    handleCheckIn,
+    initiateCheckout,
+    cancelCheckout,
+    completeSession,
+  } = useCleanUpSession();
+
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Make sure we load the timer as soon as user enters the page
+  useEffect(() => {
+    async function loadActiveTimer() {
+      const timerData = await apiService.getTimer();
+      // Only initialize if we got valid server-side timer state
+      if (timerData && timerData.logId && timerData.checkInTime) {
+        initializeTimer(timerData);
+      }
+    }
+    loadActiveTimer();
+  }, [initializeTimer]);
 
   // Load all events from /events for the Upcoming Events section
   useEffect(() => {
@@ -61,25 +89,6 @@ export const Dashboard: React.FC = () => {
     loadEvents();
   }, []);
 
-  const {
-    state,
-    activeEventId,
-    activeLogId,
-    remainingSeconds,
-    elapsedSeconds,
-    restoredFromStorage,
-    openDurationPicker,
-    cancelDurationPicker,
-    handleCheckIn,
-    initiateCheckout,
-    cancelCheckout,
-    completeSession,
-  } = useCleanUpSession();
-
-  // True only when the session was restored from localStorage on login/refresh
-  // (timer had already completed). Used to force the form with no X dismiss button.
-  const isMandatory = state === "logging_activity" && restoredFromStorage;
-
   const getInitials = (name?: string) => {
     if (!name) return "U";
     const parts = name.trim().split(" ");
@@ -89,6 +98,10 @@ export const Dashboard: React.FC = () => {
     return parts[0][0].toUpperCase();
   };
   const initials = getInitials(currentUser?.name || "Jane Doe");
+
+  // True only when the session was restored from backend timer that had expired
+  // (timer had already completed). Used to force the form with no X dismiss button.
+  const isMandatory = state === "logging_activity" && restoredFromStorage;
 
   // keep events load (already done above in separate useEffect)
 
@@ -134,6 +147,7 @@ export const Dashboard: React.FC = () => {
     const resultId = await apiService.checkInEvent({
       eventId: activeEventId,
       checkInTime: new Date().toISOString(),
+      hoursEnrolled: (durationSecs / 3600).toString(),
     });
     if (resultId) {
       handleCheckIn(resultId, durationSecs);
@@ -144,18 +158,49 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const calculateCheckOutTime = async () => {
+    const timerData = await apiService.getTimer();
+    const now = new Date();
+
+    if (timerData && timerData.checkInTime && timerData.hoursEnrolled) {
+      const checkInDate = new Date(timerData.checkInTime);
+      let durationMs = 0;
+      const hoursStr = timerData.hoursEnrolled.toLowerCase();
+
+      if (hoursStr.endsWith("min")) {
+        durationMs = parseFloat(hoursStr) * 60 * 1000;
+      } else if (hoursStr.endsWith("hours") || hoursStr.endsWith("hour")) {
+        durationMs = parseFloat(hoursStr) * 3600 * 1000;
+      } else {
+        durationMs = parseFloat(hoursStr) * 3600 * 1000;
+      }
+
+      const maxCheckOutDate = new Date(checkInDate.getTime() + durationMs);
+
+      // Validation:
+      // 1. If user checks out BEFORE the max time, use current timestamp.
+      // 2. If user checks out AFTER the max time, cap it at the max duration.
+      return now < maxCheckOutDate ? now.toISOString() : maxCheckOutDate.toISOString();
+    }
+    return now.toISOString(); // fallback
+  };
+
   // ── Step 4: User submits the log activity form → checkOutEvent API ──────
   const handleSubmitReport = async (
     weight: number,
     type: string,
+    finalLocation: string,
     photo?: File,
   ) => {
     if (!activeLogId) return;
 
+    const checkOutTime = await calculateCheckOutTime();
+
     const checkoutSuccess = await apiService.checkOutEvent(activeLogId, {
-      checkOutTime: new Date().toISOString(),
+      checkOutTime,
       garbageWeight: weight,
       garbageType: type,
+      eventLocation: finalLocation,
       wasteImage: photo, // pass file directly — sent as multipart
     });
 
@@ -218,14 +263,21 @@ export const Dashboard: React.FC = () => {
             {state === "idle" && activeEvents.length > 0 && (
               /* Start Clean-up — visible on both mobile and desktop */
               <button
-                onClick={() =>
-                  activeEvents.length > 0 &&
-                  openDurationPicker(activeEvents[0].eventId)
-                }
+                onClick={() => {
+                  if (userStats && (userStats.todayHours || 0) >= 2) {
+                    toast.error("Daily limit of 2 hours reached! See you tomorrow 🌿");
+                    return;
+                  }
+                  openDurationPicker(activeEvents[0].eventId);
+                }}
                 disabled={activeEvents.length === 0}
-                className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] disabled:opacity-50 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md flex items-center gap-2 transition-all active:scale-95"
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all rounded-full shadow-md cursor-pointer sm:px-5 sm:py-2.5 sm:text-sm active:scale-95 ${
+                  userStats && (userStats.todayHours || 0) >= 2
+                    ? "bg-gray-400 grayscale"
+                    : "bg-[#96c93d] hover:bg-[#86b537]"
+                }`}
               >
-                Start Clean-up
+                {(userStats?.todayHours || 0) >= 2 ? "Limit Reached" : "Start Clean-up"}
               </button>
             )}
 
@@ -376,6 +428,7 @@ export const Dashboard: React.FC = () => {
         <DurationSelectModal
           onSelect={handleDurationSelected}
           onCancel={cancelDurationPicker}
+          todayHours={userStats?.todayHours || 0}
         />
       )}
 

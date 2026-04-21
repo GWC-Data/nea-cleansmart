@@ -4,20 +4,26 @@ import { X, Clock } from 'lucide-react';
 interface DurationSelectModalProps {
   onSelect: (seconds: number) => void;
   onCancel: () => void;
+  todayHours?: number;
 }
 
 export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
   onSelect,
   onCancel,
+  todayHours = 0,
 }) => {
   const [selectedSeconds, setSelectedSeconds] = useState<number | null>(null);
 
-  const OPTIONS = [
+  const ALL_OPTIONS = [
     { label: '30 Min', value: 1800 },
     { label: '1 Hour', value: 3600 },
     { label: '1.5 Hours', value: 5400 },
     { label: '2 Hours', value: 7200 },
   ];
+
+  const remainingHours = Math.max(0, 2 - todayHours);
+  const OPTIONS = ALL_OPTIONS.filter(opt => opt.value / 3600 <= remainingHours + 0.01); // +0.01 to handle float precision
+
 
   const handleStart = () => {
     if (selectedSeconds) {

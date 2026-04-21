@@ -5,7 +5,7 @@ interface LogActivityFormProps {
   elapsedSeconds: number;
   location: string;
   onCancel?: () => void;
-  onSubmit: (weight: number, type: string, photo?: File) => void;
+  onSubmit: (weight: number, type: string, finalLocation: string, photo?: File) => void;
   isMandatory?: boolean;
 }
 
@@ -60,8 +60,9 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!weight) return;
-    const primaryType = selectedTypes.length > 0 ? selectedTypes[0] : "mixed";
-    onSubmit(parseFloat(weight), primaryType, photoFile ?? undefined);
+    const typesJoined = selectedTypes.length > 0 ? selectedTypes.join(', ') : "mixed";
+    const finalLocation = location || manualLocation;
+    onSubmit(parseFloat(weight), typesJoined, finalLocation, photoFile ?? undefined);
   };
 
   return (
@@ -72,7 +73,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
             <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
             <p className="text-xs text-gray-500 font-medium">
               {isMandatory
-                ? "⚠️ Please complete your previous session report" // 👈
+                ? "⚠️ Please complete your previous session report"
                 : "Session Report Checkout"}
             </p>
           </div>

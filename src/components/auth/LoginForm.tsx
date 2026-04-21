@@ -38,6 +38,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent multiple rapid clicks/submits
     handleLogin(form, onSuccess);
   };
 
