@@ -1,6 +1,8 @@
 /**
  * AdminSidebar.tsx
- * Dark blue navigation sidebar for the Admin Panel.
+ * Professional, elegant navigation sidebar with refined solid theme colors.
+ * No gradients - using pure solid colors only.
+ * Palette: #86B537 (green) • #509CD1 (sky) • #108ACB (blue)
  */
 
 import React from "react";
@@ -14,7 +16,6 @@ import {
   X,
 } from "lucide-react";
 import { useAdminAuthContext } from "../../context/AdminAuthContext";
-import { toast } from "sonner";
 import logo from "../../assets/publicHygineCouncil.png";
 
 interface AdminSidebarProps {
@@ -26,13 +27,15 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ComponentType<{ className?: string; size?: number }>;
+  iconColor: string;
+  bgColor: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Users", path: "/admin/users", icon: Users },
-  { label: "Events", path: "/admin/events", icon: CalendarDays },
-  { label: "Activity Logs", path: "/admin/logs", icon: ClipboardList },
+  { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard, iconColor: "#509CD1", bgColor: "#E8F2FA" },
+  { label: "Users", path: "/admin/users", icon: Users, iconColor: "#86B537", bgColor: "#F0F7E4" },
+  { label: "Events", path: "/admin/events", icon: CalendarDays, iconColor: "#108ACB", bgColor: "#E8F2FA" },
+  { label: "Activity Logs", path: "/admin/logs", icon: ClipboardList, iconColor: "#86B537", bgColor: "#F0F7E4" },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -52,7 +55,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-[#1A2A3A]/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
@@ -60,37 +63,43 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-[220px] flex flex-col
-          transition-transform duration-300 ease-in-out
+          fixed top-0 left-0 z-50 h-full w-[260px] flex flex-col
+          transition-transform duration-300 ease-in-out shadow-xl
           lg:translate-x-0 lg:relative lg:z-auto
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
         style={{
-          background: "#0f4772",
-          borderRight: "1px solid rgba(255,255,255,0.08)",
+          background: "#FFFFFF",
+          borderRight: "1px solid #E8EDF2",
         }}
       >
+
         {/* Brand Header */}
-        <div className="flex items-center justify-center px-5 py-5 shrink-0">
-          <div className="flex items-center">
-            {/* add the publicHygineCouncil image present in the users page*/}
+        <div className="flex items-center justify-center px-5 py-5 shrink-0 border-b border-[#E8EDF2] relative">
+          <div className="rounded-lg p-1.5" style={{ background: "#F5F7FA" }}>
             <img
               src={logo}
               alt="Public Hygiene Council"
-              className="h-10 md:h-12 object-contain"
+              className="h-9 md:h-12 lg:h-14 object-contain"
             />
           </div>
-          {/* Close button (mobile only) */}
           <button
             onClick={onClose}
-            className="lg:hidden text-white/50 hover:text-white transition-colors p-1"
+            className="lg:hidden text-[#8A9AA8] hover:text-[#1A2A3A] transition-colors absolute right-5"
           >
             <X size={18} />
           </button>
         </div>
 
+        {/* Main Menu Label */}
+        <div className="px-5 pt-5 pb-2">
+          <p className="text-[10px] font-semibold tracking-wider text-[#8A9AA8] uppercase">
+            Main Menu
+          </p>
+        </div>
+
         {/* Navigation Items */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -99,41 +108,37 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group relative ${
-                    isActive
-                      ? "bg-white/10 border-l-[3px] pl-2.5"
-                      : "hover:bg-white/5 border-l-[3px] border-transparent pl-2.5"
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${isActive
+                    ? "font-medium"
+                    : "hover:bg-[#F8F9FB]"
                   }`
                 }
-                style={({ isActive }) =>
-                  isActive ? { borderLeftColor: "#96c93d" } : {}
-                }
+                style={({ isActive }) => {
+                  const baseStyle: React.CSSProperties = {
+                    borderLeft: isActive ? `3px solid ${item.iconColor}` : "3px solid transparent",
+                    paddingLeft: "11px",
+                  };
+                  if (isActive) {
+                    baseStyle.background = item.bgColor;
+                  }
+                  return baseStyle;
+                }}
               >
                 {({ isActive }) => (
                   <>
                     <Icon
                       size={17}
-                      className={`shrink-0 transition-colors ${
-                        isActive
-                          ? "text-white"
-                          : "text-white/50 group-hover:text-white/75"
-                      }`}
+                      className="shrink-0"
+                      style={{
+                        color: isActive ? item.iconColor : "#A0AAB5",
+                      }}
                     />
                     <span
-                      className={`text-sm tracking-tight transition-colors ${
-                        isActive
-                          ? "text-white font-bold"
-                          : "text-white/70 font-medium group-hover:text-white/90"
-                      }`}
+                      className={`text-[13px] flex-1 transition-colors ${isActive ? "text-[#1A2A3A] font-medium" : "text-[#6B7A88]"
+                        }`}
                     >
                       {item.label}
                     </span>
-                    {isActive && (
-                      <span
-                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ background: "#96c93d" }}
-                      />
-                    )}
                   </>
                 )}
               </NavLink>
@@ -141,38 +146,35 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           })}
         </nav>
 
-        {/* Footer — User + Logout */}
-        <div
-          className="shrink-0 px-4 py-4 border-t"
-          style={{ borderColor: "rgba(255,255,255,0.08)" }}
-        >
-          {/* User info */}
-          <div className="flex items-center gap-2.5 mb-3">
+        {/* Footer Section */}
+        <div className="shrink-0 px-3 py-4 border-t border-[#E8EDF2]">
+          {/* User Profile Card */}
+          <div
+            className="flex items-center gap-2.5 px-2 py-2 rounded-lg mb-3"
+            style={{ background: "#F5F7FA" }}
+          >
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-sm text-white"
-              style={{ background: "#08351e" }}
+              className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 text-white text-sm font-semibold"
+              style={{ background: "#86B537" }}
             >
               {currentUser?.name?.[0]?.toUpperCase() || "A"}
             </div>
-            <div className="min-w-0">
-              <p className="text-white text-[13px] font-bold truncate leading-none">
-                {currentUser?.name || "Admin"}
+            <div className="min-w-0 flex-1">
+              <p className="text-[#1A2A3A] text-[12px] font-medium truncate">
+                {currentUser?.name || "Admin User"}
               </p>
-              <p
-                className="text-[10px] truncate mt-0.5"
-                style={{ color: "rgba(255,255,255,0.4)" }}
-              >
-                {currentUser?.email || ""}
+              <p className="text-[10px] truncate text-[#8A9AA8]">
+                {currentUser?.email || "admin@phc.gov.sg"}
               </p>
             </div>
           </div>
 
-          {/* Logout */}
+          {/* Logout Button - Changed from pink to blue */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-[#6B7A88] hover:text-[#108ACB] hover:bg-[#E8F2FA] text-[13px] font-medium"
           >
-            <LogOut size={15} />
+            <LogOut size={16} />
             <span>Sign Out</span>
           </button>
         </div>
@@ -180,3 +182,5 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     </>
   );
 };
+
+export default AdminSidebar;

@@ -1,102 +1,76 @@
 /**
  * AdminHeader.tsx
- * Top header bar with breadcrumb, search, and user profile.
+ * Professional top header bar with breadcrumb, notifications, and user profile.
+ * Clean and elegant design without search bar.
+ * Theme colors: #86B537 (green) • #509CD1 (sky) • #108ACB (blue)
  */
 
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, LogOut, Bell } from "lucide-react";
-import { useAdminAuthContext } from "../../context/AdminAuthContext";
-import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { Menu, Bell, ChevronRight } from "lucide-react";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
 }
 
-const PAGE_LABELS: Record<string, string> = {
-  "/admin/dashboard": "Dashboard",
-  "/admin/users":     "Users",
-  "/admin/events":    "Events",
-  "/admin/logs":      "Activity Logs",
+const PAGE_LABELS: Record<string, { label: string; accent: string }> = {
+  "/admin/dashboard": { label: "Dashboard", accent: "#509CD1" },
+  "/admin/users": { label: "Users", accent: "#86B537" },
+  "/admin/events": { label: "Events", accent: "#108ACB" },
+  "/admin/logs": { label: "Activity Logs", accent: "#86B537" },
 };
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
-  const { currentUser, logout } = useAdminAuthContext();
   const location = useLocation();
-  const navigate = useNavigate();
-
   const pathname = location.pathname;
-  // Find the matching page label
-  const currentPage = Object.entries(PAGE_LABELS).find(([key]) =>
+  const currentPageInfo = Object.entries(PAGE_LABELS).find(([key]) =>
     pathname.endsWith(key)
-  )?.[1] || "Admin";
-
-  const handleLogout = () => {
-    logout();
-    navigate("/admin/login");
-  };
-
-  const initials = currentUser?.name
-    ? currentUser.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "AD";
+  )?.[1] || { label: "Admin", accent: "#509CD1" };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 lg:px-6 h-14 flex items-center justify-between shrink-0">
-      {/* Left: Hamburger + Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onMenuToggle}
-          className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-          aria-label="Toggle menu"
-          id="admin-menu-toggle"
-        >
-          <Menu size={20} />
-        </button>
-
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-400 font-medium">Admin</span>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-800 font-bold">{currentPage}</span>
-        </div>
-      </div>
-
-      {/* Right: Notification + Profile */}
-      <div className="flex items-center gap-2">
-        {/* Notification Bell */}
-        <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative">
-          <Bell size={18} />
-        </button>
-
-        {/* Profile Avatar */}
-        <div className="flex items-center gap-2 pl-2">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-gray-800 leading-none">{currentUser?.name || "Admin"}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5 capitalize">{currentUser?.role || "admin"}</p>
-          </div>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white cursor-pointer shrink-0"
-            style={{ background: "#08351e" }}
-            title={currentUser?.name}
+    <header
+      className="sticky top-0 z-40 bg-white shrink-0"
+      style={{
+        borderBottom: "1px solid #E8EDF2",
+      }}
+    >
+      <div className="flex items-center justify-between h-16 px-4 lg:px-8">
+        {/* Left Section: Menu Toggle + Breadcrumb */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onMenuToggle}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#1A2A3A]"
+            aria-label="Toggle menu"
           >
-            {initials}
-          </div>
+            <Menu size={20} />
+          </button>
+
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center gap-2">
+            <span className="text-sm text-[#8A9AA8] font-medium">Admin</span>
+            <ChevronRight size={14} className="text-[#C5CDD5]" />
+            <span
+              className="text-sm font-semibold"
+              style={{ color: currentPageInfo.accent }}
+            >
+              {currentPageInfo.label}
+            </span>
+          </nav>
         </div>
 
-        {/* Logout (desktop) */}
-        <button
-          onClick={handleLogout}
-          className="ml-1 p-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-gray-400"
-          title="Sign out"
-          id="admin-logout-btn"
-        >
-          <LogOut size={17} />
-        </button>
+        {/* Right Section: Notifications */}
+        <div className="flex items-center gap-2">
+          {/* Notification Bell */}
+          <button
+            className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#1A2A3A]"
+            aria-label="Notifications"
+          >
+            <Bell size={18} />
+          </button>
+        </div>
       </div>
     </header>
   );
 };
+
+export default AdminHeader;

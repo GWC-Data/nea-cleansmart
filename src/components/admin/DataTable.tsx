@@ -1,6 +1,6 @@
 /**
  * DataTable.tsx
- * Generic sortable, filterable table component for admin data views.
+ * Professional generic sortable table component with clean styling.
  */
 
 import React, { useState } from "react";
@@ -23,7 +23,6 @@ interface DataTableProps<T> {
   emptyText?: string;
   emptySubtext?: string;
   onRowClick?: (row: T) => void;
-  stickyHeader?: boolean;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -33,7 +32,7 @@ export function DataTable<T extends Record<string, unknown>>({
   data,
   rowKey,
   loading = false,
-  emptyIcon = "🗒️",
+  emptyIcon = "📋",
   emptyText = "No data found",
   emptySubtext = "Adjust your filters to see results.",
   onRowClick,
@@ -58,29 +57,27 @@ export function DataTable<T extends Record<string, unknown>>({
       const bv = b[sortKey];
       if (av === undefined || av === null) return 1;
       if (bv === undefined || bv === null) return -1;
-      const cmp =
-        typeof av === "number" && typeof bv === "number"
-          ? av - bv
-          : String(av).localeCompare(String(bv));
+      const cmp = typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [data, sortKey, sortDir]);
 
   const SortIcon = ({ colKey }: { colKey: string }) => {
-    if (sortKey !== colKey)
-      return <ChevronsUpDown size={13} className="text-gray-300" />;
-    if (sortDir === "asc") return <ChevronUp size={13} className="text-[#107acc]" />;
-    return <ChevronDown size={13} className="text-[#107acc]" />;
+    if (sortKey !== colKey) return <ChevronsUpDown size={13} className="text-[#C5CDD5]" />;
+    if (sortDir === "asc") return <ChevronUp size={13} style={{ color: "#108ACB" }} />;
+    return <ChevronDown size={13} style={{ color: "#108ACB" }} />;
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E8EDF2] overflow-hidden">
         <div className="p-4 space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-11 bg-gray-100 rounded-xl animate-pulse"
+              className="h-11 bg-[#F5F7FA] rounded-lg animate-pulse"
               style={{ opacity: 1 - i * 0.12 }}
             />
           ))}
@@ -90,16 +87,16 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-[#E8EDF2] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100" style={{ background: "#f9fbf9" }}>
+            <tr className="border-b border-[#E8EDF2]" style={{ background: "#F8F9FB" }}>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap ${
-                    col.sortable ? "cursor-pointer select-none hover:text-gray-600" : ""
+                  className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] whitespace-nowrap ${
+                    col.sortable ? "cursor-pointer select-none hover:text-[#6B7A88]" : ""
                   }`}
                   style={col.width ? { width: col.width } : {}}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -112,13 +109,13 @@ export function DataTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-[#F0F2F5]">
             {sortedData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="py-16 text-center">
                   <div className="text-4xl mb-3">{emptyIcon}</div>
-                  <p className="text-gray-700 font-bold text-sm">{emptyText}</p>
-                  <p className="text-gray-400 text-xs mt-1">{emptySubtext}</p>
+                  <p className="text-[#1A2A3A] font-semibold text-sm">{emptyText}</p>
+                  <p className="text-[#8A9AA8] text-xs mt-1">{emptySubtext}</p>
                 </td>
               </tr>
             ) : (
@@ -127,16 +124,16 @@ export function DataTable<T extends Record<string, unknown>>({
                   key={rowKey(row)}
                   className={`transition-colors ${
                     onRowClick
-                      ? "cursor-pointer hover:bg-gray-50 active:bg-gray-100"
-                      : "hover:bg-gray-50/60"
+                      ? "cursor-pointer hover:bg-[#F8F9FB]"
+                      : "hover:bg-[#F8F9FB]/60"
                   }`}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3 text-gray-700 align-middle">
+                    <td key={col.key} className="px-4 py-3 align-middle">
                       {col.render
                         ? col.render(row, index)
-                        : (row[col.key] as React.ReactNode) ?? <span className="text-gray-300">—</span>}
+                        : (row[col.key] as React.ReactNode) ?? <span className="text-[#C5CDD5]">—</span>}
                     </td>
                   ))}
                 </tr>
@@ -148,8 +145,8 @@ export function DataTable<T extends Record<string, unknown>>({
 
       {/* Footer row count */}
       {sortedData.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-gray-50 flex items-center justify-between">
-          <p className="text-[11px] text-gray-400 font-medium">
+        <div className="px-4 py-2.5 border-t border-[#E8EDF2] flex items-center justify-between">
+          <p className="text-[11px] text-[#8A9AA8] font-medium">
             {sortedData.length} record{sortedData.length !== 1 ? "s" : ""}
           </p>
         </div>

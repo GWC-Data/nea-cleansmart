@@ -1,18 +1,17 @@
 /**
  * UsersPage.tsx
- * View, search, and filter all users. Click to open user detail modal.
+ * Professional user management view with elegant theme-based styling.
+ * Theme colors: #86B537 (green) • #509CD1 (sky) • #108ACB (blue)
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, UserPlus, Users } from "lucide-react";
 import { DataTable } from "../../../components/admin/DataTable";
 import type { Column } from "../../../components/admin/DataTable";
 import { UserDetailModal } from "../../../components/admin/UserDetailModal";
 import { adminApiService } from "../../../services/adminApiService";
 import type { UserProfile, LeaderboardEntry } from "../../../types/apiTypes";
 import { format } from "date-fns";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
   return name
@@ -24,26 +23,18 @@ function getInitials(name: string) {
 }
 
 const ROLE_STYLES: Record<string, { bg: string; text: string }> = {
-  admin: { bg: "#dbeafe", text: "#1d4ed8" },
-  volunteer: { bg: "#dcfce7", text: "#15803d" },
-  user: { bg: "#dcfce7", text: "#15803d" },
+  admin: { bg: "#E8F2FA", text: "#108ACB" },
+  volunteer: { bg: "#F0F7E4", text: "#86B537" },
+  user: { bg: "#F0F7E4", text: "#86B537" },
 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "volunteer" | "admin">(
-    "all",
-  );
-  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">(
-    "all",
-  );
-
+  const [roleFilter, setRoleFilter] = useState<"all" | "volunteer" | "admin">("all");
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -65,37 +56,25 @@ export const UsersPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Build a userId → leaderboard entry map
-  const lbMap = useMemo(
-    () => new Map(leaderboard.map((e) => [e.userId, e])),
-    [leaderboard],
-  );
+  const lbMap = useMemo(() => new Map(leaderboard.map((e) => [e.userId, e])), [leaderboard]);
 
-  // Filtered users
   const filtered = useMemo(() => {
     return users.filter((u) => {
       const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q);
-      const matchRole =
-        roleFilter === "all" ||
-        (roleFilter === "admin" ? u.role === "admin" : u.role !== "admin");
-      const matchGender =
-        genderFilter === "all" || u.gender?.toLowerCase() === genderFilter;
+      const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+      const matchRole = roleFilter === "all" || (roleFilter === "admin" ? u.role === "admin" : u.role !== "admin");
+      const matchGender = genderFilter === "all" || u.gender?.toLowerCase() === genderFilter;
       return matchSearch && matchRole && matchGender;
     });
   }, [users, search, roleFilter, genderFilter]);
 
-  // Table columns
   const columns: Column<UserProfile & Record<string, unknown>>[] = [
     {
       key: "_idx",
       label: "#",
       width: "48px",
       render: (_row, index) => (
-        <span className="text-gray-400 font-bold text-xs">{index + 1}</span>
+        <span className="text-[#A0AAB5] font-medium text-xs">{index + 1}</span>
       ),
     },
     {
@@ -103,16 +82,16 @@ export const UsersPage: React.FC = () => {
       label: "User",
       sortable: true,
       render: (row) => (
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs text-white shrink-0"
-            style={{ background: "#08351e" }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-xs text-white shrink-0"
+            style={{ background: "linear-gradient(135deg, #86B537, #509CD1)" }}
           >
             {getInitials(row.name)}
           </div>
           <div>
-            <p className="font-bold text-gray-800 text-sm">{row.name}</p>
-            <p className="text-[11px] text-gray-400">{row.email}</p>
+            <p className="font-semibold text-[#1A2A3A] text-sm">{row.name}</p>
+            <p className="text-[11px] text-[#8A9AA8]">{row.email}</p>
           </div>
         </div>
       ),
@@ -125,7 +104,7 @@ export const UsersPage: React.FC = () => {
         const style = ROLE_STYLES[row.role?.toLowerCase()] ?? ROLE_STYLES.user;
         return (
           <span
-            className="px-2.5 py-0.5 rounded-full text-[11px] font-black capitalize"
+            className="px-2.5 py-0.5 rounded-md text-[11px] font-medium capitalize"
             style={{ background: style.bg, color: style.text }}
           >
             {row.role}
@@ -138,7 +117,7 @@ export const UsersPage: React.FC = () => {
       label: "Age",
       sortable: true,
       render: (row) => (
-        <span className="text-gray-600 font-medium text-sm">
+        <span className="text-[#6B7A88] font-medium text-sm">
           {row.age ?? "—"}
         </span>
       ),
@@ -147,7 +126,7 @@ export const UsersPage: React.FC = () => {
       key: "gender",
       label: "Gender",
       render: (row) => (
-        <span className="text-gray-600 font-medium text-sm capitalize">
+        <span className="text-[#6B7A88] font-medium text-sm capitalize">
           {row.gender ?? "—"}
         </span>
       ),
@@ -155,11 +134,10 @@ export const UsersPage: React.FC = () => {
     {
       key: "_hours",
       label: "Hours",
-      sortable: false,
       render: (row) => {
         const lb = lbMap.get(row.id);
         return (
-          <span className="text-gray-700 font-bold text-sm">
+          <span className="text-[#1A2A3A] font-semibold text-sm">
             {lb ? `${lb.totalHours.toFixed(1)}h` : "—"}
           </span>
         );
@@ -169,7 +147,7 @@ export const UsersPage: React.FC = () => {
       key: "_events",
       label: "Events",
       render: (row) => (
-        <span className="text-gray-600 font-medium text-sm">
+        <span className="text-[#6B7A88] font-medium text-sm">
           {row.joinedEvents?.length ?? 0}
         </span>
       ),
@@ -179,7 +157,7 @@ export const UsersPage: React.FC = () => {
       label: "Joined",
       sortable: true,
       render: (row) => (
-        <span className="text-gray-500 text-xs font-medium">
+        <span className="text-[#8A9AA8] text-xs font-medium">
           {row.createdAt ? format(new Date(row.createdAt), "dd MMM yyyy") : "—"}
         </span>
       ),
@@ -195,7 +173,14 @@ export const UsersPage: React.FC = () => {
             setSelectedUser(row as UserProfile);
             setModalOpen(true);
           }}
-          className="px-3 py-1.5 rounded-xl text-[11px] font-black text-[#107acc] bg-blue-50 hover:bg-blue-100 transition-colors"
+          className="px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+          style={{ background: "#E8F2FA", color: "#108ACB" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#D4EAF8";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#E8F2FA";
+          }}
         >
           View
         </button>
@@ -204,50 +189,58 @@ export const UsersPage: React.FC = () => {
   ];
 
   return (
-    <div className="animate-slide-up space-y-5">
+    <div className="space-y-5">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[#1A2A3A] tracking-tight">
             Users
           </h1>
-          <p className="text-sm text-gray-400 font-medium mt-0.5">
-            {loading ? "Loading…" : `${users.length} registered users`}
+          <p className="text-sm text-[#8A9AA8] font-medium mt-0.5">
+            {loading ? "Loading..." : `${users.length} registered users`}
           </p>
         </div>
+        <button
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          style={{ background: "#86B537", color: "#FFFFFF" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#75A030";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#86B537";
+          }}
+        >
+          <UserPlus size={16} />
+          Add User
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white rounded-xl border border-[#E8EDF2] p-4">
         <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"
-            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or email…"
-              className="w-full pl-8 pr-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-              id="users-search"
+              placeholder="Search by name or email..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
             />
           </div>
 
           {/* Role filter */}
-          <div className="flex items-center gap-1 shrink-0">
-            <SlidersHorizontal size={13} className="text-gray-400" />
+          <div className="flex items-center gap-1">
+            <Filter size={13} className="text-[#8A9AA8]" />
             {(["all", "volunteer", "admin"] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRoleFilter(r)}
-                className={`px-3 py-1.5 rounded-full text-xs font-black capitalize transition-all ${
-                  roleFilter === r
-                    ? "text-white shadow-sm"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-                style={roleFilter === r ? { background: "#0f4772" } : {}}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${roleFilter === r
+                    ? "text-white"
+                    : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
+                  }`}
+                style={roleFilter === r ? { background: "#108ACB" } : {}}
               >
                 {r === "all" ? "All Roles" : r}
               </button>
@@ -255,17 +248,16 @@ export const UsersPage: React.FC = () => {
           </div>
 
           {/* Gender filter */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1">
             {(["all", "male", "female"] as const).map((g) => (
               <button
                 key={g}
                 onClick={() => setGenderFilter(g)}
-                className={`px-3 py-1.5 rounded-full text-xs font-black capitalize transition-all ${
-                  genderFilter === g
-                    ? "text-white shadow-sm"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-                style={genderFilter === g ? { background: "#25935f" } : {}}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${genderFilter === g
+                    ? "text-white"
+                    : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
+                  }`}
+                style={genderFilter === g ? { background: "#86B537" } : {}}
               >
                 {g === "all" ? "All Genders" : g}
               </button>
@@ -276,9 +268,8 @@ export const UsersPage: React.FC = () => {
 
       {/* Results summary */}
       {!loading && search && (
-        <p className="text-xs text-gray-400 font-medium px-1">
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "
-          {search}"
+        <p className="text-xs text-[#8A9AA8] font-medium px-1">
+          {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "{search}"
         </p>
       )}
 
@@ -288,7 +279,13 @@ export const UsersPage: React.FC = () => {
         data={filtered as unknown as Record<string, unknown>[]}
         rowKey={(r) => r["id"] as string}
         loading={loading}
-        emptyIcon="👥"
+        emptyIcon={
+          <div className="flex flex-col items-center">
+            <div className="w-15 h-15 rounded-full flex items-center justify-center" style={{ background: "#F5F7FA" }}>
+              <Users size={32} style={{ color: "#A0AAB5" }} />
+            </div>
+          </div>
+        }
         emptyText="No users found"
         emptySubtext="Adjust your search or filters."
         onRowClick={(r) => {
@@ -302,9 +299,7 @@ export const UsersPage: React.FC = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         user={selectedUser}
-        leaderboardEntry={
-          selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null
-        }
+        leaderboardEntry={selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null}
       />
     </div>
   );

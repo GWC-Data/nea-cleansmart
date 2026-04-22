@@ -1,6 +1,7 @@
 /**
  * EventsPage.tsx
- * Full event management — tabs for upcoming/past, create/edit/delete.
+ * Professional event management with tabs for upcoming/past, create/edit/delete.
+ * Theme colors: #86B537 (green) • #509CD1 (sky) • #108ACB (blue)
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
@@ -20,21 +21,16 @@ import { adminApiService } from "../../../services/adminApiService";
 import type { EventData } from "../../../types/apiTypes";
 import { format } from "date-fns";
 
-// ─── Delete confirmation inline state ────────────────────────────────────────
-
 interface DeleteState {
   eventId: string | null;
   loading: boolean;
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"active" | "past">("active");
-
   const [formOpen, setFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [deleteState, setDeleteState] = useState<DeleteState>({
@@ -59,16 +55,15 @@ export const EventsPage: React.FC = () => {
   const now = new Date();
 
   const filtered = useMemo(() => {
-    const byTab =
-      tab === "active"
-        ? events.filter((e) => new Date(e.date) >= now)
-        : events.filter((e) => new Date(e.date) < now);
+    const byTab = tab === "active"
+      ? events.filter((e) => new Date(e.date) >= now)
+      : events.filter((e) => new Date(e.date) < now);
     if (!search) return byTab;
     const q = search.toLowerCase();
     return byTab.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q),
+        e.location.toLowerCase().includes(q)
     );
   }, [events, tab, search, now]);
 
@@ -100,22 +95,21 @@ export const EventsPage: React.FC = () => {
   };
 
   return (
-    <div className="animate-slide-up space-y-5">
+    <div className="space-y-5">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[#1A2A3A] tracking-tight">
             Events
           </h1>
-          <p className="text-sm text-gray-400 font-medium mt-0.5">
-            {loading ? "Loading…" : `${events.length} total events`}
+          <p className="text-sm text-[#8A9AA8] font-medium mt-0.5">
+            {loading ? "Loading..." : `${events.length} total events`}
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-black shadow-sm transition-all hover:opacity-90 active:scale-95"
-          style={{ background: "#96c93d" }}
-          id="create-event-btn"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90"
+          style={{ background: "#86B537" }}
         >
           <PlusCircle size={16} />
           Create Event
@@ -123,18 +117,17 @@ export const EventsPage: React.FC = () => {
       </div>
 
       {/* Tabs + Search */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-[#E8EDF2] p-4">
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F5F7FA" }}>
           {(["active", "past"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-black capitalize transition-all ${
-                tab === t
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-4 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${tab === t
+                  ? "bg-white text-[#1A2A3A] shadow-sm"
+                  : "text-[#6B7A88] hover:text-[#1A2A3A]"
+                }`}
             >
               {t === "active" ? "Active Events" : "Past Events"}
             </button>
@@ -143,16 +136,12 @@ export const EventsPage: React.FC = () => {
 
         {/* Search */}
         <div className="relative">
-          <Search
-            size={13}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"
-          />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search events…"
-            className="pl-8 pr-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-            id="events-search"
+            placeholder="Search events..."
+            className="pl-8 pr-4 py-2 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
           />
         </div>
       </div>
@@ -161,26 +150,25 @@ export const EventsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
-            >
-              <div className="h-40 bg-gray-100 animate-pulse" />
+            <div key={i} className="bg-white rounded-xl border border-[#E8EDF2] overflow-hidden">
+              <div className="h-40 bg-[#F5F7FA] animate-pulse" />
               <div className="p-4 space-y-2">
-                <div className="h-4 bg-gray-100 rounded-lg animate-pulse w-3/4" />
-                <div className="h-3 bg-gray-100 rounded-lg animate-pulse w-1/2" />
-                <div className="h-3 bg-gray-100 rounded-lg animate-pulse w-2/3" />
+                <div className="h-4 bg-[#F5F7FA] rounded-lg animate-pulse w-3/4" />
+                <div className="h-3 bg-[#F5F7FA] rounded-lg animate-pulse w-1/2" />
+                <div className="h-3 bg-[#F5F7FA] rounded-lg animate-pulse w-2/3" />
               </div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-20 text-center">
-          <span className="text-5xl">📅</span>
-          <p className="mt-4 text-gray-700 font-black text-base">
+        <div className="bg-white rounded-xl border border-[#E8EDF2] py-20 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full" style={{ background: "#F5F7FA" }}>
+            <CalendarDays size={32} style={{ color: "#A0AAB5" }} />
+          </div>
+          <p className="mt-4 text-[#1A2A3A] font-semibold text-base">
             No {tab} events found
           </p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-[#8A9AA8] text-sm mt-1">
             {tab === "active"
               ? 'Create a new event using the "Create Event" button above.'
               : "Past events will appear here once events conclude."}
@@ -188,8 +176,8 @@ export const EventsPage: React.FC = () => {
           {tab === "active" && (
             <button
               onClick={openCreate}
-              className="mt-4 px-5 py-2.5 rounded-full text-white text-sm font-black inline-flex items-center gap-2"
-              style={{ background: "#96c93d" }}
+              className="mt-4 px-5 py-2.5 rounded-lg text-white text-sm font-semibold inline-flex items-center gap-2"
+              style={{ background: "#86B537" }}
             >
               <PlusCircle size={15} />
               Create First Event
@@ -201,16 +189,15 @@ export const EventsPage: React.FC = () => {
           {filtered.map((event) => {
             const eventDate = new Date(event.date);
             const isDeleting = deleteState.eventId === event.eventId;
-            const confirmDelete =
-              deleteState.eventId === event.eventId && !deleteState.loading;
+            const confirmDelete = deleteState.eventId === event.eventId && !deleteState.loading;
 
             return (
               <div
                 key={event.eventId}
-                className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group"
+                className="bg-white rounded-xl border border-[#E8EDF2] hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group"
               >
                 {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden shrink-0">
+                <div className="relative h-40 bg-gradient-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0">
                   {event.eventImage ? (
                     <img
                       src={event.eventImage}
@@ -219,109 +206,96 @@ export const EventsPage: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <CalendarDays size={32} className="text-gray-300" />
+                      <CalendarDays size={32} className="text-[#A0AAB5]" />
                     </div>
                   )}
 
                   {/* Date overlay badge */}
-                  <div className="absolute top-3 left-3 bg-white rounded-xl px-2.5 py-1.5 shadow-md text-center min-w-[44px]">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 leading-none">
+                  <div className="absolute top-3 left-3 bg-white rounded-lg px-2.5 py-1.5 shadow-sm text-center min-w-[44px]">
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-[#8A9AA8] leading-none">
                       {format(eventDate, "MMM")}
                     </p>
-                    <p className="text-lg font-black text-gray-900 leading-tight">
+                    <p className="text-lg font-bold text-[#1A2A3A] leading-tight">
                       {format(eventDate, "d")}
                     </p>
                   </div>
 
                   {/* Past label */}
                   {tab === "past" && (
-                    <div className="absolute top-3 right-3 bg-black/50 rounded-lg px-2 py-0.5">
-                      <span className="text-white text-[10px] font-black">
-                        Past
-                      </span>
+                    <div className="absolute top-3 right-3 bg-[#1A2A3A]/70 rounded-md px-2 py-0.5">
+                      <span className="text-white text-[10px] font-medium">Past</span>
                     </div>
                   )}
                 </div>
 
                 {/* Card Body */}
                 <div className="px-4 pt-3 pb-2 flex-1 flex flex-col">
-                  <h3 className="text-sm font-black text-gray-900 tracking-tight leading-tight line-clamp-2 mb-1.5">
+                  <h3 className="text-sm font-semibold text-[#1A2A3A] tracking-tight leading-tight line-clamp-2 mb-1.5">
                     {event.name}
                   </h3>
 
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
-                    <MapPin size={11} className="text-gray-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs text-[#6B7A88] font-medium mb-1">
+                    <MapPin size={11} className="text-[#8A9AA8] shrink-0" />
                     <span className="truncate">{event.location}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mb-3">
+                  <div className="flex items-center gap-1.5 text-xs text-[#8A9AA8] font-medium mb-3">
                     <Users size={11} className="shrink-0" />
                     <span>{event.joinsCount ?? 0} participants</span>
                   </div>
 
                   {event.rewards && (
-                    <p className="text-[11px] text-[#25935f] font-bold mb-2">
+                    <p className="text-[11px] font-semibold mb-2" style={{ color: "#86B537" }}>
                       🏆 {event.rewards}
                     </p>
                   )}
 
-                  {/* Delete confirmation */}
+                  {/* Delete confirmation - Updated to use blue instead of pink */}
                   {confirmDelete ? (
-                    <div className="mt-auto rounded-2xl bg-red-50 border border-red-100 p-3">
-                      <p className="text-xs text-red-600 font-bold mb-2 leading-snug">
-                        Delete <em>{event.name}</em>? This cannot be undone.
+                    <div className="mt-auto rounded-lg p-3" style={{ background: "#E8F2FA", border: "1px solid #D4EAF8" }}>
+                      <p className="text-xs font-semibold mb-2 leading-snug" style={{ color: "#108ACB" }}>
+                        Delete "{event.name}"? This cannot be undone.
                       </p>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleDelete(event.eventId)}
-                          className="flex-1 py-1.5 rounded-xl bg-red-600 text-white text-xs font-black transition hover:bg-red-700"
+                          className="flex-1 py-1.5 rounded-md text-white text-xs font-semibold transition"
+                          style={{ background: "#108ACB" }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#0E6EAD"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "#108ACB"; }}
                         >
-                          {deleteState.loading ? (
-                            <Loader2
-                              size={12}
-                              className="animate-spin mx-auto"
-                            />
-                          ) : (
-                            "Confirm"
-                          )}
+                          {deleteState.loading ? <Loader2 size={12} className="animate-spin mx-auto" /> : "Confirm"}
                         </button>
                         <button
-                          onClick={() =>
-                            setDeleteState({ eventId: null, loading: false })
-                          }
-                          className="flex-1 py-1.5 rounded-xl bg-gray-100 text-gray-600 text-xs font-black transition hover:bg-gray-200"
+                          onClick={() => setDeleteState({ eventId: null, loading: false })}
+                          className="flex-1 py-1.5 rounded-md bg-[#F5F7FA] text-[#6B7A88] text-xs font-semibold transition hover:bg-[#E8EDF2]"
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    /* Action buttons */
+                    /* Action buttons - Updated delete button to use blue/green */
                     <div className="mt-auto flex gap-2 pt-1">
                       <button
                         onClick={() => openEdit(event)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-2xl border border-blue-200 bg-blue-50 text-[#107acc] text-xs font-black hover:bg-blue-100 transition-colors"
-                        id={`edit-event-${event.eventId}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: "#E8F2FA", color: "#108ACB" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#D4EAF8"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "#E8F2FA"; }}
                       >
                         <Pencil size={12} />
                         Edit
                       </button>
                       <button
-                        onClick={() =>
-                          setDeleteState({
-                            eventId: event.eventId,
-                            loading: false,
-                          })
-                        }
+                        onClick={() => setDeleteState({ eventId: event.eventId, loading: false })}
                         disabled={isDeleting}
-                        className="flex items-center justify-center px-3 py-2 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-xs font-black hover:bg-red-100 transition-colors"
-                        id={`delete-event-${event.eventId}`}
+                        className="flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: "#F0F7E4", color: "#86B537" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#E6F3DA"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "#F0F7E4"; }}
                       >
-                        {isDeleting ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={12} />
-                        )}
+                        {isDeleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                       </button>
                     </div>
                   )}

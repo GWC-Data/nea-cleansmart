@@ -1,6 +1,8 @@
 /**
  * AdminDashboard.tsx
  * Main analytics overview — KPI cards, charts, recent activity feed.
+ * Brand palette: #86B537 (green), #509CD1 (sky), #108ACB (blue)
+ * No pink colors used - replaced with sky/blue tones.
  */
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -8,7 +10,6 @@ import { Users, CalendarDays, Clock, Trash2, TrendingUp } from "lucide-react";
 import {
   BarChart,
   Bar,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -17,6 +18,8 @@ import {
   ResponsiveContainer,
   BarChart as HBarChart,
   Bar as HBar,
+  Area,
+  AreaChart,
 } from "recharts";
 import { StatCard } from "../../../components/admin/StatCard";
 import { adminApiService } from "../../../services/adminApiService";
@@ -27,8 +30,6 @@ import type {
   LeaderboardEntry,
 } from "../../../types/apiTypes";
 import { formatDistanceToNow, format } from "date-fns";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function groupEventsByMonth(events: EventData[]) {
   const counts: Record<string, number> = {};
@@ -54,8 +55,6 @@ function groupLogsByDate(logs: EventLog[]) {
     .slice(-10);
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [events, setEvents] = useState<EventData[]>([]);
@@ -77,7 +76,6 @@ export const AdminDashboard: React.FC = () => {
       setEvents(allEvents);
       setTopContributors(leaderboard);
 
-      // Fetch logs for the most recent 5 events
       const recentEvents = [...allEvents]
         .sort(
           (a, b) =>
@@ -109,78 +107,30 @@ export const AdminDashboard: React.FC = () => {
   }, [loadData]);
 
   const eventsByMonth = groupEventsByMonth(events);
-  console.log("eventsByMonth", eventsByMonth);
-  console.log("events", events);
-  // events
-  //   {
-  //     "eventId": "324284b7-f7c5-4bee-ad9c-2ac70cf7e4c2",
-  //     "date": "2026-05-20T00:00:00.000Z",
-  //     "location": "Remote",
-  //     "name": "15-Hour ​Clean-up Challenge",
-  //     "details": "1 clean-up (minimum 30\nminutes to maximum 2 hours)​",
-  //     "description": "We all have a hand in keeping Singapore clean. Join us in completing 15 hours of clean-up activities throughout 2026. This is more than just a clean-up initiative—make a meaningful difference today, enjoy yourself, and become part of Singapore's continuing story of cleanliness and community pride.​",
-  //     "rewards": "All members who complete 15 hours of clean-up activities in 2026 will receive an attractive premium from PHC. Terms and conditions apply.​",
-  //     "joinsCount": 4,
-  //     "participants": [
-  //         "09644a53-05f4-472c-a785-51ef2ccadb7e",
-  //         "c9cdc04a-cd02-42d9-8203-93f5a859ecc7",
-  //         "9458d695-b96b-4870-a479-5de052a5a5f2",
-  //         "0aff07f1-838a-46eb-89af-c1dd07171291"
-  //     ],
-  //     "event_image": "uploads\\event_images\\event-image-1776328008261-254475743.png",
-  //     "createdAt": "2026-04-16T08:26:48.000Z",
-  //     "updatedAt": "2026-04-17T08:38:55.000Z",
-  //     "eventImage": "uploads\\event_images\\event-image-1776328008261-254475743.png"
-  // }
   const wasteOverTime = groupLogsByDate(recentLogs);
-  console.log("wasteOverTime", wasteOverTime);
-  console.log("recentLogs", recentLogs);
-  // recentLogs
-  //   [{
-  //     "id": 14,
-  //     "eventId": "324284b7-f7c5-4bee-ad9c-2ac70cf7e4c2",
-  //     "userId": "09644a53-05f4-472c-a785-51ef2ccadb7e",
-  //     "groupId": null,
-  //     "checkInTime": "2026-04-17T11:16:52.000Z",
-  //     "checkOutTime": "2026-04-17T11:18:17.000Z",
-  //     "totalHours": 0.0237861,
-  //     "garbageWeight": 1,
-  //     "hoursEnrolled": "0.5",
-  //     "garbageType": "Cigarette butts, Packet/canned drinks",
-  //     "eventLocation": "tpt",
-  //     "wasteImage": null,
-  //     "createdAt": "2026-04-17T11:16:52.000Z",
-  //     "updatedAt": "2026-04-17T11:18:17.000Z",
-  //     "user": {
-  //         "id": "09644a53-05f4-472c-a785-51ef2ccadb7e",
-  //         "name": "Bharath Sevarkodiyon",
-  //         "email": "bharathsan2000@gmail.com",
-  //         "role": "admin"
-  //     },
-  //     "group": null
-  // }]
+
   return (
     <div className="animate-slide-up space-y-6">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+        <h1 className="text-2xl font-extrabold text-[#0F2540] tracking-tight">
           Dashboard
         </h1>
-        <p className="text-sm text-gray-400 font-medium mt-0.5">
+        <p className="text-sm text-slate-500 font-medium mt-1">
           Platform-wide overview
         </p>
       </div>
 
-      {/* ── KPI Cards ── */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           label="Total Users"
           value={stats?.totalUsers ?? 0}
           subtext="Registered volunteers"
           icon={<Users size={20} />}
-          borderColor="#107acc"
-          iconBg="#eff6ff"
-          iconColor="#107acc"
+          borderColor="#108ACB"
+          iconBg="#E6F3FB"
+          iconColor="#108ACB"
           loading={loading}
         />
         <StatCard
@@ -188,9 +138,9 @@ export const AdminDashboard: React.FC = () => {
           value={stats?.activeEvents ?? 0}
           subtext={`${stats?.totalEvents ?? 0} total events`}
           icon={<CalendarDays size={20} />}
-          borderColor="#25935f"
-          iconBg="#f0fdf4"
-          iconColor="#25935f"
+          borderColor="#86B537"
+          iconBg="#F0F7E4"
+          iconColor="#86B537"
           loading={loading}
         />
         <StatCard
@@ -198,9 +148,9 @@ export const AdminDashboard: React.FC = () => {
           value={stats ? `${stats.totalHoursLogged}h` : "0h"}
           subtext="Across all sessions"
           icon={<Clock size={20} />}
-          borderColor="#eab308"
-          iconBg="#fefce8"
-          iconColor="#ca8a04"
+          borderColor="#509CD1"
+          iconBg="#E8F2FA"
+          iconColor="#509CD1"
           loading={loading}
         />
         <StatCard
@@ -208,74 +158,85 @@ export const AdminDashboard: React.FC = () => {
           value={stats ? `${stats.totalWasteCollected} kg` : "0 kg"}
           subtext="All garbage bagged"
           icon={<Trash2 size={20} />}
-          borderColor="#96c93d"
-          iconBg="#f7fee7"
-          iconColor="#65a30d"
+          borderColor="#86B537"
+          iconBg="#F0F7E4"
+          iconColor="#86B537"
           loading={loading}
         />
       </div>
 
-      {/* ── Charts + Activity ── */}
+      {/* Charts + Activity */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Charts column */}
         <div className="xl:col-span-2 space-y-5">
           {/* Events by Month */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-[#E8EEF4] p-5 transition hover:shadow-[0_14px_40px_-22px_rgba(16,37,64,0.25)]">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-black text-gray-900 tracking-tight">
+                <h2 className="text-base font-extrabold text-[#0F2540] tracking-tight">
                   Events by Month
                 </h2>
-                <p className="text-xs text-gray-400 font-medium">
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
                   Events created over time
                 </p>
               </div>
-              <div className="p-2 rounded-xl bg-blue-50">
-                <TrendingUp size={15} className="text-[#107acc]" />
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: "#E6F3FB", color: "#108ACB" }}
+              >
+                <TrendingUp size={15} />
               </div>
             </div>
             {loading ? (
-              <div className="h-44 bg-gray-100 rounded-xl animate-pulse" />
+              <div className="h-44 bg-slate-100 rounded-xl animate-pulse" />
             ) : eventsByMonth.length === 0 ? (
-              <div className="h-44 flex items-center justify-center text-gray-400 text-sm">
+              <div className="h-44 flex items-center justify-center text-slate-400 text-sm font-medium">
                 No data yet
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={176}>
+              <ResponsiveContainer width="100%" height={196}>
                 <BarChart
                   data={eventsByMonth}
-                  margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+                  margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+                  barCategoryGap={18}
                 >
+                  <defs>
+                    <linearGradient id="barBlue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#108ACB" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#509CD1" stopOpacity={0.85} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#f3f4f6"
+                    strokeDasharray="3 4"
+                    stroke="#EEF3F8"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "#94A3B8", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "#94A3B8", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
                   />
                   <Tooltip
+                    cursor={{ fill: "#F2F7FB" }}
                     contentStyle={{
                       borderRadius: 12,
-                      border: "none",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                      border: "1px solid #E8EEF4",
+                      boxShadow: "0 10px 30px -12px rgba(16,37,64,0.2)",
                       fontSize: 12,
                       fontWeight: 600,
                     }}
                   />
                   <Bar
                     dataKey="count"
-                    fill="#107acc"
-                    radius={[6, 6, 0, 0]}
+                    fill="url(#barBlue)"
+                    radius={[8, 8, 0, 0]}
                     name="Events"
                   />
                 </BarChart>
@@ -284,133 +245,161 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Waste Collected Over Time */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-[#E8EEF4] p-5 transition hover:shadow-[0_14px_40px_-22px_rgba(16,37,64,0.25)]">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-black text-gray-900 tracking-tight">
+                <h2 className="text-base font-extrabold text-[#0F2540] tracking-tight">
                   Waste Collected (kg)
                 </h2>
-                <p className="text-xs text-gray-400 font-medium">
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
                   Recent session outputs
                 </p>
               </div>
-              <div className="p-2 rounded-xl" style={{ background: "#f7fee7" }}>
-                <Trash2 size={15} style={{ color: "#65a30d" }} />
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: "#F0F7E4", color: "#86B537" }}
+              >
+                <Trash2 size={15} />
               </div>
             </div>
             {loading ? (
-              <div className="h-44 bg-gray-100 rounded-xl animate-pulse" />
+              <div className="h-44 bg-slate-100 rounded-xl animate-pulse" />
             ) : wasteOverTime.length === 0 ? (
-              <div className="h-44 flex items-center justify-center text-gray-400 text-sm">
+              <div className="h-44 flex items-center justify-center text-slate-400 text-sm font-medium">
                 No session data yet
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={176}>
-                <LineChart
+              <ResponsiveContainer width="100%" height={196}>
+                <AreaChart
                   data={wasteOverTime}
-                  margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+                  margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
                 >
+                  <defs>
+                    <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#86B537" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#86B537" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#f3f4f6"
+                    strokeDasharray="3 4"
+                    stroke="#EEF3F8"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "#94A3B8", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "#94A3B8", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     contentStyle={{
                       borderRadius: 12,
-                      border: "none",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                      border: "1px solid #E8EEF4",
+                      boxShadow: "0 10px 30px -12px rgba(16,37,64,0.2)",
                       fontSize: 12,
                       fontWeight: 600,
                     }}
                   />
+                  <Area
+                    type="monotone"
+                    dataKey="kg"
+                    stroke="#86B537"
+                    strokeWidth={2.5}
+                    fill="url(#areaGreen)"
+                  />
                   <Line
                     type="monotone"
                     dataKey="kg"
-                    stroke="#96c93d"
+                    stroke="#86B537"
                     strokeWidth={2.5}
-                    dot={{ fill: "#96c93d", r: 4, strokeWidth: 0 }}
+                    dot={{ fill: "#86B537", r: 4, strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6, fill: "#86B537", stroke: "#fff", strokeWidth: 2 }}
                     name="Waste (kg)"
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Top 5 Contributors */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          {/* Top 5 Contributors - Using blue instead of pink */}
+          <div className="bg-white rounded-2xl border border-[#E8EEF4] p-5 transition hover:shadow-[0_14px_40px_-22px_rgba(16,37,64,0.25)]">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-black text-gray-900 tracking-tight">
+                <h2 className="text-base font-extrabold text-[#0F2540] tracking-tight">
                   Top 5 Contributors
                 </h2>
-                <p className="text-xs text-gray-400 font-medium">
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
                   By total hours logged
                 </p>
               </div>
-              <div className="p-2 rounded-xl bg-green-50">
-                <Users size={15} className="text-[#25935f]" />
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: "#E8F2FA", color: "#108ACB" }}
+              >
+                <Users size={15} />
               </div>
             </div>
             {loading ? (
-              <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
+              <div className="h-40 bg-slate-100 rounded-xl animate-pulse" />
             ) : topContributors.length === 0 ? (
-              <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
+              <div className="h-40 flex items-center justify-center text-slate-400 text-sm font-medium">
                 No contributors yet
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={180}>
                 <HBarChart
                   layout="vertical"
                   data={topContributors.map((u) => ({
                     name: u.userName?.split(" ")[0] ?? "User",
                     hours: Math.round(u.totalHours * 10) / 10,
                   }))}
-                  margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                  margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+                  barCategoryGap={10}
                 >
+                  <defs>
+                    <linearGradient id="barBlueGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#108ACB" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#509CD1" stopOpacity={0.85} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#f3f4f6"
+                    strokeDasharray="3 4"
+                    stroke="#EEF3F8"
                     horizontal={false}
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "#94A3B8", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 700 }}
+                    tick={{ fontSize: 12, fill: "#475569", fontWeight: 700 }}
                     axisLine={false}
                     tickLine={false}
-                    width={55}
+                    width={62}
                   />
                   <Tooltip
+                    cursor={{ fill: "#E6F3FB", opacity: 0.35 }}
                     contentStyle={{
                       borderRadius: 12,
-                      border: "none",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                      border: "1px solid #E8EEF4",
+                      boxShadow: "0 10px 30px -12px rgba(16,37,64,0.2)",
                       fontSize: 12,
                       fontWeight: 600,
                     }}
                   />
                   <HBar
                     dataKey="hours"
-                    fill="#25935f"
-                    radius={[0, 6, 6, 0]}
+                    fill="url(#barBlueGradient)"
+                    radius={[0, 8, 8, 0]}
                     name="Hours"
                   />
                 </HBarChart>
@@ -419,14 +408,14 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Recent Activity Feed ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col">
+        {/* Recent Activity Feed */}
+        <div className="bg-white rounded-2xl border border-[#E8EEF4] p-5 flex flex-col">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
-              <h2 className="text-base font-black text-gray-900 tracking-tight">
+              <h2 className="text-base font-extrabold text-[#0F2540] tracking-tight">
                 Recent Activity
               </h2>
-              <p className="text-xs text-gray-400 font-medium">
+              <p className="text-xs text-slate-400 font-medium mt-0.5">
                 Latest check-in sessions
               </p>
             </div>
@@ -437,23 +426,28 @@ export const AdminDashboard: React.FC = () => {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-14 bg-gray-100 rounded-xl animate-pulse"
+                  className="h-14 bg-slate-100 rounded-xl animate-pulse"
                 />
               ))}
             </div>
           ) : recentLogs.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center flex-col gap-2 text-center">
-              <span className="text-3xl">📋</span>
-              <p className="text-gray-500 font-bold text-sm">
+            <div className="flex-1 flex items-center justify-center flex-col gap-2 text-center py-8">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: "#E8F2FA" }}
+              >
+                <Clock size={22} style={{ color: "#509CD1" }} />
+              </div>
+              <p className="text-[#0F2540] font-bold text-sm mt-1">
                 No recent activity
               </p>
-              <p className="text-gray-400 text-xs">
+              <p className="text-slate-400 text-xs">
                 Check-in sessions will appear here
               </p>
             </div>
           ) : (
-            <div className="flex-1 space-y-2 overflow-y-auto">
-              {recentLogs.map((log) => {
+            <div className="flex-1 space-y-1 overflow-y-auto -mx-1 px-1">
+              {recentLogs.map((log, idx) => {
                 const isCompleted = !!log.checkOutTime;
                 const userInitial =
                   log.user?.name?.[0]?.toUpperCase() ??
@@ -469,46 +463,65 @@ export const AdminDashboard: React.FC = () => {
                   addSuffix: true,
                 });
 
+                // Avatar colors - using theme colors without pink
+                const avatarColors = [
+                  "#108ACB",
+                  "#86B537",
+                  "#509CD1",
+                  "#86B537",
+                  "#108ACB",
+                ];
+                const avatarColor = avatarColors[idx % avatarColors.length];
+
                 return (
                   <div
                     key={log.id}
-                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F6F8FB] transition-colors"
                   >
-                    {/* Avatar */}
+                    {/* Avatar - Solid color */}
                     <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0"
-                      style={{ background: "#08351e" }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs text-white shadow-sm"
+                      style={{ background: avatarColor }}
                     >
                       {userInitial}
                     </div>
+
                     {/* Info */}
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-gray-800 truncate">
-                        {userName}
-                      </p>
-                      <p className="text-[11px] text-gray-400 truncate font-medium">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-bold text-[#0F2540] truncate">
+                          {userName}
+                        </p>
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                          style={{
+                            background: isCompleted ? "#F0F7E4" : "#E8F2FA",
+                            color: isCompleted ? "#86B537" : "#108ACB",
+                          }}
+                        >
+                          {isCompleted ? "Completed" : "Active"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate font-medium mt-0.5">
                         {eventName}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-[10px] text-slate-400 font-semibold">
                           {timeAgo}
                         </span>
                         {log.garbageWeight > 0 && (
-                          <span className="text-[10px] text-gray-400">
-                            · {log.garbageWeight}kg
-                          </span>
+                          <>
+                            <span className="text-slate-300">·</span>
+                            <span
+                              className="text-[10px] font-bold"
+                              style={{ color: "#86B537" }}
+                            >
+                              {log.garbageWeight}kg
+                            </span>
+                          </>
                         )}
                       </div>
                     </div>
-                    {/* Status dot */}
-                    <div
-                      className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
-                        isCompleted ? "" : "animate-pulse-dot"
-                      }`}
-                      style={{
-                        background: isCompleted ? "#25935f" : "#eab308",
-                      }}
-                    />
                   </div>
                 );
               })}
