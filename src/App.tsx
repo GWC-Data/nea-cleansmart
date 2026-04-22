@@ -17,12 +17,22 @@ const LoginRoute = () => {
   return (
     <LoginPage
       onLoginSuccess={() => {
-        const redirectTo = sessionStorage.getItem("redirect_after_login");
-        sessionStorage.removeItem("redirect_after_login");
-        navigate(redirectTo || "/dashboard");
+        // If an admin just logged in, useAuth sets "login_role" = "admin" in sessionStorage
+        const isAdmin = sessionStorage.getItem("login_role") === "admin";
+        sessionStorage.removeItem("login_role");
+
+        if (isAdmin) {
+          // Restore any deep-link the admin tried to reach before being redirected
+          const adminRedirect = sessionStorage.getItem("admin_redirect_after_login");
+          sessionStorage.removeItem("admin_redirect_after_login");
+          navigate(adminRedirect || "/admin/dashboard");
+        } else {
+          const redirectTo = sessionStorage.getItem("redirect_after_login");
+          sessionStorage.removeItem("redirect_after_login");
+          navigate(redirectTo || "/dashboard");
+        }
       }}
       onNavigateToRegister={() => {
-        // Preserve the redirect path when going to register too
         navigate("/register");
       }}
     />
@@ -67,15 +77,8 @@ function App() {
             }
           />
 
-          {/* Protected Route for Admins */}
-          <Route
-            path="/admin/*"
-            element={
-              <ProtectedRoute>
-                <AdminApp />
-              </ProtectedRoute>
-            }
-          />
+          {/* Protected Route for Admins — AdminApp manages its own auth */}
+          <Route path="/admin/*" element={<AdminApp />} />
         </Routes>
         <Toaster richColors position="top-right" />
       </BrowserRouter>

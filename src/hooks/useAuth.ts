@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { loginUser, registerUser } from "../services/authService";
 import { useAuthContext } from "../context/AuthContext";
+import { saveAdminToken } from "../utils/tokenUtils";
 import type { LoginFormState, RegisterFormState } from "../types/auth.types";
 
 export const useAuth = () => {
@@ -58,8 +59,19 @@ export const useAuth = () => {
     setIsSubmitting(true);
     try {
       const { accessToken, tokenExpiry, user } = await loginUser(formData);
+
+      if (user.role === "admin") {
+        // Save to the isolated admin token key — do NOT touch user AuthContext
+        saveAdminToken(accessToken, tokenExpiry);
+        // Signal to LoginRoute that it should navigate to /admin/dashboard
+        sessionStorage.setItem("login_role", "admin");
+        onSuccess();
+        return;
+      }
+
+      // Normal volunteer login
       onLoginSuccess(accessToken, user, tokenExpiry);
-      await refreshUserProfile(); // it refreshes the user profile
+      await refreshUserProfile();
       onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
