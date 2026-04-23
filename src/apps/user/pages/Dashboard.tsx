@@ -52,7 +52,7 @@ export const Dashboard: React.FC = () => {
     state,
     activeEventId,
     activeLogId,
-    durationSeconds,
+    // durationSeconds,
     remainingSeconds,
     elapsedSeconds,
     restoredFromStorage,
@@ -250,8 +250,8 @@ export const Dashboard: React.FC = () => {
 
   // the stop button disable should not only true is it is under 30 minutes. For all the timer, the button should not display until the timer gets over. Update the logic
 
-  const isThirtyMinChallenge = durationSeconds <= 1800 * 4; // 30 minutes
-  const stopButtonDisabled = isThirtyMinChallenge && remainingSeconds > 0;
+  // const isThirtyMinChallenge = durationSeconds <= 1800 * 4; // 30 minutes
+  // const stopButtonDisabled = isThirtyMinChallenge && remainingSeconds > 0;
 
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
@@ -304,15 +304,19 @@ export const Dashboard: React.FC = () => {
                 </div>
                 {/* Stop Clean-up */}
                 {/* <button
-                  onClick={remainingSeconds === 0 ? initiateCheckout : undefined}
-                  disabled={remainingSeconds > 0}
-                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm transition-all ${
-                    remainingSeconds > 0
+                  onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                  disabled={stopButtonDisabled}
+                  className={`px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                    stopButtonDisabled
                       ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                       : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                  }`}
-                  title={remainingSeconds > 0 ? "Timer must complete before stopping" : undefined}
-                >
+                    }`}
+                  title={
+                    stopButtonDisabled
+                      ? "Must complete the 30-minute challenge"
+                      : undefined
+                    }
+                  >
                   <StopCircle className="w-4 h-4" />
                   <span>Stop Clean-up</span>
                 </button> */}
@@ -388,14 +392,18 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             {/* <button
-              onClick={remainingSeconds === 0 ? initiateCheckout : undefined}
-              disabled={remainingSeconds > 0}
+              onClick={stopButtonDisabled ? undefined : initiateCheckout}
+              disabled={stopButtonDisabled}
               className={`text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition-all shrink-0 ${
-                remainingSeconds > 0
+                stopButtonDisabled
                   ? "bg-red-500/40 border border-red-500/40 cursor-not-allowed"
                   : "bg-red-500 hover:bg-red-600 border border-red-500 shadow-red-500/20 active:scale-95 cursor-pointer"
               }`}
-              title={remainingSeconds > 0 ? "Timer must complete before stopping" : undefined}
+              title={
+                stopButtonDisabled
+                  ? "Must complete the 30-minute challenge"
+                  : undefined
+              }
             >
               <StopCircle className="w-5 h-5" />
               Stop
