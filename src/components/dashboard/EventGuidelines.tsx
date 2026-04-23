@@ -1,5 +1,5 @@
-import React from 'react';
-import { Info } from 'lucide-react';
+import React from "react";
+import { Info } from "lucide-react";
 
 export const EventGuidelines: React.FC = () => {
   return (
@@ -11,7 +11,9 @@ export const EventGuidelines: React.FC = () => {
         <li>Ensure you are properly hydrated during your sessions.</li>
         <li>Wear covered shoes and safety gloves at all times.</li>
         <li>Separate recyclables from general waste if possible.</li>
-        <li>Log your hours accurately; maximum active session allowed is 2 hours.</li>
+        <li>
+          Log your hours accurately; maximum active session allowed is 2 hours.
+        </li>
       </ul>
     </div>
   );

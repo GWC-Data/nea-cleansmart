@@ -231,7 +231,7 @@ export const apiService = {
       const events = data.events || [];
       return events.map((e: any) => ({
         ...e,
-        eventImage: e.eventImage || e.event_image || null
+        eventImage: e.eventImage || e.event_image || null,
       }));
     } catch (error) {
       console.error("getEvents error:", error);
@@ -258,7 +258,7 @@ export const apiService = {
       const events = data.events || [];
       return events.map((e: any) => ({
         ...e,
-        eventImage: e.eventImage || e.event_image || null
+        eventImage: e.eventImage || e.event_image || null,
       }));
     } catch (error) {
       console.error("getUpcomingEvents error:", error);
@@ -284,7 +284,8 @@ export const apiService = {
       }
       const data = await response.json();
       if (data.event) {
-        data.event.eventImage = data.event.eventImage || data.event.event_image || null;
+        data.event.eventImage =
+          data.event.eventImage || data.event.event_image || null;
       }
       return data.event || null;
     } catch (error) {
@@ -408,7 +409,7 @@ export const apiService = {
         if (response.status === 404) return null;
         throw new Error(`Failed to fetch timer: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       if (data.message === "No active timer found for this user") {
         return null;
@@ -835,9 +836,7 @@ export const apiService = {
         body: JSON.stringify({ password: hashedPassword }),
       });
       if (!response.ok) {
-        throw new Error(
-          `Password reset failed: ${response.statusText}`,
-        );
+        throw new Error(`Password reset failed: ${response.statusText}`);
       }
       return true;
     } catch (error) {

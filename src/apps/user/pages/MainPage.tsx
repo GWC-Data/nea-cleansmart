@@ -9,7 +9,7 @@ export const MainPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-sans bg-white">
       {/* ── LEFT PANEL — Hero Image ───────────────────────────────────── */}
-      <div className="hidden lg:flex h-screen aspect-square shrink-e bg-[#f8fcf9]">
+      <div className="hidden lg:flex h-screen aspect-square shrink-0 bg-[#f8fcf9]">
         <img
           src={mainImage}
           alt="Keep Singapore Clean 2026"

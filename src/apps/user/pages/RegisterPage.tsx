@@ -19,7 +19,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   return (
     <div className="min-h-screen bg-background flex lg:flex-row font-sans">
       {/* Left Pane - Desktop Only */}
-      <div className="hidden lg:flex h-screen aspect-square shrink-e bg-[#f8fcf9]">
+      <div className="hidden lg:flex h-screen aspect-square shrink-0 bg-[#f8fcf9]">
         <img
           src={heroBg}
           alt="Keep Singapore Clean 2026"

@@ -22,7 +22,9 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
     eventList: EventData[],
     hideJoin: boolean = false,
     emptyMessage: string = "No events available.",
-    emptyIcon: React.ReactNode = <CalendarX className="w-8 h-8 text-gray-300" />,
+    emptyIcon: React.ReactNode = (
+      <CalendarX className="w-8 h-8 text-gray-300" />
+    ),
   ) => {
     return (
       <div className="w-full mb-8 last:mb-0">

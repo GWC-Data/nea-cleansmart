@@ -21,7 +21,10 @@ import { Eye, EyeOff } from "lucide-react";
 ───────────────────────────────────────────────────────────────────── */
 
 // Inject keyframes once (idempotent guard via dataset flag)
-if (typeof document !== "undefined" && !document.getElementById("fi-autofill-kf")) {
+if (
+  typeof document !== "undefined" &&
+  !document.getElementById("fi-autofill-kf")
+) {
   const s = document.createElement("style");
   s.id = "fi-autofill-kf";
   s.textContent = `
