@@ -29,9 +29,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   loading = false,
 }) => {
   return (
-    <div
-      className="group relative bg-white rounded-2xl border border-[#E8EEF4] p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_40px_-18px_rgba(16,138,203,0.35)]"
-    >
+    <div className="group relative bg-white rounded-2xl border border-[#E8EEF4] p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_40px_-18px_rgba(16,138,203,0.35)]">
       {/* Top accent stripe */}
       <div
         className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
@@ -68,7 +66,9 @@ export const StatCard: React.FC<StatCardProps> = ({
             </p>
           )}
           {subtext && !loading && (
-            <p className="text-xs text-slate-400 font-medium mt-1.5">{subtext}</p>
+            <p className="text-xs text-slate-400 font-medium mt-1.5">
+              {subtext}
+            </p>
           )}
           {trend && !loading && (
             <div className="flex items-center gap-1 mt-2">

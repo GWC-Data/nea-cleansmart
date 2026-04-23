@@ -1,5 +1,5 @@
-import React from 'react';
-import { PlayCircle, MapPin, StopCircle } from 'lucide-react';
+import React from "react";
+import { PlayCircle, MapPin, StopCircle } from "lucide-react";
 
 interface ActiveSessionCardProps {
   remainingSeconds: number;
@@ -16,13 +16,13 @@ export const ActiveSessionCard: React.FC<ActiveSessionCardProps> = ({
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   return (
     <div className="bg-linear-to-br from-secondary-hover to-secondary p-6 rounded-2xl shadow-lg mb-8 text-white relative overflow-hidden ring-4 ring-soft border border-secondary-hover">
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-      
+
       <div className="flex items-center justify-between mb-2 z-10 relative">
         <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/10">
           <PlayCircle className="w-4 h-4" /> Active Session

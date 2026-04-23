@@ -11,7 +11,14 @@ import { saveAdminToken } from "../utils/tokenUtils";
 import type { LoginFormState, RegisterFormState } from "../types/auth.types";
 
 export const useAuth = () => {
-  const { onLoginSuccess, logout, currentUser, token, isLoading, refreshUserProfile } = useAuthContext();
+  const {
+    onLoginSuccess,
+    logout,
+    currentUser,
+    token,
+    isLoading,
+    refreshUserProfile,
+  } = useAuthContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

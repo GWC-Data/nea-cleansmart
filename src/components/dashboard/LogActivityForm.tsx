@@ -5,7 +5,12 @@ interface LogActivityFormProps {
   elapsedSeconds: number;
   location: string;
   onCancel?: () => void;
-  onSubmit: (weight: number, type: string, finalLocation: string, photo?: File) => void;
+  onSubmit: (
+    weight: number,
+    type: string,
+    finalLocation: string,
+    photo?: File,
+  ) => void;
   isMandatory?: boolean;
 }
 
@@ -21,7 +26,7 @@ const WASTE_TYPES = [
 export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   elapsedSeconds,
   location,
-  onCancel,
+  // onCancel,
   onSubmit,
   isMandatory,
 }) => {
@@ -60,9 +65,15 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!weight) return;
-    const typesJoined = selectedTypes.length > 0 ? selectedTypes.join(', ') : "mixed";
+    const typesJoined =
+      selectedTypes.length > 0 ? selectedTypes.join(", ") : "mixed";
     const finalLocation = location || manualLocation;
-    onSubmit(parseFloat(weight), typesJoined, finalLocation, photoFile ?? undefined);
+    onSubmit(
+      parseFloat(weight),
+      typesJoined,
+      finalLocation,
+      photoFile ?? undefined,
+    );
   };
 
   return (
@@ -77,14 +88,14 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                 : "Session Report Checkout"}
             </p>
           </div>
-          {!isMandatory && ( // 👈 hide X when mandatory
+          {/* {!isMandatory && ( // 👈 hide X when mandatory
             <button
               onClick={onCancel}
               className="cursor-pointer p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-          )}
+          )} */}
         </div>
 
         <div className="overflow-y-auto p-5 pb-8 space-y-6">

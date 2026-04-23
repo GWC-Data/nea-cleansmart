@@ -203,7 +203,11 @@ export const AdminDashboard: React.FC = () => {
                   <defs>
                     <linearGradient id="barBlue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#108ACB" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#509CD1" stopOpacity={0.85} />
+                      <stop
+                        offset="100%"
+                        stopColor="#509CD1"
+                        stopOpacity={0.85}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -276,7 +280,11 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <defs>
                     <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#86B537" stopOpacity={0.35} />
+                      <stop
+                        offset="0%"
+                        stopColor="#86B537"
+                        stopOpacity={0.35}
+                      />
                       <stop offset="100%" stopColor="#86B537" stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -317,8 +325,18 @@ export const AdminDashboard: React.FC = () => {
                     dataKey="kg"
                     stroke="#86B537"
                     strokeWidth={2.5}
-                    dot={{ fill: "#86B537", r: 4, strokeWidth: 2, stroke: "#fff" }}
-                    activeDot={{ r: 6, fill: "#86B537", stroke: "#fff", strokeWidth: 2 }}
+                    dot={{
+                      fill: "#86B537",
+                      r: 4,
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
+                    activeDot={{
+                      r: 6,
+                      fill: "#86B537",
+                      stroke: "#fff",
+                      strokeWidth: 2,
+                    }}
                     name="Waste (kg)"
                   />
                 </AreaChart>
@@ -362,9 +380,23 @@ export const AdminDashboard: React.FC = () => {
                   barCategoryGap={10}
                 >
                   <defs>
-                    <linearGradient id="barBlueGradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#108ACB" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#509CD1" stopOpacity={0.85} />
+                    <linearGradient
+                      id="barBlueGradient"
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="0"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor="#108ACB"
+                        stopOpacity={0.95}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="#509CD1"
+                        stopOpacity={0.85}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid

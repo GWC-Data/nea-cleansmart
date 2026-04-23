@@ -24,7 +24,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const pathname = location.pathname;
   const currentPageInfo = Object.entries(PAGE_LABELS).find(([key]) =>
-    pathname.endsWith(key)
+    pathname.endsWith(key),
   )?.[1] || { label: "Admin", accent: "#509CD1" };
 
   return (

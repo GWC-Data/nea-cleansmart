@@ -55,15 +55,16 @@ export const EventsPage: React.FC = () => {
   const now = new Date();
 
   const filtered = useMemo(() => {
-    const byTab = tab === "active"
-      ? events.filter((e) => new Date(e.date) >= now)
-      : events.filter((e) => new Date(e.date) < now);
+    const byTab =
+      tab === "active"
+        ? events.filter((e) => new Date(e.date) >= now)
+        : events.filter((e) => new Date(e.date) < now);
     if (!search) return byTab;
     const q = search.toLowerCase();
     return byTab.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q)
+        e.location.toLowerCase().includes(q),
     );
   }, [events, tab, search, now]);
 
@@ -119,15 +120,19 @@ export const EventsPage: React.FC = () => {
       {/* Tabs + Search */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-[#E8EDF2] p-4">
         {/* Tabs */}
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F5F7FA" }}>
+        <div
+          className="flex gap-1 rounded-lg p-1"
+          style={{ background: "#F5F7FA" }}
+        >
           {(["active", "past"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${tab === t
+              className={`px-4 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                tab === t
                   ? "bg-white text-[#1A2A3A] shadow-sm"
                   : "text-[#6B7A88] hover:text-[#1A2A3A]"
-                }`}
+              }`}
             >
               {t === "active" ? "Active Events" : "Past Events"}
             </button>
@@ -136,7 +141,10 @@ export const EventsPage: React.FC = () => {
 
         {/* Search */}
         <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
+          <Search
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -150,7 +158,10 @@ export const EventsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-[#E8EDF2] overflow-hidden">
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-[#E8EDF2] overflow-hidden"
+            >
               <div className="h-40 bg-[#F5F7FA] animate-pulse" />
               <div className="p-4 space-y-2">
                 <div className="h-4 bg-[#F5F7FA] rounded-lg animate-pulse w-3/4" />
@@ -162,7 +173,10 @@ export const EventsPage: React.FC = () => {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-[#E8EDF2] py-20 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full" style={{ background: "#F5F7FA" }}>
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-full"
+            style={{ background: "#F5F7FA" }}
+          >
             <CalendarDays size={32} style={{ color: "#A0AAB5" }} />
           </div>
           <p className="mt-4 text-[#1A2A3A] font-semibold text-base">
@@ -189,7 +203,8 @@ export const EventsPage: React.FC = () => {
           {filtered.map((event) => {
             const eventDate = new Date(event.date);
             const isDeleting = deleteState.eventId === event.eventId;
-            const confirmDelete = deleteState.eventId === event.eventId && !deleteState.loading;
+            const confirmDelete =
+              deleteState.eventId === event.eventId && !deleteState.loading;
 
             return (
               <div
@@ -223,7 +238,9 @@ export const EventsPage: React.FC = () => {
                   {/* Past label */}
                   {tab === "past" && (
                     <div className="absolute top-3 right-3 bg-[#1A2A3A]/70 rounded-md px-2 py-0.5">
-                      <span className="text-white text-[10px] font-medium">Past</span>
+                      <span className="text-white text-[10px] font-medium">
+                        Past
+                      </span>
                     </div>
                   )}
                 </div>
@@ -245,15 +262,27 @@ export const EventsPage: React.FC = () => {
                   </div>
 
                   {event.rewards && (
-                    <p className="text-[11px] font-semibold mb-2" style={{ color: "#86B537" }}>
+                    <p
+                      className="text-[11px] font-semibold mb-2"
+                      style={{ color: "#86B537" }}
+                    >
                       🏆 {event.rewards}
                     </p>
                   )}
 
                   {/* Delete confirmation - Updated to use blue instead of pink */}
                   {confirmDelete ? (
-                    <div className="mt-auto rounded-lg p-3" style={{ background: "#E8F2FA", border: "1px solid #D4EAF8" }}>
-                      <p className="text-xs font-semibold mb-2 leading-snug" style={{ color: "#108ACB" }}>
+                    <div
+                      className="mt-auto rounded-lg p-3"
+                      style={{
+                        background: "#E8F2FA",
+                        border: "1px solid #D4EAF8",
+                      }}
+                    >
+                      <p
+                        className="text-xs font-semibold mb-2 leading-snug"
+                        style={{ color: "#108ACB" }}
+                      >
                         Delete "{event.name}"? This cannot be undone.
                       </p>
                       <div className="flex gap-2">
@@ -261,13 +290,26 @@ export const EventsPage: React.FC = () => {
                           onClick={() => handleDelete(event.eventId)}
                           className="flex-1 py-1.5 rounded-md text-white text-xs font-semibold transition"
                           style={{ background: "#108ACB" }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "#0E6EAD"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "#108ACB"; }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#0E6EAD";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#108ACB";
+                          }}
                         >
-                          {deleteState.loading ? <Loader2 size={12} className="animate-spin mx-auto" /> : "Confirm"}
+                          {deleteState.loading ? (
+                            <Loader2
+                              size={12}
+                              className="animate-spin mx-auto"
+                            />
+                          ) : (
+                            "Confirm"
+                          )}
                         </button>
                         <button
-                          onClick={() => setDeleteState({ eventId: null, loading: false })}
+                          onClick={() =>
+                            setDeleteState({ eventId: null, loading: false })
+                          }
                           className="flex-1 py-1.5 rounded-md bg-[#F5F7FA] text-[#6B7A88] text-xs font-semibold transition hover:bg-[#E8EDF2]"
                         >
                           Cancel
@@ -281,21 +323,38 @@ export const EventsPage: React.FC = () => {
                         onClick={() => openEdit(event)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors"
                         style={{ background: "#E8F2FA", color: "#108ACB" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#D4EAF8"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#E8F2FA"; }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#D4EAF8";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "#E8F2FA";
+                        }}
                       >
                         <Pencil size={12} />
                         Edit
                       </button>
                       <button
-                        onClick={() => setDeleteState({ eventId: event.eventId, loading: false })}
+                        onClick={() =>
+                          setDeleteState({
+                            eventId: event.eventId,
+                            loading: false,
+                          })
+                        }
                         disabled={isDeleting}
                         className="flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
                         style={{ background: "#F0F7E4", color: "#86B537" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#E6F3DA"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#F0F7E4"; }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#E6F3DA";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "#F0F7E4";
+                        }}
                       >
-                        {isDeleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        {isDeleting ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={12} />
+                        )}
                       </button>
                     </div>
                   )}

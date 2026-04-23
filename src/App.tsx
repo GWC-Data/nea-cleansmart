@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { SimpleLandingPage } from "./apps/user/pages/simpleLandingPage";
+import { LandingPage } from "./apps/user/pages/LandingPage";
 import { MainPage } from "./apps/user/pages/MainPage";
 import { LoginPage } from "./apps/user/pages/LoginPage";
 import { RegisterPage } from "./apps/user/pages/RegisterPage";
@@ -23,7 +23,9 @@ const LoginRoute = () => {
 
         if (isAdmin) {
           // Restore any deep-link the admin tried to reach before being redirected
-          const adminRedirect = sessionStorage.getItem("admin_redirect_after_login");
+          const adminRedirect = sessionStorage.getItem(
+            "admin_redirect_after_login",
+          );
           sessionStorage.removeItem("admin_redirect_after_login");
           navigate(adminRedirect || "/admin/dashboard");
         } else {
@@ -51,13 +53,16 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Landing Page */}
-          <Route path="/" element={<SimpleLandingPage />} />
+          <Route path="/" element={<LandingPage />} />
 
           {/* Public Auth Routes */}
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/register" element={<RegisterRoute />} />
           <Route path="/welcome" element={<MainPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
 
           {/* Protected Routes for Users */}
           <Route

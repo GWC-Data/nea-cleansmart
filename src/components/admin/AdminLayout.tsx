@@ -16,7 +16,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#f9fbf9" }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: "#f9fbf9" }}
+    >
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}
@@ -28,9 +31,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <AdminHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
         {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

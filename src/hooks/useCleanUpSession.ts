@@ -29,55 +29,58 @@ export const useCleanUpSession = () => {
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-// Initialize from server
-  const initializeTimer = useCallback((serverData: {
-    checkInTime: string;
-    hoursEnrolled: string;
-    eventId: string;
-    logId: number;
-  }) => {
-    try {
-      const checkInTimeMs = new Date(serverData.checkInTime).getTime();
-      const nowMs = Date.now();
-      const elapsed = Math.floor((nowMs - checkInTimeMs) / 1000);
-      
-      let durationSeconds = 0;
-      const hoursStr = serverData.hoursEnrolled.toLowerCase();
-      if (hoursStr.endsWith("min")) {
-         durationSeconds = parseFloat(hoursStr) * 60;
-      } else if (hoursStr.endsWith("hours") || hoursStr.endsWith("hour")) {
-         durationSeconds = parseFloat(hoursStr) * 3600;
-      } else {
-         durationSeconds = parseFloat(hoursStr) * 3600; // default treating as hours or parse error
-      }
-      
-      const remaining = durationSeconds - elapsed;
+  // Initialize from server
+  const initializeTimer = useCallback(
+    (serverData: {
+      checkInTime: string;
+      hoursEnrolled: string;
+      eventId: string;
+      logId: number;
+    }) => {
+      try {
+        const checkInTimeMs = new Date(serverData.checkInTime).getTime();
+        const nowMs = Date.now();
+        const elapsed = Math.floor((nowMs - checkInTimeMs) / 1000);
 
-      if (remaining <= 0) {
-        setSession({
-          state: "logging_activity",
-          activeEventId: serverData.eventId,
-          activeLogId: serverData.logId,
-          checkInTime: serverData.checkInTime,
-          durationSeconds: durationSeconds,
-          remainingSeconds: 0,
-          elapsedSeconds: durationSeconds, // mark as full duration
-        });
-      } else {
-        setSession({
-          state: "checked_in",
-          activeEventId: serverData.eventId,
-          activeLogId: serverData.logId,
-          checkInTime: serverData.checkInTime,
-          durationSeconds: durationSeconds,
-          remainingSeconds: remaining,
-          elapsedSeconds: elapsed,
-        });
+        let durationSeconds = 0;
+        const hoursStr = serverData.hoursEnrolled.toLowerCase();
+        if (hoursStr.endsWith("min")) {
+          durationSeconds = parseFloat(hoursStr) * 60;
+        } else if (hoursStr.endsWith("hours") || hoursStr.endsWith("hour")) {
+          durationSeconds = parseFloat(hoursStr) * 3600;
+        } else {
+          durationSeconds = parseFloat(hoursStr) * 3600; // default treating as hours or parse error
+        }
+
+        const remaining = durationSeconds - elapsed;
+
+        if (remaining <= 0) {
+          setSession({
+            state: "logging_activity",
+            activeEventId: serverData.eventId,
+            activeLogId: serverData.logId,
+            checkInTime: serverData.checkInTime,
+            durationSeconds: durationSeconds,
+            remainingSeconds: 0,
+            elapsedSeconds: durationSeconds, // mark as full duration
+          });
+        } else {
+          setSession({
+            state: "checked_in",
+            activeEventId: serverData.eventId,
+            activeLogId: serverData.logId,
+            checkInTime: serverData.checkInTime,
+            durationSeconds: durationSeconds,
+            remainingSeconds: remaining,
+            elapsedSeconds: elapsed,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to initialize timer from server", e);
       }
-    } catch (e) {
-      console.error("Failed to initialize timer from server", e);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Start / stop timer whenever state changes
   useEffect(() => {

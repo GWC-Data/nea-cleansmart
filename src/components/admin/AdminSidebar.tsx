@@ -32,10 +32,34 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard, iconColor: "#509CD1", bgColor: "#E8F2FA" },
-  { label: "Users", path: "/admin/users", icon: Users, iconColor: "#86B537", bgColor: "#F0F7E4" },
-  { label: "Events", path: "/admin/events", icon: CalendarDays, iconColor: "#108ACB", bgColor: "#E8F2FA" },
-  { label: "Activity Logs", path: "/admin/logs", icon: ClipboardList, iconColor: "#86B537", bgColor: "#F0F7E4" },
+  {
+    label: "Dashboard",
+    path: "/admin/dashboard",
+    icon: LayoutDashboard,
+    iconColor: "#509CD1",
+    bgColor: "#E8F2FA",
+  },
+  {
+    label: "Users",
+    path: "/admin/users",
+    icon: Users,
+    iconColor: "#86B537",
+    bgColor: "#F0F7E4",
+  },
+  {
+    label: "Events",
+    path: "/admin/events",
+    icon: CalendarDays,
+    iconColor: "#108ACB",
+    bgColor: "#E8F2FA",
+  },
+  {
+    label: "Activity Logs",
+    path: "/admin/logs",
+    icon: ClipboardList,
+    iconColor: "#86B537",
+    bgColor: "#F0F7E4",
+  },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -73,7 +97,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           borderRight: "1px solid #E8EDF2",
         }}
       >
-
         {/* Brand Header */}
         <div className="flex items-center justify-center px-5 py-5 shrink-0 border-b border-[#E8EDF2] relative">
           <div className="rounded-lg p-1.5" style={{ background: "#F5F7FA" }}>
@@ -108,14 +131,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${isActive
-                    ? "font-medium"
-                    : "hover:bg-[#F8F9FB]"
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${
+                    isActive ? "font-medium" : "hover:bg-[#F8F9FB]"
                   }`
                 }
                 style={({ isActive }) => {
                   const baseStyle: React.CSSProperties = {
-                    borderLeft: isActive ? `3px solid ${item.iconColor}` : "3px solid transparent",
+                    borderLeft: isActive
+                      ? `3px solid ${item.iconColor}`
+                      : "3px solid transparent",
                     paddingLeft: "11px",
                   };
                   if (isActive) {
@@ -129,13 +153,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     <Icon
                       size={17}
                       className="shrink-0"
-                      style={{
-                        color: isActive ? item.iconColor : "#A0AAB5",
-                      }}
+                      // style={{
+                      //   color: isActive ? item.iconColor : "#A0AAB5",
+                      // }}
                     />
                     <span
-                      className={`text-[13px] flex-1 transition-colors ${isActive ? "text-[#1A2A3A] font-medium" : "text-[#6B7A88]"
-                        }`}
+                      className={`text-[13px] flex-1 transition-colors ${
+                        isActive
+                          ? "text-[#1A2A3A] font-medium"
+                          : "text-[#6B7A88]"
+                      }`}
                     >
                       {item.label}
                     </span>

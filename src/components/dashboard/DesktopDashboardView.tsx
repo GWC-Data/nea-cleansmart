@@ -6,7 +6,6 @@ import {
   Wind,
   CalendarDays,
   Users,
-  ChevronRight,
   Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +78,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   const offset = circumference - progress * circumference;
 
   return (
-    <div className="min-h-screen bg-[#f0f4f1] font-sans text-gray-900 pb-12">
+    <div className="min-h-screen bg-[#f3f7f5] font-sans text-gray-900 pb-12">
       <div className="max-w-[1400px] mx-auto px-8 xl:px-12 pt-8 flex flex-col gap-8">
         {/* TOP ROW: Welcome */}
         <div className="grid grid-cols-12 gap-6 items-center">
@@ -240,49 +239,50 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-5">
                   {upcomingEvents.map((event) => {
                     const eventDate = new Date(event.date);
-                    const formattedDate = eventDate.toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                        day: "numeric",
-                      },
-                    );
-                    const formattedTime = eventDate.toLocaleTimeString(
-                      "en-US",
-                      {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      },
-                    );
+                    const month = eventDate
+                      .toLocaleDateString("en-US", { month: "short" })
+                      .toUpperCase();
+                    const day = eventDate.getDate();
                     return (
                       <div
                         key={event.eventId}
                         onClick={() => navigate(`/events/${event.eventId}`)}
-                        className="cursor-pointer bg-white rounded-2xl px-5 py-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group"
+                        className="cursor-pointer bg-white rounded-[1.5rem] overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 group"
                       >
-                        {/* Thumbnail */}
-                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
+                        <div className="h-44 relative overflow-hidden">
                           <img
                             src={getEventImageUrl(event.eventImage)}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             alt={event.name}
                           />
+                          {/* Date badge */}
+                          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5 shadow-sm text-center min-w-[48px]">
+                            <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest leading-none">
+                              {month}
+                            </p>
+                            <p className="text-lg font-black text-gray-900 leading-tight">
+                              {day}
+                            </p>
+                          </div>
                         </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[#08351e] mb-0.5">
-                            {formattedDate} · {formattedTime} · {event.location}
-                          </p>
-                          <h3 className="font-extrabold text-gray-900 text-sm truncate">
+                        <div className="p-4 flex flex-col gap-1.5">
+                          <h3 className="font-extrabold text-gray-900 text-sm leading-snug">
                             {event.name}
                           </h3>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {event.location}
+                            </span>
+                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {event.joinsCount}
+                            </span>
+                          </div>
                         </div>
-
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors" />
                       </div>
                     );
                   })}
@@ -302,7 +302,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle
                     strokeWidth="8"
-                    stroke="#f0f4f1"
+                    stroke="#f3f7f5"
                     fill="transparent"
                     r="42"
                     cx="50"

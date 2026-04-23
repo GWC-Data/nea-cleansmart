@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Search, Filter, UserPlus, Users } from "lucide-react";
+import { Search, Filter, UserPlus } from "lucide-react";
 import { DataTable } from "../../../components/admin/DataTable";
 import type { Column } from "../../../components/admin/DataTable";
 import { UserDetailModal } from "../../../components/admin/UserDetailModal";
@@ -279,13 +279,13 @@ export const UsersPage: React.FC = () => {
         data={filtered as unknown as Record<string, unknown>[]}
         rowKey={(r) => r["id"] as string}
         loading={loading}
-        emptyIcon={
-          <div className="flex flex-col items-center">
-            <div className="w-15 h-15 rounded-full flex items-center justify-center" style={{ background: "#F5F7FA" }}>
-              <Users size={32} style={{ color: "#A0AAB5" }} />
-            </div>
-          </div>
-        }
+        // emptyIcon={
+        //   <div className="flex flex-col items-center">
+        //     <div className="w-15 h-15 rounded-full flex items-center justify-center" style={{ background: "#F5F7FA" }}>
+        //       <Users size={32} style={{ color: "#A0AAB5" }} />
+        //     </div>
+        //   </div>
+        // }
         emptyText="No users found"
         emptySubtext="Adjust your search or filters."
         onRowClick={(r) => {

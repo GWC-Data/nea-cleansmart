@@ -13,7 +13,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminAuthProvider } from "../../context/AdminAuthContext";
 import { AdminProtectedRoute } from "../../components/auth/AdminProtectedRoute";
 import { AdminLayout } from "../../components/admin/AdminLayout";
-import { AdminLoginPage } from "./pages/AdminLoginPage";
+// import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { UsersPage } from "./pages/UsersPage";
 import { EventsPage } from "./pages/EventsPage";
@@ -23,7 +23,7 @@ export const AdminApp: React.FC = () => (
   <AdminAuthProvider>
     <Routes>
       {/* ── Public: admin login (no auth guard) ───────────────────────── */}
-      <Route path="login" element={<AdminLoginPage />} />
+      {/* <Route path="login" element={<AdminLoginPage />} /> */}
 
       {/* ── Protected: all other admin pages ─────────────────────────── */}
       <Route

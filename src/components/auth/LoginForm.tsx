@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { Mail, Lock, Send, CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Send,
+  CheckCircle2,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react";
 import type { LoginFormState } from "../../types/auth.types";
 import { toast } from "sonner";
 import { FloatingInput } from "../ui/FloatingInput";
@@ -33,7 +40,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   React.useEffect(() => {
-    if (error) toast.error("Email or password is incorrect", { duration: 5000 });
+    if (error)
+      toast.error("Email or password is incorrect", { duration: 5000 });
   }, [error]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,7 +107,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div className="flex justify-end -mt-3">
             <button
               type="button"
-              onClick={() => { setForgotEmail(""); setView("forgot"); }}
+              onClick={() => {
+                setForgotEmail("");
+                setView("forgot");
+              }}
               className="cursor-pointer text-sm text-[#1d7fc4] font-semibold hover:underline"
             >
               Forgot password?
@@ -141,7 +152,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         <form onSubmit={handleSendOtp} className="space-y-5 md:space-y-7">
           <p className="text-sm text-gray-500 text-center -mt-2">
-            Enter your registered email and we'll send you an OTP to reset your password.
+            Enter your registered email and we'll send you an OTP to reset your
+            password.
           </p>
 
           <FloatingInput
@@ -213,7 +225,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         <button
           type="button"
-          onClick={() => { setForgotEmail(""); setView("login"); }}
+          onClick={() => {
+            setForgotEmail("");
+            setView("login");
+          }}
           className="cursor-pointer w-full bg-[#87b637] hover:bg-[#739a2e] text-white font-bold py-3 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />

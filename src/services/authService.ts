@@ -10,7 +10,7 @@ import type {
 const BASE = ENV.API_BASE_URL;
 // We use a fixed salt so the frontend always generates the exact same hash for the same password.
 // Be aware that frontend hashing is not a replacement for HTTPS.
-const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx"; 
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 

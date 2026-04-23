@@ -126,7 +126,9 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       onClose();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Something went wrong. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -163,7 +165,9 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               {editingEvent ? "Edit Event" : "Create New Event"}
             </h2>
             <p className="text-xs text-[#8A9AA8] font-medium mt-0.5">
-              {editingEvent ? "Update event details below" : "Fill in the details to create a new event"}
+              {editingEvent
+                ? "Update event details below"
+                : "Fill in the details to create a new event"}
             </p>
           </div>
           <button
@@ -178,7 +182,12 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
             {/* LEFT: Form */}
-            <form onSubmit={handleSubmit(onSubmit)} id="event-form" noValidate className="px-6 py-5 space-y-4 border-r border-[#E8EDF2]">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              id="event-form"
+              noValidate
+              className="px-6 py-5 space-y-4 border-r border-[#E8EDF2]"
+            >
               {/* Name */}
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
@@ -189,7 +198,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   placeholder="e.g. East Coast Park Clean-Up"
                   className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
                 />
-                {errors.name && <p className="text-[#EC5594] text-xs mt-1 font-medium">{errors.name.message}</p>}
+                {errors.name && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
               {/* Location */}
@@ -198,14 +211,21 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   Location <span className="text-[#EC5594]">*</span>
                 </label>
                 <div className="relative">
-                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
+                  <MapPin
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                  />
                   <input
                     {...register("location")}
                     placeholder="e.g. East Coast Park, Singapore"
                     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
                   />
                 </div>
-                {errors.location && <p className="text-[#EC5594] text-xs mt-1 font-medium">{errors.location.message}</p>}
+                {errors.location && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.location.message}
+                  </p>
+                )}
               </div>
 
               {/* Date */}
@@ -214,14 +234,21 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   Date & Time <span className="text-[#EC5594]">*</span>
                 </label>
                 <div className="relative">
-                  <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
+                  <CalendarDays
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                  />
                   <input
                     type="datetime-local"
                     {...register("date")}
                     className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] focus:outline-none focus:border-[#509CD1] transition-colors"
                   />
                 </div>
-                {errors.date && <p className="text-[#EC5594] text-xs mt-1 font-medium">{errors.date.message}</p>}
+                {errors.date && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.date.message}
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -235,7 +262,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   placeholder="Brief description of this event..."
                   className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors resize-none"
                 />
-                {errors.description && <p className="text-[#EC5594] text-xs mt-1 font-medium">{errors.description.message}</p>}
+                {errors.description && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
 
               {/* Details (optional) */}
@@ -243,7 +274,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
                   <span className="flex items-center gap-1">
                     <FileText size={10} />
-                    Additional Details <span className="text-[#A0AAB5]">(optional)</span>
+                    Additional Details{" "}
+                    <span className="text-[#A0AAB5]">(optional)</span>
                   </span>
                 </label>
                 <textarea
@@ -278,18 +310,32 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   className="border-2 border-dashed border-[#E8EDF2] rounded-lg p-4 text-center cursor-pointer hover:border-[#509CD1] transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <ImageIcon size={20} className="mx-auto text-[#A0AAB5] mb-1.5" />
+                  <ImageIcon
+                    size={20}
+                    className="mx-auto text-[#A0AAB5] mb-1.5"
+                  />
                   <p className="text-xs text-[#6B7A88] font-medium">
                     {imageFile ? imageFile.name : "Click to upload image"}
                   </p>
-                  <p className="text-[10px] text-[#A0AAB5] mt-0.5">PNG, JPG up to 5MB</p>
+                  <p className="text-[10px] text-[#A0AAB5] mt-0.5">
+                    PNG, JPG up to 5MB
+                  </p>
                 </div>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
               </div>
             </form>
 
             {/* RIGHT: Live Preview */}
-            <div className="px-6 py-5 hidden lg:flex flex-col" style={{ background: "#F8F9FB" }}>
+            <div
+              className="px-6 py-5 hidden lg:flex flex-col"
+              style={{ background: "#F8F9FB" }}
+            >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-4">
                 Live Preview
               </p>
@@ -298,7 +344,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 {/* Image */}
                 <div className="relative h-40 bg-gradient-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <ImageIcon size={32} className="text-[#A0AAB5]" />
@@ -319,7 +369,9 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 {/* Card Body */}
                 <div className="p-4">
                   <h3 className="text-base font-semibold text-[#1A2A3A] tracking-tight leading-tight mb-1.5">
-                    {watchedValues.name || <span className="text-[#A0AAB5]">Event name...</span>}
+                    {watchedValues.name || (
+                      <span className="text-[#A0AAB5]">Event name...</span>
+                    )}
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs text-[#6B7A88] font-medium mb-1">
                     <MapPin size={11} className="text-[#8A9AA8] shrink-0" />
@@ -330,12 +382,17 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                     <span>{formattedDate}</span>
                   </div>
                   <p className="text-xs text-[#6B7A88] font-medium leading-relaxed line-clamp-2">
-                    {watchedValues.description || <span className="text-[#A0AAB5]">Description...</span>}
+                    {watchedValues.description || (
+                      <span className="text-[#A0AAB5]">Description...</span>
+                    )}
                   </p>
                   {watchedValues.rewards && (
                     <div className="mt-3 flex items-center gap-1.5">
                       <Trophy size={11} style={{ color: "#86B537" }} />
-                      <span className="text-xs font-semibold" style={{ color: "#86B537" }}>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: "#86B537" }}
+                      >
                         {watchedValues.rewards}
                       </span>
                     </div>
@@ -371,8 +428,12 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
             disabled={isSubmitting}
             className="px-6 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-60"
             style={{ background: "#86B537" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#75A030"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#86B537"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#75A030";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#86B537";
+            }}
           >
             {isSubmitting && <Loader2 size={15} className="animate-spin" />}
             {editingEvent ? "Save Changes" : "Create Event"}

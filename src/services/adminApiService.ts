@@ -6,12 +6,19 @@
 
 import { ENV } from "../config/env";
 import { getAdminToken } from "../utils/tokenUtils";
-import type { EventData, UserProfile, EventLog, LeaderboardEntry } from "../types/apiTypes";
+import type {
+  EventData,
+  UserProfile,
+  EventLog,
+  LeaderboardEntry,
+} from "../types/apiTypes";
 import type { CreateEventPayload, PlatformStats } from "../types/admin.types";
 
 const BASE = ENV.API_BASE_URL;
 
-const adminHeaders = (extra: Record<string, string> = {}): Record<string, string> => {
+const adminHeaders = (
+  extra: Record<string, string> = {},
+): Record<string, string> => {
   const token = getAdminToken();
   return {
     ...extra,
@@ -27,7 +34,10 @@ export const adminApiService = {
   /**
    * Login with email and password
    */
-  async login(email: string, password: string): Promise<{
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
     accessToken: string;
     tokenExpiry: number;
     user: UserProfile;
@@ -80,7 +90,8 @@ export const adminApiService = {
         method: "GET",
         headers: adminHeaders(),
       });
-      if (!response.ok) throw new Error(`Failed to fetch events: ${response.statusText}`);
+      if (!response.ok)
+        throw new Error(`Failed to fetch events: ${response.statusText}`);
       const data = await response.json();
       const events = data.events || [];
       return events.map((e: EventData & { event_image?: string }) => ({
@@ -143,7 +154,9 @@ export const adminApiService = {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || `Failed to create event: ${response.statusText}`);
+        throw new Error(
+          err.message || `Failed to create event: ${response.statusText}`,
+        );
       }
       const data = await response.json();
       return data.event || null;
@@ -156,7 +169,10 @@ export const adminApiService = {
   /**
    * Update an event (admin only)
    */
-  async updateEvent(eventId: string, payload: Partial<CreateEventPayload>): Promise<EventData | null> {
+  async updateEvent(
+    eventId: string,
+    payload: Partial<CreateEventPayload>,
+  ): Promise<EventData | null> {
     try {
       let body: FormData | string;
       let headers = adminHeaders();
@@ -164,7 +180,8 @@ export const adminApiService = {
       if (payload.eventImage) {
         const form = new FormData();
         if (payload.name) form.append("name", payload.name);
-        if (payload.description) form.append("description", payload.description);
+        if (payload.description)
+          form.append("description", payload.description);
         if (payload.location) form.append("location", payload.location);
         if (payload.date) form.append("date", payload.date);
         if (payload.details) form.append("details", payload.details);
@@ -185,7 +202,9 @@ export const adminApiService = {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || `Failed to update event: ${response.statusText}`);
+        throw new Error(
+          err.message || `Failed to update event: ${response.statusText}`,
+        );
       }
       const data = await response.json();
       return data.event || null;
@@ -224,7 +243,8 @@ export const adminApiService = {
         method: "GET",
         headers: adminHeaders(),
       });
-      if (!response.ok) throw new Error(`Failed to fetch users: ${response.statusText}`);
+      if (!response.ok)
+        throw new Error(`Failed to fetch users: ${response.statusText}`);
       const data = await response.json();
       return data.users || [];
     } catch (error) {
@@ -238,10 +258,13 @@ export const adminApiService = {
    */
   async getTopLeaderboard(limit = 999): Promise<LeaderboardEntry[]> {
     try {
-      const response = await fetch(`${BASE}/users/leaderboard/top?limit=${limit}`, {
-        method: "GET",
-        headers: adminHeaders(),
-      });
+      const response = await fetch(
+        `${BASE}/users/leaderboard/top?limit=${limit}`,
+        {
+          method: "GET",
+          headers: adminHeaders(),
+        },
+      );
       if (!response.ok) return [];
       const data = await response.json();
       return data.users || [];
@@ -281,7 +304,7 @@ export const adminApiService = {
     try {
       const events = await adminApiService.getAllEvents();
       const results = await Promise.allSettled(
-        events.map((e) => adminApiService.getLogsByEvent(e.eventId))
+        events.map((e) => adminApiService.getLogsByEvent(e.eventId)),
       );
       return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
     } catch (error) {
@@ -307,10 +330,13 @@ export const adminApiService = {
 
       const now = new Date();
       const activeEvents = events.filter((e) => new Date(e.date) >= now).length;
-      const totalHoursLogged = leaderboard.reduce((sum, e) => sum + (e.totalHours || 0), 0);
+      const totalHoursLogged = leaderboard.reduce(
+        (sum, e) => sum + (e.totalHours || 0),
+        0,
+      );
       const totalWasteCollected = leaderboard.reduce(
         (sum, e) => sum + (e.garbageWeightCollected || 0),
-        0
+        0,
       );
 
       return {

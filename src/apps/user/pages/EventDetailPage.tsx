@@ -574,7 +574,11 @@ export const EventDetailPage: React.FC = () => {
 
         {/* Upcoming event — show rewards but no leaderboard */}
         {!isActiveEvent && (
-          <RewardsBadgesCard rewards={event.rewards} userTotalHours={0} isActiveEvent={false} />
+          <RewardsBadgesCard
+            rewards={event.rewards}
+            userTotalHours={0}
+            isActiveEvent={false}
+          />
         )}
       </div>
 

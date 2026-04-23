@@ -52,6 +52,7 @@ export const Dashboard: React.FC = () => {
     state,
     activeEventId,
     activeLogId,
+    durationSeconds,
     remainingSeconds,
     elapsedSeconds,
     restoredFromStorage,
@@ -180,7 +181,9 @@ export const Dashboard: React.FC = () => {
       // Validation:
       // 1. If user checks out BEFORE the max time, use current timestamp.
       // 2. If user checks out AFTER the max time, cap it at the max duration.
-      return now < maxCheckOutDate ? now.toISOString() : maxCheckOutDate.toISOString();
+      return now < maxCheckOutDate
+        ? now.toISOString()
+        : maxCheckOutDate.toISOString();
     }
     return now.toISOString(); // fallback
   };
@@ -245,6 +248,11 @@ export const Dashboard: React.FC = () => {
     updatedAt: "",
   }));
 
+  // the stop button disable should not only true is it is under 30 minutes. For all the timer, the button should not display until the timer gets over. Update the logic
+
+  const isThirtyMinChallenge = durationSeconds <= 1800 * 4; // 30 minutes
+  const stopButtonDisabled = isThirtyMinChallenge && remainingSeconds > 0;
+
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
       {/* ── Unified Top Navigation ──────────────────────────────────────────── */}
@@ -265,7 +273,9 @@ export const Dashboard: React.FC = () => {
               <button
                 onClick={() => {
                   if (userStats && (userStats.todayHours || 0) >= 2) {
-                    toast.error("Daily limit of 2 hours reached! See you tomorrow 🌿");
+                    toast.error(
+                      "Daily limit of 2 hours reached! See you tomorrow",
+                    );
                     return;
                   }
                   openDurationPicker(activeEvents[0].eventId);
@@ -277,7 +287,9 @@ export const Dashboard: React.FC = () => {
                     : "bg-[#96c93d] hover:bg-[#86b537]"
                 }`}
               >
-                {(userStats?.todayHours || 0) >= 2 ? "Limit Reached" : "Start Clean-up"}
+                {(userStats?.todayHours || 0) >= 2
+                  ? "Limit Reached"
+                  : "Start Clean-up"}
               </button>
             )}
 
@@ -291,13 +303,23 @@ export const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 {/* Stop Clean-up */}
-                <button
-                  onClick={initiateCheckout}
-                  className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                {/* <button
+                  onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                  disabled={stopButtonDisabled}
+                  className={`px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                    stopButtonDisabled
+                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                      : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                  }`}
+                  title={
+                    stopButtonDisabled
+                      ? "Must complete the 30-minute challenge"
+                      : undefined
+                  }
                 >
                   <StopCircle className="w-4 h-4" />
                   <span>Stop Clean-up</span>
-                </button>
+                </button> */}
               </div>
             )}
           </div>
@@ -369,13 +391,23 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={initiateCheckout}
-              className="bg-red-500 hover:bg-red-600 border border-red-500 text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-red-500/20 active:scale-95 transition-all cursor-pointer shrink-0"
+            {/* <button
+              onClick={stopButtonDisabled ? undefined : initiateCheckout}
+              disabled={stopButtonDisabled}
+              className={`text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition-all shrink-0 ${
+                stopButtonDisabled
+                  ? "bg-red-500/40 border border-red-500/40 cursor-not-allowed"
+                  : "bg-red-500 hover:bg-red-600 border border-red-500 shadow-red-500/20 active:scale-95 cursor-pointer"
+              }`}
+              title={
+                stopButtonDisabled
+                  ? "Must complete the 30-minute challenge"
+                  : undefined
+              }
             >
               <StopCircle className="w-5 h-5" />
               Stop
-            </button>
+            </button> */}
           </div>
         )}
 

@@ -72,12 +72,17 @@ const SummaryBar: React.FC<SummaryBarProps> = ({ logs, loading }) => {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8A9AA8]">
               Total Logs
             </p>
-            <p className="text-2xl font-bold text-[#1A2A3A] mt-1">{logs.length}</p>
+            <p className="text-2xl font-bold text-[#1A2A3A] mt-1">
+              {logs.length}
+            </p>
             <p className="text-[11px] text-[#86B537] font-medium mt-1">
               {completedLogs.length} completed
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "#E8F2FA" }}>
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
+            style={{ background: "#E8F2FA" }}
+          >
             <List size={18} style={{ color: "#108ACB" }} />
           </div>
         </div>
@@ -92,9 +97,14 @@ const SummaryBar: React.FC<SummaryBarProps> = ({ logs, loading }) => {
             <p className="text-2xl font-bold text-[#1A2A3A] mt-1">
               {totalHours.toFixed(1)}
             </p>
-            <p className="text-[11px] text-[#86B537] font-medium mt-1">hours total</p>
+            <p className="text-[11px] text-[#86B537] font-medium mt-1">
+              hours total
+            </p>
           </div>
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "#F0F7E4" }}>
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
+            style={{ background: "#F0F7E4" }}
+          >
             <Timer size={18} style={{ color: "#86B537" }} />
           </div>
         </div>
@@ -109,9 +119,14 @@ const SummaryBar: React.FC<SummaryBarProps> = ({ logs, loading }) => {
             <p className="text-2xl font-bold text-[#1A2A3A] mt-1">
               {totalWaste.toFixed(1)}
             </p>
-            <p className="text-[11px] text-[#86B537] font-medium mt-1">kg total</p>
+            <p className="text-[11px] text-[#86B537] font-medium mt-1">
+              kg total
+            </p>
           </div>
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "#F0F7E4" }}>
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
+            style={{ background: "#F0F7E4" }}
+          >
             <Trash2 size={18} style={{ color: "#86B537" }} />
           </div>
         </div>
@@ -126,7 +141,9 @@ export const EventLogsPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "completed"
+  >("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -139,13 +156,14 @@ export const EventLogsPage: React.FC = () => {
       setEvents(eventsData);
 
       const logsArrays = await Promise.all(
-        eventsData.map((e) => adminApiService.getLogsByEvent(e.eventId))
+        eventsData.map((e) => adminApiService.getLogsByEvent(e.eventId)),
       );
       const merged = logsArrays
         .flat()
         .sort(
           (a, b) =>
-            new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime()
+            new Date(b.checkInTime).getTime() -
+            new Date(a.checkInTime).getTime(),
         );
       setAllLogs(merged);
     } finally {
@@ -178,7 +196,10 @@ export const EventLogsPage: React.FC = () => {
         const q = search.toLowerCase();
         const userName = log.user?.name ?? "";
         const eventName = log.event?.name ?? "";
-        if (!userName.toLowerCase().includes(q) && !eventName.toLowerCase().includes(q)) {
+        if (
+          !userName.toLowerCase().includes(q) &&
+          !eventName.toLowerCase().includes(q)
+        ) {
           return false;
         }
       }
@@ -200,8 +221,15 @@ export const EventLogsPage: React.FC = () => {
       label: "User",
       render: (row) => {
         // Use solid colors based on userId for consistent avatar colors - no pink
-        const avatarColors = ["#86B537", "#108ACB", "#509CD1", "#86B537", "#108ACB"];
-        const colorIndex = (row.userId?.charCodeAt?.(0) || 0) % avatarColors.length;
+        const avatarColors = [
+          "#86B537",
+          "#108ACB",
+          "#509CD1",
+          "#86B537",
+          "#108ACB",
+        ];
+        const colorIndex =
+          (row.userId?.charCodeAt?.(0) || 0) % avatarColors.length;
         const avatarColor = avatarColors[colorIndex];
 
         return (
@@ -216,7 +244,9 @@ export const EventLogsPage: React.FC = () => {
               <p className="font-semibold text-[#1A2A3A] text-sm">
                 {row.user?.name ?? `User ${String(row.userId).slice(0, 6)}`}
               </p>
-              <p className="text-[10px] text-[#8A9AA8]">{row.user?.email?.slice(0, 20)}</p>
+              <p className="text-[10px] text-[#8A9AA8]">
+                {row.user?.email?.slice(0, 20)}
+              </p>
             </div>
           </div>
         );
@@ -251,7 +281,9 @@ export const EventLogsPage: React.FC = () => {
             {fmtTime(String(row.checkInTime))}
           </p>
           <p className="text-[10px] text-[#8A9AA8]">
-            {formatDistanceToNow(new Date(String(row.checkInTime)), { addSuffix: true })}
+            {formatDistanceToNow(new Date(String(row.checkInTime)), {
+              addSuffix: true,
+            })}
           </p>
         </div>
       ),
@@ -281,7 +313,10 @@ export const EventLogsPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium"
               style={{ background: "#E8F2FA", color: "#108ACB" }}
             >
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#108ACB" }} />
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: "#108ACB" }}
+              />
               Active
             </span>
           </div>
@@ -294,7 +329,10 @@ export const EventLogsPage: React.FC = () => {
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#F5F7FA" }}>
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center"
+            style={{ background: "#F5F7FA" }}
+          >
             <Clock size={12} className="text-[#8A9AA8]" />
           </div>
           <span className="text-[#1A2A3A] font-sm text-sm">
@@ -310,7 +348,10 @@ export const EventLogsPage: React.FC = () => {
       render: (row) => (
         <div>
           <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#F5F7FA" }}>
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center"
+              style={{ background: "#F5F7FA" }}
+            >
               <Trash2 size={12} className="text-[#8A9AA8]" />
             </div>
             <span className="text-[#1A2A3A] font-sm text-sm">
@@ -335,7 +376,12 @@ export const EventLogsPage: React.FC = () => {
     setDateTo("");
   };
 
-  const hasActiveFilters = search || statusFilter !== "all" || eventFilter !== "all" || dateFrom || dateTo;
+  const hasActiveFilters =
+    search ||
+    statusFilter !== "all" ||
+    eventFilter !== "all" ||
+    dateFrom ||
+    dateTo;
 
   return (
     <div className="space-y-5">
@@ -368,7 +414,10 @@ export const EventLogsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+              />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -391,7 +440,10 @@ export const EventLogsPage: React.FC = () => {
                   </option>
                 ))}
               </select>
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5] pointer-events-none" />
+              <Calendar
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5] pointer-events-none"
+              />
             </div>
 
             {/* Toggle Filters Button */}
@@ -402,7 +454,10 @@ export const EventLogsPage: React.FC = () => {
               <Filter size={14} />
               <span>Filters</span>
               {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full" style={{ background: "#108ACB" }} />
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: "#108ACB" }}
+                />
               )}
             </button>
 
@@ -423,17 +478,22 @@ export const EventLogsPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-4">
                 {/* Status Filter */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-[#8A9AA8]">Status:</span>
+                  <span className="text-xs font-medium text-[#8A9AA8]">
+                    Status:
+                  </span>
                   <div className="flex gap-1">
                     {(["all", "active", "completed"] as const).map((s) => (
                       <button
                         key={s}
                         onClick={() => setStatusFilter(s)}
-                        className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-all ${statusFilter === s
-                          ? "text-white"
-                          : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
-                          }`}
-                        style={statusFilter === s ? { background: "#108ACB" } : {}}
+                        className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-all ${
+                          statusFilter === s
+                            ? "text-white"
+                            : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
+                        }`}
+                        style={
+                          statusFilter === s ? { background: "#108ACB" } : {}
+                        }
                       >
                         {s === "all" ? "All" : s}
                       </button>
@@ -443,7 +503,9 @@ export const EventLogsPage: React.FC = () => {
 
                 {/* Date Range */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-[#8A9AA8]">Date:</span>
+                  <span className="text-xs font-medium text-[#8A9AA8]">
+                    Date:
+                  </span>
                   <input
                     type="date"
                     value={dateFrom}
@@ -477,7 +539,7 @@ export const EventLogsPage: React.FC = () => {
         data={filtered as unknown as Record<string, unknown>[]}
         rowKey={(r) => String(r["id"])}
         loading={loading}
-        emptyIcon="📋"
+        // emptyIcon="📋"
         emptyText="No activity logs found"
         emptySubtext="Adjust your filters or check back later for volunteer activity."
       />
