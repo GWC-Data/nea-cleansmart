@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, Clock, StopCircle } from "lucide-react";
+import { LogOut, Clock } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
     openDurationPicker,
     cancelDurationPicker,
     handleCheckIn,
-    initiateCheckout,
+    // initiateCheckout,
     cancelCheckout,
     completeSession,
   } = useCleanUpSession();
