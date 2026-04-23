@@ -45,7 +45,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
               {eventList.map((event) => {
                 const eventDate = new Date(event.date);
                 const formattedDate = eventDate.toLocaleDateString("en-US", {
-                  weekday: "short",
+                  // weekday: "short",
                   month: "short",
                   day: "numeric",
                 });

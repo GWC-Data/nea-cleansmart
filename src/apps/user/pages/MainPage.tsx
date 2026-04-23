@@ -9,12 +9,11 @@ export const MainPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-sans bg-white">
       {/* ── LEFT PANEL — Hero Image ───────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[50%] xl:w-1/2 relative bg-[#f8fcf9] overflow-hidden items-center justify-center p-3 lg:p-3">
+      <div className="hidden lg:flex h-screen aspect-square shrink-e bg-[#f8fcf9]">
         <img
           src={mainImage}
           alt="Keep Singapore Clean 2026"
-          className="w-full h-full object-contain max-h-[800px]"
-          style={{ minHeight: "inherit" }}
+          className="w-full h-full object-contain"
         />
       </div>
 

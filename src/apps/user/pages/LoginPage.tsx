@@ -15,11 +15,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   return (
     <div className="min-h-screen bg-background flex lg:flex-row font-sans">
       {/* Left Pane - Desktop Only */}
-      <div className="hidden lg:flex lg:w-[50%] xl:w-1/2 relative bg-[#f8fcf9] overflow-hidden items-center justify-center p-3 lg:p-3">
+      <div className="hidden lg:flex h-screen aspect-square shrink-e bg-[#f8fcf9]">
         <img
           src={heroBg}
-          alt="Login Graphic"
-          className="w-full h-full object-contain max-h-[800px]"
+          alt="Keep Singapore Clean 2026"
+          className="w-full h-full object-contain"
         />
       </div>
 

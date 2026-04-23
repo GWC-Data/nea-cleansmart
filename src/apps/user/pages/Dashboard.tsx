@@ -291,13 +291,19 @@ export const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 {/* Stop Clean-up */}
-                <button
-                  onClick={initiateCheckout}
-                  className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                {/* <button
+                  onClick={remainingSeconds === 0 ? initiateCheckout : undefined}
+                  disabled={remainingSeconds > 0}
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm shadow-sm transition-all ${
+                    remainingSeconds > 0
+                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                      : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                  }`}
+                  title={remainingSeconds > 0 ? "Timer must complete before stopping" : undefined}
                 >
                   <StopCircle className="w-4 h-4" />
                   <span>Stop Clean-up</span>
-                </button>
+                </button> */}
               </div>
             )}
           </div>
@@ -369,13 +375,19 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={initiateCheckout}
-              className="bg-red-500 hover:bg-red-600 border border-red-500 text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-red-500/20 active:scale-95 transition-all cursor-pointer shrink-0"
+            {/* <button
+              onClick={remainingSeconds === 0 ? initiateCheckout : undefined}
+              disabled={remainingSeconds > 0}
+              className={`text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition-all shrink-0 ${
+                remainingSeconds > 0
+                  ? "bg-red-500/40 border border-red-500/40 cursor-not-allowed"
+                  : "bg-red-500 hover:bg-red-600 border border-red-500 shadow-red-500/20 active:scale-95 cursor-pointer"
+              }`}
+              title={remainingSeconds > 0 ? "Timer must complete before stopping" : undefined}
             >
               <StopCircle className="w-5 h-5" />
               Stop
-            </button>
+            </button> */}
           </div>
         )}
 
