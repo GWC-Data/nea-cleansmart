@@ -1,5 +1,5 @@
 import React from "react";
-import type { UserStats } from "../../services/apiService";
+import type { UserStats } from "../../../services/apiService";
 
 interface WelcomeSectionProps {
   name: string;

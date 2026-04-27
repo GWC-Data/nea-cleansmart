@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
-import { LogOut, Plus, Users, CalendarDays, Clock, Trash2, MapPin, Award, ChevronRight } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  Users,
+  CalendarDays,
+  Trash2,
+  MapPin,
+  Award,
+  ChevronRight,
+  Clock,
+} from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
-import { EventFormModal } from "../../../components/admin/EventFormModal";
-import { AddUserModal } from "../../../components/org/AddUserModal";
+import { EventFormModal } from "../../../components/sections/admin/EventFormModal";
+import { AddUserModal } from "../../../components/sections/org/AddUserModal";
 import type { EventData, UserProfile } from "../../../types/apiTypes";
 import { apiService } from "../../../services/apiService";
 import type { UserStats } from "../../../services/apiService";
@@ -31,7 +41,7 @@ export const OrgDashboard: React.FC = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'org' | 'public'>('org');
+  const [activeTab, setActiveTab] = useState<"org" | "public">("org");
 
   const [orgUsers, setOrgUsers] = useState<UserProfile[]>([]);
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
@@ -41,7 +51,7 @@ export const OrgDashboard: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       const allEvents = await apiService.getEvents();
-      setPublicEvents(allEvents.filter(e => e.eventType !== 'private'));
+      setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
       const dashData = await apiService.getDashboard();
       if (dashData) setUserStats(dashData.stats);
     }
@@ -59,7 +69,7 @@ export const OrgDashboard: React.FC = () => {
   }, []);
 
   const handleEventSubmit = async (values: any, imageFile: File | null) => {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     const newEvent: EventData = {
       eventId: Math.random().toString(36).substr(2, 9),
       name: values.name,
@@ -75,13 +85,15 @@ export const OrgDashboard: React.FC = () => {
       updatedAt: new Date().toISOString(),
       eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
     };
-    setOrgEvents(prev => [newEvent, ...prev]);
-    toast.success(`${values.eventType === 'private' ? 'Private' : 'Public'} event created!`);
+    setOrgEvents((prev) => [newEvent, ...prev]);
+    toast.success(
+      `${values.eventType === "private" ? "Private" : "Public"} event created!`,
+    );
   };
 
   const handleUserAdded = (user: UserProfile) => {
-    if (!orgUsers.find(u => u.id === user.id)) {
-      setOrgUsers(prev => [...prev, user]);
+    if (!orgUsers.find((u) => u.id === user.id)) {
+      setOrgUsers((prev) => [...prev, user]);
     } else {
       toast.error("User is already in the organization.");
     }
@@ -90,11 +102,13 @@ export const OrgDashboard: React.FC = () => {
   const getInitials = (name?: string) => {
     if (!name) return "O";
     const parts = name.trim().split(" ");
-    return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0][0].toUpperCase();
+    return parts.length >= 2
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : parts[0][0].toUpperCase();
   };
   const initials = getInitials(currentUser?.name || "Org User");
 
-  const displayedEvents = activeTab === 'org' ? orgEvents : publicEvents;
+  const displayedEvents = activeTab === "org" ? orgEvents : publicEvents;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
@@ -138,14 +152,15 @@ export const OrgDashboard: React.FC = () => {
       </header>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-6 pt-10 pb-12 flex flex-col gap-10">
-
         {/* Welcome & Actions Row */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-              Hello, {currentUser?.name?.split(' ')[0] || "Admin"}
+              Hello, {currentUser?.name?.split(" ")[0] || "Admin"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Here is what's happening in your organization today.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Here is what's happening in your organization today.
+            </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <button
@@ -171,10 +186,14 @@ export const OrgDashboard: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
                 <Award size={20} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">Total Points</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
+                Total Points
+              </span>
             </div>
             <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">{userStats?.totalPoints ?? 0}</p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {userStats?.totalPoints ?? 0}
+              </p>
             </div>
           </div>
 
@@ -184,7 +203,9 @@ export const OrgDashboard: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-[#509CD1]/10 flex items-center justify-center text-[#509CD1] group-hover:bg-[#509CD1] group-hover:text-white transition-colors duration-300">
                 <Clock size={20} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">Hours Logged</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">
+                Hours Logged
+              </span>
             </div>
             <div className="relative z-10">
               {(() => {
@@ -192,7 +213,9 @@ export const OrgDashboard: React.FC = () => {
                 return (
                   <p className="text-4xl font-black text-gray-900 tracking-tight">
                     {time.value}
-                    <span className="text-lg font-bold text-gray-400 ml-1">{time.unit}</span>
+                    <span className="text-lg font-bold text-gray-400 ml-1">
+                      {time.unit}
+                    </span>
                   </p>
                 );
               })()}
@@ -205,10 +228,15 @@ export const OrgDashboard: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
                 <Trash2 size={20} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">Waste Collected</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
+                Waste Collected
+              </span>
             </div>
             <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">{userStats?.totalWeight ?? 0}<span className="text-lg font-bold text-gray-400 ml-1">kg</span></p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {userStats?.totalWeight ?? 0}
+                <span className="text-lg font-bold text-gray-400 ml-1">kg</span>
+              </p>
             </div>
           </div>
 
@@ -218,35 +246,41 @@ export const OrgDashboard: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-[#509CD1]/10 flex items-center justify-center text-[#509CD1] group-hover:bg-[#509CD1] group-hover:text-white transition-colors duration-300">
                 <Users size={20} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">Team Size</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">
+                Team Size
+              </span>
             </div>
             <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">{orgUsers.length}</p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {orgUsers.length}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Main Content Split */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
           {/* Left: Events Section */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-
             {/* Minimal Tabs */}
             <div className="flex gap-8 border-b border-gray-200">
               <button
-                onClick={() => setActiveTab('org')}
-                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === 'org' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                onClick={() => setActiveTab("org")}
+                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "org" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
               >
                 Organization Events
-                {activeTab === 'org' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#86B537] rounded-t-full"></div>}
+                {activeTab === "org" && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#86B537] rounded-t-full"></div>
+                )}
               </button>
               <button
-                onClick={() => setActiveTab('public')}
-                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === 'public' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                onClick={() => setActiveTab("public")}
+                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "public" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
               >
                 Public Platform Events
-                {activeTab === 'public' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#86B537] rounded-t-full"></div>}
+                {activeTab === "public" && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#86B537] rounded-t-full"></div>
+                )}
               </button>
             </div>
 
@@ -254,14 +288,18 @@ export const OrgDashboard: React.FC = () => {
             {displayedEvents.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 border-dashed p-12 text-center flex flex-col items-center justify-center">
                 <CalendarDays className="text-gray-300 mb-3" size={32} />
-                <p className="text-sm font-medium text-gray-900 mb-1">No events found</p>
+                <p className="text-sm font-medium text-gray-900 mb-1">
+                  No events found
+                </p>
                 <p className="text-xs text-gray-500 max-w-[250px]">
-                  {activeTab === 'org' ? "You haven't created any events yet. Click 'Create Event' to get started." : "There are currently no public events available on the platform."}
+                  {activeTab === "org"
+                    ? "You haven't created any events yet. Click 'Create Event' to get started."
+                    : "There are currently no public events available on the platform."}
                 </p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
-                {displayedEvents.map(event => (
+                {displayedEvents.map((event) => (
                   <div
                     key={event.eventId}
                     onClick={() => navigate(`/events/${event.eventId}`)}
@@ -269,17 +307,31 @@ export const OrgDashboard: React.FC = () => {
                   >
                     <div className="h-32 rounded-xl bg-gray-50 overflow-hidden relative">
                       {event.eventImage ? (
-                        <img src={getEventImageUrl(event.eventImage)} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img
+                          src={getEventImageUrl(event.eventImage)}
+                          alt={event.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center"><CalendarDays className="text-gray-300" size={24} /></div>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <CalendarDays className="text-gray-300" size={24} />
+                        </div>
                       )}
                       <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-center shadow-sm">
-                        <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</p>
-                        <p className="text-sm font-black text-[#86B537] leading-tight">{new Date(event.date).getDate()}</p>
+                        <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">
+                          {new Date(event.date).toLocaleDateString("en-US", {
+                            month: "short",
+                          })}
+                        </p>
+                        <p className="text-sm font-black text-[#86B537] leading-tight">
+                          {new Date(event.date).getDate()}
+                        </p>
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-sm truncate mb-1">{event.name}</h3>
+                      <h3 className="font-bold text-gray-900 text-sm truncate mb-1">
+                        {event.name}
+                      </h3>
                       <div className="flex items-center text-xs text-gray-500 gap-1 font-medium">
                         <MapPin size={12} className="shrink-0" />
                         <span className="truncate">{event.location}</span>
@@ -295,25 +347,38 @@ export const OrgDashboard: React.FC = () => {
           <div className="flex flex-col gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-900 text-sm">Team Members</h3>
-                <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{orgUsers.length}</span>
+                <h3 className="font-bold text-gray-900 text-sm">
+                  Team Members
+                </h3>
+                <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  {orgUsers.length}
+                </span>
               </div>
 
               {orgUsers.length === 0 ? (
                 <div className="text-center py-6">
                   <Users className="mx-auto text-gray-300 mb-2" size={24} />
-                  <p className="text-xs text-gray-500 font-medium">No members added yet.</p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    No members added yet.
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {orgUsers.slice(0, 5).map(u => (
-                    <div key={u.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                  {orgUsers.slice(0, 5).map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-xl transition-colors"
+                    >
                       <div className="w-8 h-8 rounded-full bg-[#f4fff5] text-[#86B537] flex items-center justify-center font-bold text-xs shrink-0">
                         {u.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{u.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
+                          {u.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {u.email}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -326,7 +391,6 @@ export const OrgDashboard: React.FC = () => {
               )}
             </div>
           </div>
-
         </div>
       </main>
 
@@ -350,7 +414,7 @@ export const OrgDashboard: React.FC = () => {
       <EventFormModal
         isOpen={eventFormOpen}
         onClose={() => setEventFormOpen(false)}
-        onSuccess={() => { }}
+        onSuccess={() => {}}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
       />

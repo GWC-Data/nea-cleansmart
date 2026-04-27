@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../../hooks/useAuth";
 import {
   Mail,
   Lock,
@@ -8,10 +8,10 @@ import {
   Loader2,
   ArrowLeft,
 } from "lucide-react";
-import type { LoginFormState } from "../../types/auth.types";
+import type { LoginFormState } from "../../../types/auth.types";
 import { toast } from "sonner";
-import { FloatingInput } from "../ui/FloatingInput";
-import { apiService } from "../../services/apiService";
+import { FloatingInput } from "../../ui/FloatingInput";
+import { apiService } from "../../../services/apiService";
 
 interface LoginFormProps {
   onSuccess: () => void;

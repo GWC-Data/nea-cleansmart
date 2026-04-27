@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../../hooks/useAuth";
 import {
   User,
   Mail,
@@ -10,9 +10,9 @@ import {
   Building2,
   Phone,
 } from "lucide-react";
-import type { RegisterFormState } from "../../types/auth.types";
+import type { RegisterFormState } from "../../../types/auth.types";
 import { toast } from "sonner";
-import { FloatingInput } from "../ui/FloatingInput";
+import { FloatingInput } from "../../ui/FloatingInput";
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -34,7 +34,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   onSuccess,
   onNavigateToLogin,
 }) => {
-  const { handleRegister, handleOrganizationRegister, isSubmitting, error } = useAuth();
+  const { handleRegister, handleOrganizationRegister, isSubmitting, error } =
+    useAuth();
   const [form, setForm] = useState<RegisterFormState>(INITIAL_STATE);
   const [activeTab, setActiveTab] = useState<"user" | "organization">("user");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -128,12 +129,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             setValidationError(null);
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
-            activeTab === "user" 
-              ? "text-white bg-[#509CD1] shadow-[0_4px_12px_rgba(80,156,209,0.3)] transform scale-[1.02]" 
+            activeTab === "user"
+              ? "text-white bg-[#509CD1] shadow-[0_4px_12px_rgba(80,156,209,0.3)] transform scale-[1.02]"
               : "text-[#6B7A88] hover:text-[#1A2A3A] hover:bg-[#E8EDF2]"
           }`}
         >
-          <User size={18} className={activeTab === "user" ? "text-white" : "text-[#8A9AA8]"} />
+          <User
+            size={18}
+            className={activeTab === "user" ? "text-white" : "text-[#8A9AA8]"}
+          />
           User
         </button>
         <button
@@ -143,12 +147,17 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             setValidationError(null);
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
-            activeTab === "organization" 
-              ? "text-white bg-[#86B537] shadow-[0_4px_12px_rgba(134,181,55,0.3)] transform scale-[1.02]" 
+            activeTab === "organization"
+              ? "text-white bg-[#86B537] shadow-[0_4px_12px_rgba(134,181,55,0.3)] transform scale-[1.02]"
               : "text-[#6B7A88] hover:text-[#1A2A3A] hover:bg-[#E8EDF2]"
           }`}
         >
-          <Building2 size={18} className={activeTab === "organization" ? "text-white" : "text-[#8A9AA8]"} />
+          <Building2
+            size={18}
+            className={
+              activeTab === "organization" ? "text-white" : "text-[#8A9AA8]"
+            }
+          />
           Organization
         </button>
       </div>
@@ -294,10 +303,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                     {form.gender || "placeholder"}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isGenderDropdownOpen
-                      ? "rotate-180 text-[#1d7fc4]"
-                      : "text-gray-400"
-                      }`}
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                      isGenderDropdownOpen
+                        ? "rotate-180 text-[#1d7fc4]"
+                        : "text-gray-400"
+                    }`}
                   />
                 </button>
 
@@ -313,10 +323,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                           setIsGenderDropdownOpen(false);
                           setGenderFocused(false);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${form.gender === option
-                          ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5"
-                          : "text-gray-700 font-medium hover:bg-gray-50"
-                          }`}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                          form.gender === option
+                            ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5"
+                            : "text-gray-700 font-medium hover:bg-gray-50"
+                        }`}
                       >
                         {option}
                       </button>
@@ -336,19 +347,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             id="reg-org-name"
             name="organizationName"
             type="text"
-            label={<>Organization Name <span className="text-red-500">*</span></>}
+            label={
+              <>
+                Organization Name <span className="text-red-500">*</span>
+              </>
+            }
             value={form.organizationName || ""}
             onChange={handleChange}
             required={activeTab === "organization"}
             icon={<Building2 className="w-5 h-5" />}
           />
-          
+
           {/* Full Name */}
           <FloatingInput
             id="reg-name-org"
             name="name"
             type="text"
-            label={<>Full Name <span className="text-red-500">*</span></>}
+            label={
+              <>
+                Full Name <span className="text-red-500">*</span>
+              </>
+            }
             value={form.name}
             onChange={handleChange}
             required={activeTab === "organization"}
@@ -360,19 +379,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             id="reg-email-org"
             name="email"
             type="email"
-            label={<>Work Email Address <span className="text-red-500">*</span></>}
+            label={
+              <>
+                Work Email Address <span className="text-red-500">*</span>
+              </>
+            }
             value={form.email}
             onChange={handleChange}
             required={activeTab === "organization"}
             icon={<Mail className="w-5 h-5" />}
           />
-          
+
           {/* Phone Number */}
           <FloatingInput
             id="reg-phone-org"
             name="phoneNumber"
             type="tel"
-            label={<>Phone Number <span className="text-red-500">*</span></>}
+            label={
+              <>
+                Phone Number <span className="text-red-500">*</span>
+              </>
+            }
             value={form.phoneNumber || ""}
             onChange={handleChange}
             required={activeTab === "organization"}
@@ -384,7 +411,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <FloatingInput
               id="reg-password-org"
               name="password"
-              label={<>Password <span className="text-red-500">*</span></>}
+              label={
+                <>
+                  Password <span className="text-red-500">*</span>
+                </>
+              }
               value={form.password}
               onChange={handleChange}
               required={activeTab === "organization"}
@@ -395,7 +426,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <FloatingInput
               id="reg-confirm-password-org"
               name="confirmPassword"
-              label={<>Confirm Password <span className="text-red-500">*</span></>}
+              label={
+                <>
+                  Confirm Password <span className="text-red-500">*</span>
+                </>
+              }
               value={form.confirmPassword}
               onChange={handleChange}
               required={activeTab === "organization"}

@@ -2,15 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { LogOut, Clock, StopCircle } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
-import { StatsOverview } from "../../../components/dashboard/StatsOverview";
-import { WelcomeSection } from "../../../components/dashboard/WelcomeSection";
-import { CommunityEvents } from "../../../components/dashboard/CommunityEvents";
-// import { RewardsSection } from "../../../components/dashboard/RewardsSection";
-import { EventGuidelines } from "../../../components/dashboard/EventGuidelines";
-import { LogActivityForm } from "../../../components/dashboard/LogActivityForm";
+import { StatsOverview } from "../../../components/sections/user/StatsOverview";
+import { WelcomeSection } from "../../../components/sections/user/WelcomeSection";
+import { CommunityEvents } from "../../../components/sections/user/CommunityEvents";
+import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
+import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
 import { DurationSelectModal } from "../../../components/modal/DurationSelectModal";
-// import { EventDetailsModal } from "../../../components/modal/EventDetailsModal";
-import { DesktopDashboardView } from "../../../components/dashboard/DesktopDashboardView";
+import { DesktopDashboardView } from "../../../components/sections/user/DesktopDashboardView";
 import { apiService } from "../../../services/apiService";
 import type {
   EventData,
@@ -52,7 +50,6 @@ export const Dashboard: React.FC = () => {
     state,
     activeEventId,
     activeLogId,
-    durationSeconds,
     remainingSeconds,
     elapsedSeconds,
     restoredFromStorage,
@@ -473,21 +470,6 @@ export const Dashboard: React.FC = () => {
           isMandatory={isMandatory}
         />
       )}
-
-      {/* Event Details / Join flow modal */}
-      {/* {selectedEventToJoin && (
-        <EventDetailsModal
-          event={selectedEventToJoin}
-          onClose={() => setSelectedEventToJoin(null)}
-          onSuccessClose={() => {
-            setSelectedEventToJoin(null);
-            const profStr = localStorage.getItem("nea_user_profile");
-            if (profStr) {
-              setLocalJoinedEventIds(JSON.parse(profStr).joinedEvents || []);
-            }
-          }}
-        />
-      )} */}
     </div>
   );
 };

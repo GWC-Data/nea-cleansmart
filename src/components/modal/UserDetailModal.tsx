@@ -98,7 +98,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         >
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
+            className="cursor-pointer absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
           >
             <X size={16} />
           </button>

@@ -6,9 +6,9 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, Filter, UserPlus } from "lucide-react";
-import { DataTable } from "../../../components/admin/DataTable";
-import type { Column } from "../../../components/admin/DataTable";
-import { UserDetailModal } from "../../../components/admin/UserDetailModal";
+import { DataTable } from "../../../components/sections/admin/DataTable";
+import type { Column } from "../../../components/sections/admin/DataTable";
+import { UserDetailModal } from "../../../components/modal/UserDetailModal";
 import { adminApiService } from "../../../services/adminApiService";
 import type { UserProfile, LeaderboardEntry } from "../../../types/apiTypes";
 import { format } from "date-fns";
@@ -33,8 +33,12 @@ export const UsersPage: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "volunteer" | "admin">("all");
-  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "volunteer" | "admin">(
+    "all",
+  );
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">(
+    "all",
+  );
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -45,6 +49,7 @@ export const UsersPage: React.FC = () => {
         adminApiService.getAllUsers(),
         adminApiService.getTopLeaderboard(999),
       ]);
+      console.log("userData", usersData);
       setUsers(usersData);
       setLeaderboard(lbData);
     } finally {
@@ -56,14 +61,23 @@ export const UsersPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  const lbMap = useMemo(() => new Map(leaderboard.map((e) => [e.userId, e])), [leaderboard]);
+  const lbMap = useMemo(
+    () => new Map(leaderboard.map((e) => [e.userId, e])),
+    [leaderboard],
+  );
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
       const q = search.toLowerCase();
-      const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-      const matchRole = roleFilter === "all" || (roleFilter === "admin" ? u.role === "admin" : u.role !== "admin");
-      const matchGender = genderFilter === "all" || u.gender?.toLowerCase() === genderFilter;
+      const matchSearch =
+        !q ||
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q);
+      const matchRole =
+        roleFilter === "all" ||
+        (roleFilter === "admin" ? u.role === "admin" : u.role !== "admin");
+      const matchGender =
+        genderFilter === "all" || u.gender?.toLowerCase() === genderFilter;
       return matchSearch && matchRole && matchGender;
     });
   }, [users, search, roleFilter, genderFilter]);
@@ -83,10 +97,7 @@ export const UsersPage: React.FC = () => {
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-xs text-white shrink-0"
-            style={{ background: "linear-gradient(135deg, #86B537, #509CD1)" }}
-          >
+          <div className="w-8 h-8 rounded-lg flex bg-[#108acb] items-center justify-center font-semibold text-xs text-white shrink-0">
             {getInitials(row.name)}
           </div>
           <div>
@@ -131,27 +142,15 @@ export const UsersPage: React.FC = () => {
         </span>
       ),
     },
-    {
-      key: "_hours",
-      label: "Hours",
-      render: (row) => {
-        const lb = lbMap.get(row.id);
-        return (
-          <span className="text-[#1A2A3A] font-semibold text-sm">
-            {lb ? `${lb.totalHours.toFixed(1)}h` : "—"}
-          </span>
-        );
-      },
-    },
-    {
-      key: "_events",
-      label: "Events",
-      render: (row) => (
-        <span className="text-[#6B7A88] font-medium text-sm">
-          {row.joinedEvents?.length ?? 0}
-        </span>
-      ),
-    },
+    // {
+    //   key: "_events",
+    //   label: "Events",
+    //   render: (row) => (
+    //     <span className="text-[#6B7A88] font-medium text-sm">
+    //       {row.joinedEvents?.length ?? 0}
+    //     </span>
+    //   ),
+    // },
     {
       key: "createdAt",
       label: "Joined",
@@ -220,7 +219,10 @@ export const UsersPage: React.FC = () => {
         <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+            />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -236,10 +238,11 @@ export const UsersPage: React.FC = () => {
               <button
                 key={r}
                 onClick={() => setRoleFilter(r)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${roleFilter === r
+                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                  roleFilter === r
                     ? "text-white"
                     : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
-                  }`}
+                }`}
                 style={roleFilter === r ? { background: "#108ACB" } : {}}
               >
                 {r === "all" ? "All Roles" : r}
@@ -253,10 +256,11 @@ export const UsersPage: React.FC = () => {
               <button
                 key={g}
                 onClick={() => setGenderFilter(g)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${genderFilter === g
+                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                  genderFilter === g
                     ? "text-white"
                     : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
-                  }`}
+                }`}
                 style={genderFilter === g ? { background: "#86B537" } : {}}
               >
                 {g === "all" ? "All Genders" : g}
@@ -269,7 +273,8 @@ export const UsersPage: React.FC = () => {
       {/* Results summary */}
       {!loading && search && (
         <p className="text-xs text-[#8A9AA8] font-medium px-1">
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "{search}"
+          {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "
+          {search}"
         </p>
       )}
 
@@ -299,7 +304,9 @@ export const UsersPage: React.FC = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         user={selectedUser}
-        leaderboardEntry={selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null}
+        leaderboardEntry={
+          selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null
+        }
       />
     </div>
   );

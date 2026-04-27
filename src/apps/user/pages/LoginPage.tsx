@@ -1,6 +1,6 @@
 import React from "react";
 
-import { LoginForm } from "../../../components/auth/LoginForm";
+import { LoginForm } from "../../../components/sections/auth/LoginForm";
 import heroBg from "../../../assets/logIn.png";
 
 interface LoginPageProps {

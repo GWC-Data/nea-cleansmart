@@ -9,8 +9,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { EventData, UserStats } from "../../services/apiService";
-import { getEventImageUrl } from "../../utils/imageUtils";
+import type { EventData, UserStats } from "../../../services/apiService";
+import { getEventImageUrl } from "../../../utils/imageUtils";
 
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";

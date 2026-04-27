@@ -11,8 +11,8 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminAuthProvider } from "../../context/AdminAuthContext";
-import { AdminProtectedRoute } from "../../components/auth/AdminProtectedRoute";
-import { AdminLayout } from "../../components/admin/AdminLayout";
+import { AdminProtectedRoute } from "../../components/sections/auth/AdminProtectedRoute";
+import { AdminLayout } from "../../components/sections/admin/AdminLayout";
 // import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { UsersPage } from "./pages/UsersPage";
@@ -35,9 +35,9 @@ export const AdminApp: React.FC = () => (
                 {/* Default: redirect /admin → /admin/dashboard */}
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="users"     element={<UsersPage />} />
-                <Route path="events"    element={<EventsPage />} />
-                <Route path="logs"      element={<EventLogsPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="events" element={<EventsPage />} />
+                <Route path="logs" element={<EventLogsPage />} />
               </Routes>
             </AdminLayout>
           </AdminProtectedRoute>

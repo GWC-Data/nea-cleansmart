@@ -15,8 +15,8 @@ import {
   LogOut,
   X,
 } from "lucide-react";
-import { useAdminAuthContext } from "../../context/AdminAuthContext";
-import logo from "../../assets/publicHygineCouncil.png";
+import { useAdminAuthContext } from "../../../context/AdminAuthContext";
+import logo from "../../../assets/publicHygineCouncil.png";
 
 interface AdminSidebarProps {
   isOpen: boolean;

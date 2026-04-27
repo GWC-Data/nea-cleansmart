@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock, Trash2, Wind } from "lucide-react";
-import type { UserStats } from "../../services/apiService";
+import type { UserStats } from "../../../services/apiService";
 
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";

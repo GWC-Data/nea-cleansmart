@@ -239,7 +239,7 @@ export const adminApiService = {
    */
   async getAllUsers(): Promise<UserProfile[]> {
     try {
-      const response = await fetch(`${BASE}/users-profiles`, {
+      const response = await fetch(`${BASE}/users`, {
         method: "GET",
         headers: adminHeaders(),
       });

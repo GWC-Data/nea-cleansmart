@@ -4,7 +4,7 @@ import { LandingPage } from "./apps/user/pages/LandingPage";
 import { MainPage } from "./apps/user/pages/MainPage";
 import { LoginPage } from "./apps/user/pages/LoginPage";
 import { RegisterPage } from "./apps/user/pages/RegisterPage";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ProtectedRoute } from "./components/sections/auth/ProtectedRoute";
 import { AdminApp } from "./apps/admin/AdminApp";
 import { Dashboard } from "./apps/user/pages/Dashboard";
 import { Toaster } from "sonner";
@@ -85,15 +85,15 @@ function App() {
 
           {/* Protected Route for Admins — AdminApp manages its own auth */}
           <Route path="/admin/*" element={<AdminApp />} />
-          
+
           {/* Organization Route */}
-          <Route 
-            path="/org/*" 
+          <Route
+            path="/org/*"
             element={
               <ProtectedRoute>
                 <OrgApp />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
         <Toaster richColors position="top-right" />

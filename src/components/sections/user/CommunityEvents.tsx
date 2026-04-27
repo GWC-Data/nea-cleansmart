@@ -1,8 +1,8 @@
 import React from "react";
 import { MapPin, CalendarX, Clock4 } from "lucide-react";
-import type { EventData } from "../../services/apiService";
+import type { EventData } from "../../../services/apiService";
 import { useNavigate } from "react-router-dom";
-import { getEventImageUrl } from "../../utils/imageUtils";
+import { getEventImageUrl } from "../../../utils/imageUtils";
 
 interface CommunityEventsProps {
   activeEvents: EventData[];

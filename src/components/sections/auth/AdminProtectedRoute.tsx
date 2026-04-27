@@ -6,7 +6,7 @@
 
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAdminAuthContext } from "../../context/AdminAuthContext";
+import { useAdminAuthContext } from "../../../context/AdminAuthContext";
 import { Leaf } from "lucide-react";
 
 interface AdminProtectedRouteProps {

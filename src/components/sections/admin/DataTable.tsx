@@ -37,6 +37,8 @@ export function DataTable<T extends Record<string, unknown>>({
   emptySubtext = "Adjust your filters to see results.",
   onRowClick,
 }: DataTableProps<T>) {
+  console.log("columns", columns);
+  console.log("data", data);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
@@ -156,13 +158,13 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {/* Footer row count */}
-      {sortedData.length > 0 && (
+      {/* {sortedData.length > 0 && (
         <div className="px-4 py-2.5 border-t border-[#E8EDF2] flex items-center justify-between">
           <p className="text-[11px] text-[#8A9AA8] font-medium">
             {sortedData.length} record{sortedData.length !== 1 ? "s" : ""}
           </p>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

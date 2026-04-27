@@ -21,7 +21,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { StatCard } from "../../../components/admin/StatCard";
+import { StatCard } from "../../../components/sections/admin/StatCard";
 import { adminApiService } from "../../../services/adminApiService";
 import type { PlatformStats } from "../../../types/admin.types";
 import type {

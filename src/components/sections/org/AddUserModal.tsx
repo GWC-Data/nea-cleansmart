@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Search, Loader2, CheckCircle2 } from "lucide-react";
-import { apiService } from "../../services/apiService";
-import type { UserProfile } from "../../types/apiTypes";
+import { apiService } from "../../../services/apiService";
+import type { UserProfile } from "../../../types/apiTypes";
 import { toast } from "sonner";
 
 interface AddUserModalProps {
@@ -42,7 +42,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     setAddingId(user.id);
     try {
       // Simulate API call to add user to org
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800));
       toast.success(`${user.name} added to organization!`);
       onUserAdded(user);
     } finally {
@@ -52,13 +52,14 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A2A3A]/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
@@ -105,7 +106,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-sm text-[#8A9AA8] font-medium">No users found.</p>
+              <p className="text-sm text-[#8A9AA8] font-medium">
+                No users found.
+              </p>
             </div>
           ) : (
             <div className="space-y-1">
