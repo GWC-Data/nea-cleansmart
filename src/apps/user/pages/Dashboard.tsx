@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, Clock } from "lucide-react";
+import { LogOut, Clock, StopCircle } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/dashboard/StatsOverview";
@@ -52,7 +52,7 @@ export const Dashboard: React.FC = () => {
     state,
     activeEventId,
     activeLogId,
-    // durationSeconds,
+    durationSeconds,
     remainingSeconds,
     elapsedSeconds,
     restoredFromStorage,
@@ -60,7 +60,7 @@ export const Dashboard: React.FC = () => {
     openDurationPicker,
     cancelDurationPicker,
     handleCheckIn,
-    // initiateCheckout,
+    initiateCheckout,
     cancelCheckout,
     completeSession,
   } = useCleanUpSession();
@@ -248,10 +248,9 @@ export const Dashboard: React.FC = () => {
     updatedAt: "",
   }));
 
-  // the stop button disable should not only true is it is under 30 minutes. For all the timer, the button should not display until the timer gets over. Update the logic
-
-  // const isThirtyMinChallenge = durationSeconds <= 1800 * 4; // 30 minutes
-  // const stopButtonDisabled = isThirtyMinChallenge && remainingSeconds > 0;
+  // The stop button is disabled until at least 30 minutes (1800 seconds) have elapsed,
+  // or until the timer fully completes.
+  const stopButtonDisabled = elapsedSeconds < 1800 && remainingSeconds > 0;
 
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
@@ -303,23 +302,23 @@ export const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 {/* Stop Clean-up */}
-                {/* <button
+                <button
                   onClick={stopButtonDisabled ? undefined : initiateCheckout}
                   disabled={stopButtonDisabled}
                   className={`px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
                     stopButtonDisabled
                       ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                       : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                    }`}
+                  }`}
                   title={
                     stopButtonDisabled
-                      ? "Must complete the 30-minute challenge"
+                      ? "Must complete at least 30 minutes before stopping"
                       : undefined
-                    }
-                  >
+                  }
+                >
                   <StopCircle className="w-4 h-4" />
                   <span>Stop Clean-up</span>
-                </button> */}
+                </button>
               </div>
             )}
           </div>
@@ -391,7 +390,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            {/* <button
+            <button
               onClick={stopButtonDisabled ? undefined : initiateCheckout}
               disabled={stopButtonDisabled}
               className={`text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition-all shrink-0 ${
@@ -401,13 +400,13 @@ export const Dashboard: React.FC = () => {
               }`}
               title={
                 stopButtonDisabled
-                  ? "Must complete the 30-minute challenge"
+                  ? "Must complete at least 30 minutes before stopping"
                   : undefined
               }
             >
               <StopCircle className="w-5 h-5" />
               Stop
-            </button> */}
+            </button>
           </div>
         )}
 

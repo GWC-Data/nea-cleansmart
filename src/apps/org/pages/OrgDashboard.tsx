@@ -11,6 +11,18 @@ import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";
 import { getEventImageUrl } from "../../../utils/imageUtils";
 
+function formatCleanupTime(hours: number): { value: string; unit: string } {
+  if (!hours) return { value: "0", unit: "h" };
+  if (hours < 1) {
+    // If less than an hour, show minutes
+    const mins = Math.round(hours * 60);
+    return { value: mins.toString(), unit: "m" };
+  }
+  // Otherwise show hours with 1 decimal place
+  const floored = Math.floor(hours * 10) / 10;
+  return { value: floored.toFixed(1), unit: "h" };
+}
+
 export const OrgDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
   const navigate = useNavigate();
@@ -175,7 +187,15 @@ export const OrgDashboard: React.FC = () => {
               <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">Hours Logged</span>
             </div>
             <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">{userStats?.todayHours ?? 0}<span className="text-lg font-bold text-gray-400 ml-1">h</span></p>
+              {(() => {
+                const time = formatCleanupTime(userStats?.todayHours ?? 0);
+                return (
+                  <p className="text-4xl font-black text-gray-900 tracking-tight">
+                    {time.value}
+                    <span className="text-lg font-bold text-gray-400 ml-1">{time.unit}</span>
+                  </p>
+                );
+              })()}
             </div>
           </div>
 
