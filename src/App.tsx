@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { LandingPage } from "./apps/user/pages/LandingPage";
-import { MainPage } from "./apps/user/pages/MainPage";
+import { WelcomePage } from "./apps/user/pages/WelcomePage";
 import { LoginPage } from "./apps/user/pages/LoginPage";
 import { RegisterPage } from "./apps/user/pages/RegisterPage";
 import { ProtectedRoute } from "./components/sections/auth/ProtectedRoute";
@@ -59,7 +59,7 @@ function App() {
           {/* Public Auth Routes */}
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/register" element={<RegisterRoute />} />
-          <Route path="/welcome" element={<MainPage />} />
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route
             path="/reset-password/:token"
             element={<ResetPasswordPage />}

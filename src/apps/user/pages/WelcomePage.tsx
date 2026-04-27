@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import mainImage from "../../../assets/main.png";
 import logo from "../../../assets/publicHygineCouncil.png";
 
-export const MainPage: React.FC = () => {
+export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
 
   return (

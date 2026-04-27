@@ -353,7 +353,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
               <div className="bg-white rounded-xl shadow-md border border-[#E8EDF2] overflow-hidden">
                 {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden">
+                <div className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden">
                   {imagePreview ? (
                     <img
                       src={imagePreview}

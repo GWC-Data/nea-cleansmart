@@ -28,7 +28,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-in fade-in duration-300">
-      <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10 bg-gradient-to-b from-black/80 to-transparent">
+      <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10 bg-linear-to-b from-black/80 to-transparent">
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <ScanLine className="w-5 h-5 text-green-400" /> Check In
         </h2>
