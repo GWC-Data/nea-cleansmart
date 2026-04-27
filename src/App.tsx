@@ -10,6 +10,7 @@ import { Dashboard } from "./apps/user/pages/Dashboard";
 import { Toaster } from "sonner";
 import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
 import { ResetPasswordPage } from "./apps/user/pages/ResetPasswordPage";
+import { OrgApp } from "./apps/org/OrgApp";
 
 // Wrapper component to provide navigation logic for the Login Page
 const LoginRoute = () => {
@@ -84,6 +85,16 @@ function App() {
 
           {/* Protected Route for Admins — AdminApp manages its own auth */}
           <Route path="/admin/*" element={<AdminApp />} />
+          
+          {/* Organization Route */}
+          <Route 
+            path="/org/*" 
+            element={
+              <ProtectedRoute>
+                <OrgApp />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
         <Toaster richColors position="top-right" />
       </BrowserRouter>

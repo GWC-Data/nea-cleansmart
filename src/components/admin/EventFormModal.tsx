@@ -27,15 +27,18 @@ const eventSchema = z.object({
   location: z.string().min(2, "Location is required"),
   date: z.string().min(1, "Date is required"),
   rewards: z.string().optional(),
+  eventType: z.enum(["public", "private"]),
 });
 
-type EventFormFields = z.infer<typeof eventSchema>;
+export type EventFormFields = z.infer<typeof eventSchema>;
 
 interface EventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   editingEvent?: EventData | null;
+  showEventTypeToggle?: boolean;
+  onSubmitOverride?: (values: EventFormFields, imageFile: File | null) => Promise<void>;
 }
 
 export const EventFormModal: React.FC<EventFormModalProps> = ({
@@ -43,6 +46,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   onClose,
   onSuccess,
   editingEvent,
+  showEventTypeToggle,
+  onSubmitOverride,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
@@ -64,6 +69,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       location: "",
       date: "",
       rewards: "",
+      eventType: "public",
     },
   });
 
@@ -81,6 +87,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         location: editingEvent.location || "",
         date: dateStr,
         rewards: editingEvent.rewards || "",
+        eventType: editingEvent.eventType || "public",
       });
       setImagePreview(editingEvent.eventImage || null);
       setImageFile(null);
@@ -92,6 +99,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         location: "",
         date: "",
         rewards: "",
+        eventType: "public",
       });
       setImagePreview(null);
       setImageFile(null);
@@ -110,17 +118,21 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   const onSubmit = async (values: EventFormFields) => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        ...values,
-        ...(imageFile ? { eventImage: imageFile } : {}),
-      };
-
-      if (editingEvent) {
-        await adminApiService.updateEvent(editingEvent.eventId, payload);
-        toast.success("Event updated successfully!");
+      if (onSubmitOverride) {
+        await onSubmitOverride(values, imageFile);
       } else {
-        await adminApiService.createEvent(payload);
-        toast.success("Event created successfully!");
+        const payload = {
+          ...values,
+          ...(imageFile ? { eventImage: imageFile } : {}),
+        };
+
+        if (editingEvent) {
+          await adminApiService.updateEvent(editingEvent.eventId, payload);
+          toast.success("Event updated successfully!");
+        } else {
+          await adminApiService.createEvent(payload);
+          toast.success("Event created successfully!");
+        }
       }
       onSuccess();
       onClose();
@@ -153,7 +165,10 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
     : "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A2A3A]/60 backdrop-blur-sm p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A2A3A]/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
       <div
         className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -301,6 +316,40 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 />
               </div>
 
+              {/* Event Type Toggle (if enabled) */}
+              {showEventTypeToggle && (
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                    Event Type
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="public"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-sm font-medium text-[#1A2A3A]">Public Event</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="private"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-sm font-medium text-[#1A2A3A]">Private Event</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-[#8A9AA8] mt-1.5">
+                    {watchedValues.eventType === "private" 
+                      ? "Only visible to your organization."
+                      : "Visible publicly to everyone."}
+                  </p>
+                </div>
+              )}
+
               {/* Image Upload */}
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
@@ -381,6 +430,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                     <CalendarDays size={11} className="shrink-0" />
                     <span>{formattedDate}</span>
                   </div>
+                  {showEventTypeToggle && (
+                    <div className="inline-block px-2 py-0.5 rounded-full bg-[#E8EDF2] text-[10px] font-bold text-[#6B7A88] uppercase tracking-wider mb-2">
+                      {watchedValues.eventType === "private" ? "Private" : "Public"}
+                    </div>
+                  )}
                   <p className="text-xs text-[#6B7A88] font-medium leading-relaxed line-clamp-2">
                     {watchedValues.description || (
                       <span className="text-[#A0AAB5]">Description...</span>

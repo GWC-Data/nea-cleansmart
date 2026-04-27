@@ -15,6 +15,7 @@ export interface EventData {
   joinsCount: number;
   participants: string[];
   eventImage?: string | null;
+  eventType?: "public" | "private";
   createdAt: string;
   updatedAt: string;
 }

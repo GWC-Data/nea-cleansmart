@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import type {
   LoginPayload,
   RegisterPayload,
+  RegisterOrganizationPayload,
   AuthResponse,
   UserProfile,
 } from "../types/auth.types";
@@ -18,6 +19,27 @@ const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
  * Creates a new user account.
  * Maps to: POST /users
  */
+export const registerOrganization = async (
+  payload: RegisterOrganizationPayload,
+): Promise<any> => {
+  // Hash password before sending
+  const hashedPassword = bcrypt.hashSync(payload.password, FRONTEND_SALT);
+  const securePayload = { ...payload, password: hashedPassword };
+
+  const res = await fetch(`${BASE}/organizations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(securePayload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error?.message ?? "Registration failed. Please try again.");
+  }
+
+  return res.json();
+};
+
 export const registerUser = async (
   payload: RegisterPayload,
 ): Promise<UserProfile> => {

@@ -142,7 +142,7 @@ export const adminApiService = {
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, ...rest } = payload;
+        const { eventImage: _img, eventType, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 
@@ -190,7 +190,7 @@ export const adminApiService = {
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, ...rest } = payload;
+        const { eventImage: _img, eventType, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 

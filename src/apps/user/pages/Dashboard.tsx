@@ -356,7 +356,7 @@ export const Dashboard: React.FC = () => {
                 <div className="h-px bg-gray-50 my-1 w-full" />
                 <button
                   onClick={handleLogout}
-                  className="cursor-pointer   w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
+                  className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
                 >
                   <LogOut className="w-4 h-4" /> Logout
                 </button>

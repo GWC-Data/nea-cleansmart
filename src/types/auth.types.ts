@@ -16,6 +16,15 @@ export interface RegisterPayload {
   gender?: string;
 }
 
+export interface RegisterOrganizationPayload {
+  organizationName: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  role: "admin";
+}
+
 /** Payload sent to POST /auth/login */
 export interface LoginPayload {
   email: string;
@@ -58,6 +67,8 @@ export interface RegisterFormState {
   confirmPassword: string;
   age?: string;
   gender?: string;
+  organizationName?: string;
+  phoneNumber?: string;
 }
 
 /** Local state shape for the login form */

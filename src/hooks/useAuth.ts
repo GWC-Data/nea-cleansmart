@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { loginUser, registerUser } from "../services/authService";
+import { loginUser, registerUser, registerOrganization } from "../services/authService";
 import { useAuthContext } from "../context/AuthContext";
 import { saveAdminToken } from "../utils/tokenUtils";
 import type { LoginFormState, RegisterFormState } from "../types/auth.types";
@@ -43,6 +43,29 @@ export const useAuth = () => {
         role: "user", // Users registering via the User App are always "user" role
         ...(formData.age && { age: Number(formData.age) }), // only include if filled
         ...(formData.gender && { gender: formData.gender }), // only include if filled
+      });
+      onSuccess();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOrganizationRegister = async (
+    formData: RegisterFormState,
+    onSuccess: () => void,
+  ) => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await registerOrganization({
+        organizationName: formData.organizationName!,
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber!,
+        password: formData.password,
+        role: "admin",
       });
       onSuccess();
     } catch (err: unknown) {
@@ -95,6 +118,7 @@ export const useAuth = () => {
     isLoading,
     handleLogin,
     handleRegister,
+    handleOrganizationRegister,
     logout,
     refreshUserProfile,
   };
