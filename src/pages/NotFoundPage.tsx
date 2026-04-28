@@ -46,11 +46,6 @@ export const NotFoundPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Subtle footer */}
-      <div className="mt-16 text-slate-400 text-sm font-medium">
-        NEA CleanSmart &copy; {new Date().getFullYear()}
-      </div>
     </div>
   );
 };

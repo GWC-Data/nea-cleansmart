@@ -18,6 +18,7 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { UsersPage } from "./pages/UsersPage";
 import { EventsPage } from "./pages/EventsPage";
 import { EventLogsPage } from "./pages/EventLogsPage";
+import { OrganizationRequestsPage } from "./pages/OrganizationRequestsPage";
 import { NotFoundPage } from "../../pages/NotFoundPage";
 
 export const AdminApp: React.FC = () => (
@@ -37,8 +38,9 @@ export const AdminApp: React.FC = () => (
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="users" element={<UsersPage />} />
-                <Route path="events" element={<EventsPage />} />
+                 <Route path="events" element={<EventsPage />} />
                 <Route path="logs" element={<EventLogsPage />} />
+                <Route path="requests" element={<OrganizationRequestsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AdminLayout>

@@ -6,8 +6,8 @@
  */
 
 import React from "react";
-import { useLocation } from "react-router-dom";
-import { Menu, Bell, ChevronRight } from "lucide-react";
+import { useLocation, Link } from "react-router-dom";
+import { Menu, UserCheck, ChevronRight } from "lucide-react";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -18,6 +18,7 @@ const PAGE_LABELS: Record<string, { label: string; accent: string }> = {
   "/admin/users": { label: "Users", accent: "#86B537" },
   "/admin/events": { label: "Events", accent: "#108ACB" },
   "/admin/logs": { label: "Activity Logs", accent: "#86B537" },
+  "/admin/requests": { label: "Organization Requests", accent: "#108ACB" },
 };
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
@@ -60,13 +61,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
 
         {/* Right Section: Notifications */}
         <div className="flex items-center gap-2">
-          {/* Notification Bell */}
-          <button
-            className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#1A2A3A]"
-            aria-label="Notifications"
+          {/* Organization Requests Link */}
+          <Link
+            to="/admin/requests"
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#108ACB]"
+            aria-label="Organization Requests"
           >
-            <Bell size={18} />
-          </button>
+            <UserCheck size={18} />
+            <span className="text-sm font-medium">Requests</span>
+          </Link>
         </div>
       </div>
     </header>
