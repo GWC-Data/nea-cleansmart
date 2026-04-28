@@ -11,6 +11,8 @@ import { Toaster } from "sonner";
 import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
 import { ResetPasswordPage } from "./apps/user/pages/ResetPasswordPage";
 import { OrgApp } from "./apps/org/OrgApp";
+import { NotFoundPage } from "./pages/NotFoundPage";
+
 
 // Wrapper component to provide navigation logic for the Login Page
 const LoginRoute = () => {
@@ -95,7 +97,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Catch-all 404 Route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </AuthProvider>

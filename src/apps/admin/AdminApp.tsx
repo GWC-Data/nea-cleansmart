@@ -18,6 +18,7 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { UsersPage } from "./pages/UsersPage";
 import { EventsPage } from "./pages/EventsPage";
 import { EventLogsPage } from "./pages/EventLogsPage";
+import { NotFoundPage } from "../../pages/NotFoundPage";
 
 export const AdminApp: React.FC = () => (
   <AdminAuthProvider>
@@ -38,6 +39,7 @@ export const AdminApp: React.FC = () => (
                 <Route path="users" element={<UsersPage />} />
                 <Route path="events" element={<EventsPage />} />
                 <Route path="logs" element={<EventLogsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AdminLayout>
           </AdminProtectedRoute>
@@ -46,3 +48,4 @@ export const AdminApp: React.FC = () => (
     </Routes>
   </AdminAuthProvider>
 );
+
