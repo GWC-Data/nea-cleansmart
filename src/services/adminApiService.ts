@@ -11,7 +11,7 @@ import type {
   UserProfile,
   EventLog,
   LeaderboardEntry,
-} from "../types/apiTypes";
+} from "../types/api.types";
 import type { CreateEventPayload, PlatformStats } from "../types/admin.types";
 
 const BASE = ENV.API_BASE_URL;

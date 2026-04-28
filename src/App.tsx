@@ -6,7 +6,7 @@ import { LoginPage } from "./apps/user/pages/LoginPage";
 import { RegisterPage } from "./apps/user/pages/RegisterPage";
 import { ProtectedRoute } from "./components/sections/auth/ProtectedRoute";
 import { AdminApp } from "./apps/admin/AdminApp";
-import { Dashboard } from "./apps/user/pages/Dashboard";
+import { UserDashboard } from "./apps/user/pages/UserDashboard";
 import { Toaster } from "sonner";
 import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
 import { ResetPasswordPage } from "./apps/user/pages/ResetPasswordPage";
@@ -72,7 +72,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <UserDashboard />
               </ProtectedRoute>
             }
           />

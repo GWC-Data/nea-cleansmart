@@ -13,9 +13,9 @@ import {
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
-import { EventFormModal } from "../../../components/sections/admin/EventFormModal";
-import { AddUserModal } from "../../../components/sections/org/AddUserModal";
-import type { EventData, UserProfile } from "../../../types/apiTypes";
+import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
+import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
+import type { EventData, UserProfile } from "../../../types/api.types";
 import { apiService } from "../../../services/apiService";
 import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";

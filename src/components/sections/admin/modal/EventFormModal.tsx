@@ -17,8 +17,9 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import { adminApiService } from "../../../services/adminApiService";
-import type { EventData } from "../../../types/apiTypes";
+import { adminApiService } from "../../../../services/adminApiService";
+import type { EventData } from "../../../../types/api.types";
+import { getEventImageUrl } from "../../../../utils/imageUtils";
 
 const eventSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -72,7 +73,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       location: "",
       date: "",
       rewards: "",
-      eventType: "public",
+      eventType: "private",
     },
   });
 
@@ -90,9 +91,17 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         location: editingEvent.location || "",
         date: dateStr,
         rewards: editingEvent.rewards || "",
-        eventType: editingEvent.eventType || "public",
+        eventType: editingEvent.eventType || "private",
       });
       setImagePreview(editingEvent.eventImage || null);
+      setImageFile(null);
+      // when editing event
+      if (editingEvent.eventImage) {
+        // Use getEventImageUrl to resolve the remote path
+        setImagePreview(getEventImageUrl(editingEvent.eventImage));
+      } else {
+        setImagePreview(null);
+      }
       setImageFile(null);
     } else {
       reset({
@@ -102,8 +111,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         location: "",
         date: "",
         rewards: "",
-        eventType: "public",
+        eventType: "private",
       });
+      setImagePreview(null);
+      setImageFile(null);
+      // when editing event
       setImagePreview(null);
       setImageFile(null);
     }
@@ -153,13 +165,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   if (!isOpen) return null;
 
   const previewDate = watchedValues.date ? new Date(watchedValues.date) : null;
-  const formattedDate = previewDate
-    ? previewDate.toLocaleDateString("en-SG", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "—";
+  // const formattedDate = previewDate
+  //   ? previewDate.toLocaleDateString("en-SG", {
+  //       day: "numeric",
+  //       month: "short",
+  //       year: "numeric",
+  //     })
+  //   : "—";
   const formattedMonth = previewDate
     ? previewDate.toLocaleDateString("en-SG", { month: "short" }).toUpperCase()
     : "";
@@ -168,10 +180,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
     : "";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A2A3A]/60 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A2A3A]/60 backdrop-blur-sm p-4">
       <div
         className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -180,31 +189,31 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8EDF2] shrink-0">
           <div>
             <h2 className="text-xl font-bold text-[#1A2A3A] tracking-tight">
-              {editingEvent ? "Edit Event" : "Create New Event"}
+              {editingEvent ? "Edit Event" : "Create Event"}
             </h2>
-            <p className="text-xs text-[#8A9AA8] font-medium mt-0.5">
+            {/* <p className="text-xs text-[#8A9AA8] font-medium mt-0.5">
               {editingEvent
                 ? "Update event details below"
                 : "Fill in the details to create a new event"}
-            </p>
+            </p> */}
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[#F5F7FA] transition-colors text-[#8A9AA8] hover:text-[#1A2A3A]"
+            className="cursor-pointer p-2 rounded-lg hover:bg-[#F5F7FA] transition-colors text-[#8A9AA8] hover:text-[#1A2A3A]"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
+        <div className="flex-1 flex min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 w-full min-h-0">
             {/* LEFT: Form */}
             <form
               onSubmit={handleSubmit(onSubmit)}
               id="event-form"
               noValidate
-              className="px-6 py-5 space-y-4 border-r border-[#E8EDF2]"
+              className="px-6 py-5 space-y-4 border-r border-[#E8EDF2] overflow-y-auto event-form-scroll"
             >
               {/* Name */}
               <div>
@@ -287,13 +296,50 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 )}
               </div>
 
+              {/* Event Type Toggle (if enabled) */}
+              {showEventTypeToggle && (
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                    Event Type
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="private"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-sm font-medium text-[#1A2A3A]">
+                        Private Event
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="public"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-sm font-medium text-[#1A2A3A]">
+                        Public Event
+                      </span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-[#8A9AA8] mt-1.5">
+                    {watchedValues.eventType === "private"
+                      ? "Only visible to your organization."
+                      : "Visible publicly to everyone."}
+                  </p>
+                </div>
+              )}
+
               {/* Details (optional) */}
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
                   <span className="flex items-center gap-1">
                     <FileText size={10} />
-                    Additional Details{" "}
-                    <span className="text-[#A0AAB5]">(optional)</span>
+                    Details{" "}
                   </span>
                 </label>
                 <textarea
@@ -309,7 +355,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
                   <span className="flex items-center gap-1">
                     <Trophy size={10} />
-                    Rewards <span className="text-[#A0AAB5]">(optional)</span>
+                    Rewards
                   </span>
                 </label>
                 <input
@@ -319,48 +365,10 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 />
               </div>
 
-              {/* Event Type Toggle (if enabled) */}
-              {showEventTypeToggle && (
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
-                    Event Type
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="public"
-                        {...register("eventType")}
-                        className="accent-[#509CD1]"
-                      />
-                      <span className="text-sm font-medium text-[#1A2A3A]">
-                        Public Event
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="private"
-                        {...register("eventType")}
-                        className="accent-[#509CD1]"
-                      />
-                      <span className="text-sm font-medium text-[#1A2A3A]">
-                        Private Event
-                      </span>
-                    </label>
-                  </div>
-                  <p className="text-xs text-[#8A9AA8] mt-1.5">
-                    {watchedValues.eventType === "private"
-                      ? "Only visible to your organization."
-                      : "Visible publicly to everyone."}
-                  </p>
-                </div>
-              )}
-
               {/* Image Upload */}
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
-                  Event Image <span className="text-[#A0AAB5]">(optional)</span>
+                  Event Image
                 </label>
                 <div
                   className="border-2 border-dashed border-[#E8EDF2] rounded-lg p-4 text-center cursor-pointer hover:border-[#509CD1] transition-colors"
@@ -389,7 +397,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
             {/* RIGHT: Live Preview */}
             <div
-              className="px-6 py-5 hidden lg:flex flex-col"
+              className="px-6 py-5 hidden lg:flex flex-col overflow-hidden"
               style={{ background: "#F8F9FB" }}
             >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-4">
@@ -398,7 +406,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
               <div className="bg-white rounded-xl shadow-md border border-[#E8EDF2] overflow-hidden">
                 {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden">
+                <div className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -433,10 +441,10 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                     <MapPin size={11} className="text-[#8A9AA8] shrink-0" />
                     <span>{watchedValues.location || "Location..."}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-[#8A9AA8] font-medium mb-3">
+                  {/* <div className="flex items-center gap-1.5 text-xs text-[#8A9AA8] font-medium mb-3">
                     <CalendarDays size={11} className="shrink-0" />
                     <span>{formattedDate}</span>
-                  </div>
+                  </div> */}
                   {showEventTypeToggle && (
                     <div className="inline-block px-2 py-0.5 rounded-full bg-[#E8EDF2] text-[10px] font-bold text-[#6B7A88] uppercase tracking-wider mb-2">
                       {watchedValues.eventType === "private"
@@ -444,11 +452,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                         : "Public"}
                     </div>
                   )}
-                  <p className="text-xs text-[#6B7A88] font-medium leading-relaxed line-clamp-2">
+                  {/* <p className="text-xs text-[#6B7A88] font-medium leading-relaxed line-clamp-2">
                     {watchedValues.description || (
                       <span className="text-[#A0AAB5]">Description...</span>
                     )}
-                  </p>
+                  </p> */}
                   {watchedValues.rewards && (
                     <div className="mt-3 flex items-center gap-1.5">
                       <Trophy size={11} style={{ color: "#86B537" }} />
@@ -463,14 +471,14 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 pb-4">
+                {/* <div className="px-4 pb-4">
                   <div
                     className="w-full py-2.5 rounded-lg text-sm font-semibold text-white text-center"
                     style={{ background: "#108ACB" }}
                   >
                     Join Event
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -481,7 +489,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg border border-[#E8EDF2] text-[#6B7A88] text-sm font-semibold hover:bg-[#F5F7FA] transition-colors"
+            className="cursor-pointer px-5 py-2.5 rounded-lg border border-[#E8EDF2] text-[#6B7A88] text-sm font-semibold hover:bg-[#F5F7FA] transition-colors"
           >
             Cancel
           </button>
@@ -489,7 +497,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
             type="submit"
             form="event-form"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-60"
+            className="cursor-pointer px-6 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-60"
             style={{ background: "#86B537" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#75A030";

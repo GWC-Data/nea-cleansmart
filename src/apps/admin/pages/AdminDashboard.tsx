@@ -28,7 +28,7 @@ import type {
   EventData,
   EventLog,
   LeaderboardEntry,
-} from "../../../types/apiTypes";
+} from "../../../types/api.types";
 import { formatDistanceToNow, format } from "date-fns";
 
 function groupEventsByMonth(events: EventData[]) {

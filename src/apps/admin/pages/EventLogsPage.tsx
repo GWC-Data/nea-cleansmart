@@ -19,7 +19,7 @@ import {
 import { DataTable } from "../../../components/sections/admin/DataTable";
 import type { Column } from "../../../components/sections/admin/DataTable";
 import { adminApiService } from "../../../services/adminApiService";
-import type { EventLog, EventData } from "../../../types/apiTypes";
+import type { EventLog, EventData } from "../../../types/api.types";
 import { format, formatDistanceToNow } from "date-fns";
 
 function fmtTime(ts: string | null | undefined) {

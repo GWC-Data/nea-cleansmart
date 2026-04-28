@@ -16,9 +16,9 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { EventFormModal } from "../../../components/modal/EventFormModal";
+import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
 import { adminApiService } from "../../../services/adminApiService";
-import type { EventData } from "../../../types/apiTypes";
+import type { EventData } from "../../../types/api.types";
 import { format } from "date-fns";
 import { getEventImageUrl } from "../../../utils/imageUtils";
 

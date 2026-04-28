@@ -7,7 +7,7 @@ import { WelcomeSection } from "../../../components/sections/user/WelcomeSection
 import { CommunityEvents } from "../../../components/sections/user/CommunityEvents";
 import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
-import { DurationSelectModal } from "../../../components/modal/DurationSelectModal";
+import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
 import { DesktopDashboardView } from "../../../components/sections/user/DesktopDashboardView";
 import { apiService } from "../../../services/apiService";
 import type {
@@ -18,7 +18,7 @@ import type {
 import { toast } from "sonner";
 import { useAuth } from "../../../hooks/useAuth";
 
-export const Dashboard: React.FC = () => {
+export const UserDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

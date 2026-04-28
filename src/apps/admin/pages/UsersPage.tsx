@@ -8,9 +8,9 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, Filter, UserPlus } from "lucide-react";
 import { DataTable } from "../../../components/sections/admin/DataTable";
 import type { Column } from "../../../components/sections/admin/DataTable";
-import { UserDetailModal } from "../../../components/modal/UserDetailModal";
+import { UserDetailModal } from "../../../components/sections/admin/modal/UserDetailModal";
 import { adminApiService } from "../../../services/adminApiService";
-import type { UserProfile, LeaderboardEntry } from "../../../types/apiTypes";
+import type { UserProfile, LeaderboardEntry } from "../../../types/api.types";
 import { format } from "date-fns";
 
 function getInitials(name: string) {

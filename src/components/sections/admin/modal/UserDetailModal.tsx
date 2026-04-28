@@ -14,8 +14,8 @@ import {
   Clock,
   Trash2,
 } from "lucide-react";
-import type { UserProfile } from "../../types/apiTypes";
-import type { LeaderboardEntry } from "../../types/apiTypes";
+import type { UserProfile } from "../../../../types/api.types";
+import type { LeaderboardEntry } from "../../../../types/api.types";
 import { format } from "date-fns";
 
 interface UserDetailModalProps {

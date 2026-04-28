@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Search, Loader2, CheckCircle2 } from "lucide-react";
-import { apiService } from "../../../services/apiService";
-import type { UserProfile } from "../../../types/apiTypes";
+import { apiService } from "../../../../services/apiService";
+import type { UserProfile } from "../../../../types/api.types";
 import { toast } from "sonner";
 
 interface AddUserModalProps {
