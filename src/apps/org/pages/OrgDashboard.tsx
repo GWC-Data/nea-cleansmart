@@ -76,11 +76,13 @@ export const OrgDashboard: React.FC = () => {
       description: values.description,
       details: values.details || "",
       location: values.location,
-      date: values.date,
+      startDate: values.startDate,
+      endDate: values.endDate,
       rewards: values.rewards || "",
       joinsCount: 0,
       participants: [],
       eventType: values.eventType,
+      userCount: values.userCount ? Number(values.userCount) : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
@@ -319,12 +321,12 @@ export const OrgDashboard: React.FC = () => {
                       )}
                       <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-center shadow-sm">
                         <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">
-                          {new Date(event.date).toLocaleDateString("en-US", {
+                          {new Date(event.startDate).toLocaleDateString("en-US", {
                             month: "short",
                           })}
                         </p>
                         <p className="text-sm font-black text-[#86B537] leading-tight">
-                          {new Date(event.date).getDate()}
+                          {new Date(event.startDate).getDate()}
                         </p>
                       </div>
                     </div>

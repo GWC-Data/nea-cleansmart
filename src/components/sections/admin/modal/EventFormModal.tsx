@@ -15,6 +15,7 @@ import {
   Loader2,
   Trophy,
   FileText,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApiService } from "../../../../services/adminApiService";
@@ -26,9 +27,11 @@ const eventSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   details: z.string().optional(),
   location: z.string().min(2, "Location is required"),
-  date: z.string().min(1, "Date is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
   rewards: z.string().optional(),
   eventType: z.enum(["public", "private"]),
+  userCount: z.union([z.string(), z.number()]).optional(),
 });
 
 export type EventFormFields = z.infer<typeof eventSchema>;
@@ -71,9 +74,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       description: "",
       details: "",
       location: "",
-      date: "",
+      startDate: "",
+      endDate: "",
       rewards: "",
       eventType: "private",
+      userCount: "",
     },
   });
 
@@ -81,17 +86,19 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
   useEffect(() => {
     if (editingEvent) {
-      const dateStr = editingEvent.date
-        ? new Date(editingEvent.date).toISOString().slice(0, 16)
-        : "";
+      // const dateStr = editingEvent.date
+      //   ? new Date(editingEvent.date).toISOString().slice(0, 16)
+      //   : "";
       reset({
         name: editingEvent.name || "",
         description: editingEvent.description || "",
         details: editingEvent.details || "",
         location: editingEvent.location || "",
-        date: dateStr,
+        startDate: editingEvent.startDate ? editingEvent.startDate.split("T")[0] : "",
+        endDate: editingEvent.endDate ? editingEvent.endDate.split("T")[0] : "",
         rewards: editingEvent.rewards || "",
         eventType: editingEvent.eventType || "private",
+        userCount: editingEvent.userCount || "",
       });
       setImagePreview(editingEvent.eventImage || null);
       setImageFile(null);
@@ -109,9 +116,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         description: "",
         details: "",
         location: "",
-        date: "",
+        startDate: "",
+        endDate: "",
         rewards: "",
         eventType: "private",
+        userCount: "",
       });
       setImagePreview(null);
       setImageFile(null);
@@ -138,6 +147,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       } else {
         const payload = {
           ...values,
+          time: "00:00",
           ...(imageFile ? { eventImage: imageFile } : {}),
         };
 
@@ -164,14 +174,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  const previewDate = watchedValues.date ? new Date(watchedValues.date) : null;
-  // const formattedDate = previewDate
-  //   ? previewDate.toLocaleDateString("en-SG", {
-  //       day: "numeric",
-  //       month: "short",
-  //       year: "numeric",
-  //     })
-  //   : "—";
+  const previewDate = watchedValues.startDate ? new Date(watchedValues.startDate) : null;
   const formattedMonth = previewDate
     ? previewDate.toLocaleDateString("en-SG", { month: "short" }).toUpperCase()
     : "";
@@ -217,13 +220,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
             >
               {/* Name */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   Event Name <span className="text-[#EC5594]">*</span>
                 </label>
                 <input
                   {...register("name")}
                   placeholder="e.g. East Coast Park Clean-Up"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
                 />
                 {errors.name && (
                   <p className="text-[#EC5594] text-xs mt-1 font-medium">
@@ -234,7 +237,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
               {/* Location */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   Location <span className="text-[#EC5594]">*</span>
                 </label>
                 <div className="relative">
@@ -245,7 +248,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   <input
                     {...register("location")}
                     placeholder="e.g. East Coast Park, Singapore"
-                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
                   />
                 </div>
                 {errors.location && (
@@ -255,39 +258,64 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 )}
               </div>
 
-              {/* Date */}
-              <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
-                  Date & Time <span className="text-[#EC5594]">*</span>
-                </label>
-                <div className="relative">
-                  <CalendarDays
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
-                  />
-                  <input
-                    type="datetime-local"
-                    {...register("date")}
-                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] focus:outline-none focus:border-[#509CD1] transition-colors"
-                  />
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
+                    Start Date <span className="text-[#EC5594]">*</span>
+                  </label>
+                  <div className="relative">
+                    <CalendarDays
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                    />
+                    <input
+                      type="date"
+                      {...register("startDate")}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] focus:outline-none focus:border-[#509CD1] transition-colors"
+                    />
+                  </div>
+                  {errors.startDate && (
+                    <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                      {errors.startDate.message}
+                    </p>
+                  )}
                 </div>
-                {errors.date && (
-                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
-                    {errors.date.message}
-                  </p>
-                )}
+                <div>
+                  <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
+                    End Date <span className="text-[#EC5594]">*</span>
+                  </label>
+                  <div className="relative">
+                    <CalendarDays
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                    />
+                    <input
+                      type="date"
+                      {...register("endDate")}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] focus:outline-none focus:border-[#509CD1] transition-colors"
+                    />
+                  </div>
+                  {errors.endDate && (
+                    <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                      {errors.endDate.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   Description <span className="text-[#EC5594]">*</span>
                 </label>
                 <textarea
                   {...register("description")}
                   rows={3}
                   placeholder="Brief description of this event..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors resize-none"
                 />
                 {errors.description && (
                   <p className="text-[#EC5594] text-xs mt-1 font-medium">
@@ -299,7 +327,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               {/* Event Type Toggle (if enabled) */}
               {showEventTypeToggle && (
                 <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                  <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                     Event Type
                   </label>
                   <div className="flex gap-4">
@@ -310,7 +338,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                         {...register("eventType")}
                         className="accent-[#509CD1]"
                       />
-                      <span className="text-sm font-medium text-[#1A2A3A]">
+                      <span className="text-[12px] font-medium text-[#1A2A3A]">
                         Private Event
                       </span>
                     </label>
@@ -321,12 +349,12 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                         {...register("eventType")}
                         className="accent-[#509CD1]"
                       />
-                      <span className="text-sm font-medium text-[#1A2A3A]">
+                      <span className="text-[12px] font-medium text-[#1A2A3A]">
                         Public Event
                       </span>
                     </label>
                   </div>
-                  <p className="text-xs text-[#8A9AA8] mt-1.5">
+                  <p className="text-[12px] text-[#8A9AA8] mt-1.5">
                     {watchedValues.eventType === "private"
                       ? "Only visible to your organization."
                       : "Visible publicly to everyone."}
@@ -334,9 +362,30 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 </div>
               )}
 
+              {/* Max Participants (Only for public events in org dashboard) */}
+              {showEventTypeToggle && watchedValues.eventType === "public" && (
+                <div>
+                  <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
+                    Participant Limit
+                  </label>
+                  <div className="relative">
+                    <Users
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                    />
+                    <input
+                      type="number"
+                      {...register("userCount")}
+                      placeholder="e.g. 50 (leave empty for unlimited)"
+                      className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Details (optional) */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   <span className="flex items-center gap-1">
                     <FileText size={10} />
                     Details{" "}
@@ -346,13 +395,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   {...register("details")}
                   rows={2}
                   placeholder="Extra info, requirements, meeting points..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors resize-none"
                 />
               </div>
 
               {/* Rewards */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   <span className="flex items-center gap-1">
                     <Trophy size={10} />
                     Rewards
@@ -361,13 +410,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 <input
                   {...register("rewards")}
                   placeholder="e.g. 50 points + Bronze badge"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
                 />
               </div>
 
               {/* Image Upload */}
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-1.5">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-[#4A5568] mb-1.5">
                   Event Image
                 </label>
                 <div
@@ -378,10 +427,10 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                     size={20}
                     className="mx-auto text-[#A0AAB5] mb-1.5"
                   />
-                  <p className="text-xs text-[#6B7A88] font-medium">
+                  <p className="text-[12px] text-[#6B7A88] font-medium">
                     {imageFile ? imageFile.name : "Click to upload image"}
                   </p>
-                  <p className="text-[10px] text-[#A0AAB5] mt-0.5">
+                  <p className="text-[12px] text-[#A0AAB5] mt-0.5">
                     PNG, JPG up to 5MB
                   </p>
                 </div>
@@ -400,7 +449,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               className="px-6 py-5 hidden lg:flex flex-col overflow-hidden"
               style={{ background: "#F8F9FB" }}
             >
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-4">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-4">
                 Live Preview
               </p>
 

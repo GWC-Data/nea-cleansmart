@@ -135,7 +135,8 @@ export const adminApiService = {
         form.append("name", payload.name);
         form.append("description", payload.description);
         form.append("location", payload.location);
-        form.append("date", payload.date);
+        form.append("startDate", payload.startDate);
+        form.append("endDate", payload.endDate);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
         form.append("eventImage", payload.eventImage);
@@ -183,7 +184,8 @@ export const adminApiService = {
         if (payload.description)
           form.append("description", payload.description);
         if (payload.location) form.append("location", payload.location);
-        if (payload.date) form.append("date", payload.date);
+        if (payload.startDate) form.append("startDate", payload.startDate);
+        if (payload.endDate) form.append("endDate", payload.endDate);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
         form.append("eventImage", payload.eventImage);
@@ -329,7 +331,7 @@ export const adminApiService = {
       ]);
 
       const now = new Date();
-      const activeEvents = events.filter((e) => new Date(e.date) >= now).length;
+      const activeEvents = events.filter((e) => new Date(e.startDate) >= now).length;
       const totalHoursLogged = leaderboard.reduce(
         (sum, e) => sum + (e.totalHours || 0),
         0,

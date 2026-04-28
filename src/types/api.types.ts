@@ -6,7 +6,9 @@
 
 export interface EventData {
   eventId: string;
-  date: string;
+  startDate: string;
+  endDate: string;
+  time?: string;
   location: string;
   name: string;
   details: string;
@@ -16,6 +18,7 @@ export interface EventData {
   participants: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
+  userCount?: number;
   createdAt: string;
   updatedAt: string;
 }

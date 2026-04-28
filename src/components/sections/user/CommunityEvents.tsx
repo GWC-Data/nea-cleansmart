@@ -45,7 +45,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
           <div className="w-full overflow-x-auto snap-x hide-scrollbar scroll-smooth">
             <div className="flex gap-4 min-w-max pb-2">
               {eventList.map((event) => {
-                const eventDate = new Date(event.date);
+                const eventDate = new Date(event.startDate);
                 const formattedDate = eventDate.toLocaleDateString("en-US", {
                   // weekday: "short",
                   month: "short",

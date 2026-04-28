@@ -15,16 +15,16 @@ export const NotFoundPage: React.FC = () => {
 
       <div className="relative z-10 max-w-lg w-full">
         {/* Large 404 text with gradient */}
-        <h1 className="text-[12rem] font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-green-600 to-emerald-800 select-none">
+        <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-green-600 to-emerald-800 select-none">
           404
         </h1>
 
-        <div className="space-y-6 -mt-8">
+        <div className="space-y-6">
           <h2 className="text-3xl font-bold text-slate-900">
             Oops! Page not found
           </h2>
           <p className="text-lg text-slate-600">
-            The link you followed may be broken, or the page may have been removed. 
+            The link you followed may be broken, or the page may have been removed.
             Let's get you back on track.
           </p>
 

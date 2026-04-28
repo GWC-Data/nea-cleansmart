@@ -11,7 +11,8 @@ const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
  */
 export interface EventData {
   eventId: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   location: string;
   name: string;
   details: string;
@@ -68,7 +69,8 @@ export interface DashboardEvent {
   eventId: string;
   eventName: string;
   location: string;
-  eventDate: string;
+  startDate: string;
+  endDate: string;
   joinedCount: number;
   eventImage: string | null;
 }

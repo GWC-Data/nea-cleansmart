@@ -232,7 +232,8 @@ export const UserDashboard: React.FC = () => {
   // Convert DashboardEvent to EventData shape for components that need it
   const activeEventsAsEventData: EventData[] = activeEvents.map((e) => ({
     eventId: e.eventId,
-    date: e.eventDate,
+    startDate: e.startDate,
+    endDate: e.endDate,
     location: e.location,
     name: e.eventName,
     details: "",

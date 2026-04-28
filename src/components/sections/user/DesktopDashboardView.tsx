@@ -174,7 +174,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               ) : (
                 <div className="grid grid-cols-2 gap-5">
                   {activeEvents.map((event) => {
-                    const eventDate = new Date(event.date);
+                    const eventDate = new Date(event.startDate);
                     const month = eventDate
                       .toLocaleDateString("en-US", { month: "short" })
                       .toUpperCase();
@@ -241,7 +241,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               ) : (
                 <div className="grid grid-cols-2 gap-5">
                   {upcomingEvents.map((event) => {
-                    const eventDate = new Date(event.date);
+                    const eventDate = new Date(event.startDate);
                     const month = eventDate
                       .toLocaleDateString("en-US", { month: "short" })
                       .toUpperCase();
