@@ -11,6 +11,7 @@ import type {
   UserProfile,
   EventLog,
   LeaderboardEntry,
+  FullUserProfile,
 } from "../types/api.types";
 import type { CreateEventPayload, PlatformStats } from "../types/admin.types";
 
@@ -256,6 +257,31 @@ export const adminApiService = {
   },
 
   /**
+   * Create a new user (admin/public endpoint)
+   */
+  async createUser(payload: any): Promise<UserProfile | null> {
+    try {
+      const response = await fetch(`${BASE}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(
+          err.message || `Failed to create user: ${response.statusText}`,
+        );
+      }
+      const data = await response.json();
+      return data.user || null;
+    } catch (error) {
+      console.error("adminApiService.createUser error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Get top N users leaderboard
    */
   async getTopLeaderboard(limit = 999): Promise<LeaderboardEntry[]> {
@@ -273,6 +299,28 @@ export const adminApiService = {
     } catch (error) {
       console.error("adminApiService.getTopLeaderboard error:", error);
       return [];
+    }
+  },
+
+  /**
+   * Get full user profile with stats (admin only)
+   */
+  async getFullUserProfile(userId: string): Promise<FullUserProfile | null> {
+    try {
+      const response = await fetch(`${BASE}/users/full-profile/${userId}`, {
+        method: "GET",
+        headers: adminHeaders(),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return {
+        ...data,
+        eventsJoinedCount: data.eventsJoined,
+        groupsJoinedCount: data.groupsJoined,
+      };
+    } catch (error) {
+      console.error(`adminApiService.getFullUserProfile(${userId}) error:`, error);
+      return null;
     }
   },
 

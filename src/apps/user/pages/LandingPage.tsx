@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ExternalLinkIcon, Menu, X } from "lucide-react";
 import { FaYoutube, FaFacebook, FaInstagram } from "react-icons/fa6";
 import logo from "../../../assets/publicHygineCouncil.png";
 
@@ -177,8 +177,44 @@ export const LandingPage: React.FC = () => {
           </p>
 
           <p>
-            Please refer to our Youtube Channel and follow us on Social Media at
-            @KeepSGClean on Tik Tok, Facebook and Instagram for regular updates.
+            Please refer to our {""}
+            <a
+              href="https://www.youtube.com/publichygienecouncil"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1d7fc4] underline decoration-1 underline-offset-2 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
+            >
+              YouTube channel
+              <ExternalLinkIcon />
+            </a>{" "}
+            and follow us on Social Media at @KeepSGClean on
+            <a
+              href="https://www.tiktok.com/@keepsgclean"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1d7fc4] underline decoration-1 underline-offset-2 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
+            >
+              TikTok <ExternalLinkIcon />
+            </a>
+            ,{" "}
+            <a
+              href="https://facebook.com/keepsgclean"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1d7fc4] underline decoration-1 underline-offset-2 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
+            >
+              Facebook <ExternalLinkIcon />
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://instagram.com/keepsgclean"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1d7fc4] underline decoration-1 underline-offset-2 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
+            >
+              Instagram <ExternalLinkIcon />
+            </a>{" "}
+            for regular updates.
           </p>
         </div>
 

@@ -9,8 +9,9 @@ import { Search, Filter, UserPlus } from "lucide-react";
 import { DataTable } from "../../../components/sections/admin/DataTable";
 import type { Column } from "../../../components/sections/admin/DataTable";
 import { UserDetailModal } from "../../../components/sections/admin/modal/UserDetailModal";
+import { UserFormModal } from "../../../components/sections/admin/modal/UserFormModal";
 import { adminApiService } from "../../../services/adminApiService";
-import type { UserProfile, LeaderboardEntry } from "../../../types/api.types";
+import type { UserProfile, LeaderboardEntry, FullUserProfile } from "../../../types/api.types";
 import { format } from "date-fns";
 
 function getInitials(name: string) {
@@ -40,7 +41,10 @@ export const UsersPage: React.FC = () => {
     "all",
   );
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedFullUser, setSelectedFullUser] = useState<FullUserProfile | null>(null);
+  const [loadingFull, setLoadingFull] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -200,6 +204,7 @@ export const UsersPage: React.FC = () => {
           </p>
         </div>
         <button
+          onClick={() => setAddModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           style={{ background: "#86B537", color: "#FFFFFF" }}
           onMouseEnter={(e) => {
@@ -279,34 +284,45 @@ export const UsersPage: React.FC = () => {
       )}
 
       {/* Table */}
-      <DataTable
-        columns={columns as Column<Record<string, unknown>>[]}
-        data={filtered as unknown as Record<string, unknown>[]}
-        rowKey={(r) => r["id"] as string}
+      <DataTable<UserProfile & Record<string, unknown>>
+        columns={columns}
+        data={filtered as (UserProfile & Record<string, unknown>)[]}
+        rowKey={(r) => r.id}
         loading={loading}
-        // emptyIcon={
-        //   <div className="flex flex-col items-center">
-        //     <div className="w-15 h-15 rounded-full flex items-center justify-center" style={{ background: "#F5F7FA" }}>
-        //       <Users size={32} style={{ color: "#A0AAB5" }} />
-        //     </div>
-        //   </div>
-        // }
         emptyText="No users found"
         emptySubtext="Adjust your search or filters."
-        onRowClick={(r) => {
-          setSelectedUser(r as unknown as UserProfile);
+        onRowClick={async (r) => {
+          setSelectedUser(r);
           setModalOpen(true);
+          setLoadingFull(true);
+          try {
+            const full = await adminApiService.getFullUserProfile(r.id);
+            if (full) setSelectedFullUser(full);
+          } finally {
+            setLoadingFull(false);
+          }
         }}
       />
 
       {/* User Detail Modal */}
       <UserDetailModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        user={selectedUser}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedFullUser(null);
+        }}
+        user={selectedFullUser || selectedUser}
+        loading={loadingFull}
         leaderboardEntry={
           selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null
         }
+      />
+
+      {/* User Form Modal (Add User) */}
+      <UserFormModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={loadData}
       />
     </div>
   );

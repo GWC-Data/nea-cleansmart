@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,9 +8,11 @@ import {
   Medal,
   Share2,
   Trophy,
-  // Clock,
+  Clock,
   Trash2,
   Gift,
+  StopCircle,
+  Sparkles,
 } from "lucide-react";
 import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
@@ -18,10 +20,15 @@ import type {
   EventData,
   LeaderboardEntry,
   EventLeaderboard,
+  UserStats,
 } from "../../../services/apiService";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { toast } from "sonner";
 import { getEventImageUrl } from "../../../utils/imageUtils";
+import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
+import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
+import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
+import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 
 const BADGES = [
   {
@@ -71,7 +78,7 @@ const RewardsBadgesCard: React.FC<{
       <p className="text-xs text-gray-400 font-medium mb-5 leading-relaxed">
         Complete clean-up hours to unlock badges and rewards.
       </p>
-      {isActiveEvent && nextBadge && (
+      {/* {isActiveEvent && nextBadge && (
         <div className="mb-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
           <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1.5">
             <span>Progress to {nextBadge.label}</span>
@@ -89,28 +96,28 @@ const RewardsBadgesCard: React.FC<{
             />
           </div>
         </div>
-      )}
-      <div className="flex flex-col gap-3">
+      )} */}
+      <div className="flex flex-col lg:flex-row gap-3">
         {BADGES.map((badge) => {
           const isEarned = userTotalHours >= badge.hours;
           const isCurrent = highestEarned?.label === badge.label;
           return (
             <div
               key={badge.label}
-              className={`flex items-center gap-4 rounded-2xl px-4 py-3 border shadow-sm transition-all ${isCurrent ? `${badge.color} border-transparent ring-2 ${badge.ring} scale-[1.02]` : isEarned ? `${badge.color} border-transparent opacity-70` : "bg-white border-gray-100"}`}
+              className={`flex items-center lg:flex-col lg:justify-center gap-4 lg:gap-3 rounded-2xl px-4 py-3 lg:py-5 lg:px-2 border shadow-sm transition-all lg:flex-1 ${isCurrent ? `${badge.color} border-transparent ring-2 ${badge.ring} scale-[1.02]` : isEarned ? `${badge.color} border-transparent opacity-70` : "bg-white border-gray-100"}`}
             >
               <div
-                className={`p-3 rounded-full border shrink-0
+                className={`p-3 lg:p-4 rounded-full border shrink-0
                 ${
                   isEarned
                     ? "bg-white/60 " + badge.border
                     : badge.color + " " + badge.border
                 }`}
               >
-                <Medal className={`w-5 h-5 ${badge.icon}`} />
+                <Medal className={`w-5 h-5 lg:w-7 lg:h-7 ${badge.icon}`} />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
+              <div className="flex-1 lg:flex-none w-full flex flex-col items-start lg:items-center">
+                <div className="flex items-center gap-2 lg:flex-col lg:gap-1.5">
                   <p className="font-extrabold text-gray-800 text-sm">
                     {badge.label}
                   </p>
@@ -127,8 +134,9 @@ const RewardsBadgesCard: React.FC<{
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-500 font-medium">
-                  {badge.points} points · {badge.hours} hrs
+                <p className="text-[11px] text-gray-500 font-medium lg:text-center mt-1 lg:mt-2 lg:leading-tight">
+                  <span className="lg:block">{badge.points} pts</span>
+                  <span className="lg:hidden"> · {badge.hours} hrs</span>
                 </p>
               </div>
             </div>
@@ -326,8 +334,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ eventName, onClose }) => (
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export const EventDetailPage: React.FC = () => {
-  // It was throwing a mismatch error because operations like includes() strict-check type values.
-  const { eventId = "" } = useParams(); // Added = "" to prevent type mismatch error
+  const { eventId = "" } = useParams();
   const navigate = useNavigate();
   const { currentUser, isLoading, refreshUserProfile } = useAuth();
 
@@ -340,38 +347,167 @@ export const EventDetailPage: React.FC = () => {
   );
   const [isJoining, setIsJoining] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [dashboardLocation, setDashboardLocation] = useState("");
 
-  // Fetch event details + dashboard joined-events list in parallel
+  const {
+    state: sessionState,
+    activeEventId,
+    activeLogId,
+    remainingSeconds,
+    elapsedSeconds,
+    restoredFromStorage,
+    initializeTimer,
+    openDurationPicker,
+    cancelDurationPicker,
+    handleCheckIn,
+    initiateCheckout,
+    cancelCheckout,
+    completeSession,
+  } = useCleanUpSession();
+
+  const loadData = useCallback(async () => {
+    setDataLoading(true);
+    try {
+      if (!eventId) return;
+      const [found, dashboard] = await Promise.all([
+        apiService.getEventById(eventId),
+        apiService.getDashboard(),
+      ]);
+
+      setEvent(found);
+      setUserStats(dashboard?.stats ?? null);
+
+      const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
+      setEventsJoined(joinedIds);
+
+      if (joinedIds.includes(eventId)) {
+        const lb = await apiService.getEventLeaderboard(eventId);
+        setLeaderboardData(lb);
+      }
+    } finally {
+      setDataLoading(false);
+    }
+  }, [eventId]);
+
   useEffect(() => {
     if (isLoading) return;
+    loadData();
+  }, [eventId, isLoading, loadData]);
 
-    async function loadAll() {
-      setDataLoading(true);
-      try {
-        if (!eventId) return;
-        const [found, dashboard] = await Promise.all([
-          apiService.getEventById(eventId),
-          apiService.getDashboard(),
-        ]);
-
-        setEvent(found);
-
-        // Build a flat list of joined eventIds from the dashboard response
-        const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
-        setEventsJoined(joinedIds);
-
-        // Fetch leaderboard only if this event is in the joined list
-        if (joinedIds.includes(eventId)) {
-          const lb = await apiService.getEventLeaderboard(eventId);
-          setLeaderboardData(lb);
-        }
-      } finally {
-        setDataLoading(false);
+  // Load active timer on mount
+  useEffect(() => {
+    async function loadActiveTimer() {
+      const timerData = await apiService.getTimer();
+      if (timerData && timerData.logId && timerData.checkInTime) {
+        initializeTimer(timerData);
       }
     }
+    loadActiveTimer();
+  }, [initializeTimer]);
 
-    loadAll();
-  }, [eventId, isLoading]);
+  // Geolocation for checkout
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`,
+            );
+            const data = await res.json();
+            if (data?.display_name) setDashboardLocation(data.display_name);
+          } catch {}
+        },
+        () => {},
+      );
+    }
+  }, []);
+
+  const formatTime = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0)
+      return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const stopButtonDisabled = elapsedSeconds < 1800 && remainingSeconds > 0;
+
+  const handleDurationSelected = async (durationSecs: number) => {
+    if (!activeEventId) return;
+    const result = await apiService.checkInEvent({
+      eventId: activeEventId,
+      checkInTime: new Date().toISOString(),
+      hoursEnrolled: (durationSecs / 3600).toString(),
+    });
+
+    // Structured error returned from backend
+    if (result !== null && typeof result === "object" && "error" in result) {
+      cancelDurationPicker();
+      toast.error(result.error);
+      return;
+    }
+
+    // Null means something unexpected happened
+    if (result === null) {
+      cancelDurationPicker();
+      toast.error("Check-in failed. Please try again.");
+      return;
+    }
+
+    // Success: result is the log ID (number)
+    handleCheckIn(result, durationSecs);
+    toast.success("Checked in! Your session has started.");
+  };
+
+  const handleSubmitReport = async (
+    weight: number,
+    type: string,
+    finalLocation: string,
+    photo?: File,
+  ) => {
+    if (!activeLogId) return;
+    const now = new Date();
+    const timerData = await apiService.getTimer();
+    let checkOutDate = now;
+    let checkOutTime = now.toISOString();
+    if (timerData?.checkInTime && timerData?.hoursEnrolled) {
+      const checkInDate = new Date(timerData.checkInTime);
+      const hoursStr = timerData.hoursEnrolled.toLowerCase();
+      const durationMs = hoursStr.endsWith("min")
+        ? parseFloat(hoursStr) * 60 * 1000
+        : parseFloat(hoursStr) * 3600 * 1000;
+      const maxCheckOut = new Date(checkInDate.getTime() + durationMs);
+
+      // Prevent clock skew issues: checkOutDate cannot be before checkInDate
+      if (checkOutDate < checkInDate) {
+        checkOutDate = checkInDate;
+      }
+
+      checkOutTime =
+        checkOutDate < maxCheckOut
+          ? checkOutDate.toISOString()
+          : maxCheckOut.toISOString();
+    }
+    const checkoutResult = await apiService.checkOutEvent(activeLogId, {
+      checkOutTime,
+      garbageWeight: weight,
+      garbageType: type,
+      eventLocation: finalLocation,
+      wasteImage: photo,
+    });
+
+    if (checkoutResult === true) {
+      completeSession();
+      toast.success("Report submitted! Great job 🌿");
+      await loadData();
+    } else {
+      // checkoutResult is { error: string }
+      toast.error(checkoutResult.error || "Failed to submit report. Please try again.");
+    }
+  };
 
   //  Loading guard — BEFORE any derivations
   if (dataLoading || isLoading || !event)
@@ -390,7 +526,7 @@ export const EventDetailPage: React.FC = () => {
         ?.totalHours ?? 0)
     : 0;
 
-  const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
+  const formattedDate = new Date(event.startDate).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -530,18 +666,79 @@ export const EventDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-900">
       {/* Header */}
-      <header className="bg-white px-5 sm:px-8 lg:px-12 py-4 sticky top-0 z-40 border-b border-gray-100 flex items-center">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="cursor-pointer flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <img
-          src={logo}
-          alt="Public Hygiene Council"
-          className="h-10 w-auto ml-auto"
-        />
+      <header className="bg-white px-5 sm:px-8 lg:px-12 py-4 sticky top-0 z-40 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="cursor-pointer flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+        </div>
+
+        <div className="flex items-center justify-end gap-4">
+          <div className="flex flex-1">
+            {/* Start Clean-up — only for active (joined) events */}
+            {isActiveEvent && sessionState === "idle" && (
+              <button
+                onClick={() => {
+                  if (userStats && (userStats.todayHours || 0) >= 2) {
+                    toast.error(
+                      "Daily limit of 2 hours reached! See you tomorrow",
+                    );
+                    return;
+                  }
+                  openDurationPicker(eventId);
+                }}
+                className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                  userStats && (userStats.todayHours || 0) >= 2
+                    ? "bg-gray-400 grayscale cursor-not-allowed"
+                    : "bg-[#96c93d] hover:bg-[#86b537]"
+                }`}
+              >
+                {userStats && (userStats.todayHours || 0) >= 2
+                  ? "Daily Limit Reached"
+                  : "Start Clean-up"}
+              </button>
+            )}
+
+            {/* Active session countdown + Stop */}
+            {isActiveEvent && sessionState === "checked_in" && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-mono font-bold tabular-nums text-sm">
+                    {formatTime(remainingSeconds)}
+                  </span>
+                </div>
+                <button
+                  onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                  disabled={stopButtonDisabled}
+                  className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                    stopButtonDisabled
+                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                      : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                  }`}
+                  title={
+                    stopButtonDisabled
+                      ? "Must complete at least 30 minutes before stopping"
+                      : undefined
+                  }
+                >
+                  <StopCircle className="w-4 h-4" />
+                  <span>Stop Clean-up</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div>
+            <img
+              src={logo}
+              alt="Public Hygiene Council"
+              className="h-10 w-auto"
+            />
+          </div>
+        </div>
       </header>
 
       {/* Mobile & Tablet */}
@@ -559,12 +756,12 @@ export const EventDetailPage: React.FC = () => {
         {/* Active event extras — leaderboard + badges */}
         {isActiveEvent && (
           <>
-            {/* Mobile: show 5 rows, scroll from 6th (~4.5rem per row) */}
-            <LeaderboardCard
+            {/* Leaderboard commented out */}
+            {/* <LeaderboardCard
               leaderboard={leaderboardData?.leaderboard ?? []}
               currentUserId={currentUser?.id ?? null}
               scrollClass="max-h-[calc(5*4.75rem)]"
-            />
+            /> */}
             <RewardsBadgesCard
               rewards={event.rewards}
               userTotalHours={userTotalHours}
@@ -588,32 +785,129 @@ export const EventDetailPage: React.FC = () => {
           <div className="grid grid-cols-12 gap-8 xl:gap-10 items-start">
             {/* LEFT */}
             <div className="col-span-7 flex flex-col gap-6">
-              <div className="w-full h-64 xl:h-72 rounded-[2rem] overflow-hidden shadow-sm">
+              <div className="w-full h-64 xl:h-[320px] rounded-[2rem] overflow-hidden shadow-sm">
                 <img
                   src={getEventImageUrl(event.eventImage)}
                   className="w-full h-full object-cover"
                   alt={event.name}
                 />
               </div>
-              <EventInfoCard />
+              <div className="lg:pr-4">
+                <EventInfoCard />
+              </div>
             </div>
 
             {/* RIGHT */}
             <div className="col-span-5">
               <div className="sticky top-24 flex flex-col gap-6">
-                {/* Leaderboard — active events only, moved here from left column */}
-                {isActiveEvent && (
-                  <LeaderboardCard
-                    leaderboard={leaderboardData?.leaderboard ?? []}
-                    currentUserId={currentUser?.id ?? null}
-                    scrollClass="min-h-[12.74rem] max-h-[12.74rem]"
-                  />
-                )}
+                {/* XP Ring */}
+                {(() => {
+                  const totalPoints = userStats?.totalPoints ?? 0;
+                  const getNextBadge = (pts: number) =>
+                    pts < 50
+                      ? { label: "Silver", pointsNeeded: 50 - pts }
+                      : pts < 100
+                        ? { label: "Gold", pointsNeeded: 100 - pts }
+                        : pts < 150
+                          ? { label: "Diamond", pointsNeeded: 150 - pts }
+                          : null;
+                  const nextBadge = getNextBadge(totalPoints);
+                  const hasBadge = totalPoints >= 50;
+                  const badgeName = !hasBadge
+                    ? null
+                    : totalPoints < 100
+                      ? "Silver"
+                      : totalPoints < 150
+                        ? "Gold"
+                        : "Diamond";
+                  const start =
+                    totalPoints < 50
+                      ? 0
+                      : totalPoints < 100
+                        ? 50
+                        : totalPoints < 150
+                          ? 100
+                          : 150;
+                  const end =
+                    totalPoints < 50 ? 50 : totalPoints < 100 ? 100 : 150;
+                  const progress = Math.min(
+                    (totalPoints - start) / (end - start),
+                    1,
+                  );
+                  const circumference = 264;
+                  const offset = circumference - progress * circumference;
+                  return (
+                    <div className="w-full h-64 xl:h-[320px] bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-4">
+                      <div className="relative w-40 h-40 xl:w-48 xl:h-48">
+                        <svg
+                          className="w-full h-full -rotate-90"
+                          viewBox="0 0 100 100"
+                        >
+                          <circle
+                            strokeWidth="8"
+                            stroke="#f3f7f5"
+                            fill="transparent"
+                            r="42"
+                            cx="50"
+                            cy="50"
+                          />
+                          <circle
+                            strokeWidth="8"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            stroke="#96c93d"
+                            fill="transparent"
+                            r="42"
+                            cx="50"
+                            cy="50"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-4xl xl:text-5xl font-black text-gray-900 leading-none">
+                            {totalPoints}
+                          </span>
+                          <span className="text-[10px] xl:text-xs font-black text-gray-400 uppercase tracking-widest mt-1">
+                            Points
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 mt-2">
+                        <p className="text-sm font-extrabold text-gray-800 text-center">
+                          Contribution Level
+                        </p>
+                        <p className="text-xs text-gray-500 font-medium text-center">
+                          {nextBadge ? (
+                            <>
+                              <span className="font-black text-gray-800">
+                                {nextBadge.pointsNeeded} pts{" "}
+                              </span>
+                              until your{" "}
+                              <span className="font-black text-[#08351e]">
+                                {nextBadge.label}
+                              </span>{" "}
+                              badge!
+                            </>
+                          ) : (
+                            <span className="font-black text-[#08351e] flex items-center gap-1 justify-center">
+                              <Sparkles className="w-4 h-4" /> All badges
+                              earned!
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <RewardsBadgesCard
                   rewards={event.rewards}
                   userTotalHours={isActiveEvent ? userTotalHours : 0}
                   isActiveEvent={isActiveEvent}
                 />
+
+                {/* Event Guidelines */}
+                <EventGuidelines />
               </div>
             </div>
           </div>
@@ -631,6 +925,26 @@ export const EventDetailPage: React.FC = () => {
       )}
       {modalView === "success" && (
         <SuccessModal eventName={event.name} onClose={handleSuccessClose} />
+      )}
+
+      {/* Duration Picker Modal */}
+      {sessionState === "selecting_duration" && (
+        <DurationSelectModal
+          onSelect={handleDurationSelected}
+          onCancel={cancelDurationPicker}
+          todayHours={userStats?.todayHours || 0}
+        />
+      )}
+
+      {/* Log Activity Form */}
+      {sessionState === "logging_activity" && (
+        <LogActivityForm
+          elapsedSeconds={elapsedSeconds}
+          location={dashboardLocation}
+          onCancel={restoredFromStorage ? undefined : cancelCheckout}
+          onSubmit={handleSubmitReport}
+          isMandatory={restoredFromStorage}
+        />
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Clock } from "lucide-react";
 
 interface DurationSelectModalProps {
-  onSelect: (seconds: number) => void;
+  onSelect: (seconds: number) => Promise<void> | void;
   onCancel: () => void;
   todayHours?: number;
 }
@@ -26,9 +26,16 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
     (opt) => opt.value / 3600 <= remainingHours + 0.01,
   ); // +0.01 to handle float precision
 
-  const handleStart = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStart = async () => {
     if (selectedSeconds) {
-      onSelect(selectedSeconds);
+      setIsLoading(true);
+      try {
+        await onSelect(selectedSeconds);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -77,10 +84,10 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
 
           <button
             onClick={handleStart}
-            disabled={!selectedSeconds}
+            disabled={!selectedSeconds || isLoading}
             className="cursor-pointer w-full bg-[#96c93d] hover:bg-[#86b537] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-extrabold py-4 rounded-xl transition-colors shadow-sm"
           >
-            Start Session
+            {isLoading ? "Starting..." : "Start Session"}
           </button>
         </div>
       </div>

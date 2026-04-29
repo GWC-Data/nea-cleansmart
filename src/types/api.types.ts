@@ -82,3 +82,52 @@ export interface LeaderboardEntry {
   eventName: string;
   eventDate: string;
 }
+
+export interface OrganizationProfile {
+  orgId: string;
+  name: string;
+  email: string;
+  role: "organization";
+  address?: string;
+  phone?: string;
+  isApproved?: boolean;
+}
+
+export interface OrganizationDashboard {
+  message: string;
+  profile: OrganizationProfile;
+  stats: {
+    totalPoints: number;
+    totalMinutesLogged: number;
+    totalWeight: number;
+  };
+  eventsJoined: {
+    eventId: string;
+    eventName: string;
+    location: string;
+    eventStartDate: string;
+    eventEndDate: string;
+    joinedCount: number;
+    eventImage: string | null;
+  }[];
+  events: {
+    public: any[];
+    private: any[];
+  };
+  usersJoined: {
+    userId: string;
+    name: string;
+    email: string;
+  }[];
+}
+
+export interface FullUserProfile extends UserProfile {
+  totalWasteCollected: number;
+  totalTimeLogged: number;
+  co2Collected: number;
+  eventsJoinedCount: number;
+  groupsJoinedCount: number;
+  totalPoints: number;
+  overallBadge: string | null;
+  completedActivities: number;
+}

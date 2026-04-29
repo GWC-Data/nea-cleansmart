@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Trash2,
   MapPin,
   Clock,
   Wind,
-  CalendarDays,
   Users,
-  Sparkles,
+  Trophy,
+  Building2,
+  Medal,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { EventData, UserStats } from "../../../services/apiService";
@@ -15,21 +16,8 @@ import { getEventImageUrl } from "../../../utils/imageUtils";
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";
   const hours = totalMinutes / 60;
-  // Floor to 1 decimal place (e.g. 11min → 0.1h, not 0.2h)
   const floored = Math.floor(hours * 10) / 10;
   return floored.toFixed(1);
-}
-
-function getNextBadgeInfo(
-  totalPoints: number,
-): { label: string; pointsNeeded: number } | null {
-  if (totalPoints < 50)
-    return { label: "Silver", pointsNeeded: 50 - totalPoints };
-  if (totalPoints < 100)
-    return { label: "Gold", pointsNeeded: 100 - totalPoints };
-  if (totalPoints < 150)
-    return { label: "Diamond", pointsNeeded: 150 - totalPoints };
-  return null;
 }
 
 interface DesktopDashboardViewProps {
@@ -38,6 +26,8 @@ interface DesktopDashboardViewProps {
   upcomingEvents: EventData[];
   currentUserId?: string | null;
   stats: UserStats | null;
+  userLeaderboard?: any[];
+  orgLeaderboard?: any[];
 }
 
 export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
@@ -45,58 +35,56 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   activeEvents,
   upcomingEvents,
   stats,
+  userLeaderboard = [],
+  orgLeaderboard = [],
 }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"users" | "orgs">("users");
 
   const totalMinutes = stats?.totalMinutesLogged ?? 0;
   const totalWeight = stats?.totalWeight ?? 0;
-  const totalPoints = stats?.totalPoints ?? 0;
   const carbonReduced = stats ? Math.floor(stats.co2Collected).toString() : "0";
   const hoursDisplay = formatCleanupHours(totalMinutes);
-  const nextBadge = getNextBadgeInfo(totalPoints);
-  const hasBadge = totalPoints >= 50;
-  const badgeName = !hasBadge
-    ? null
-    : totalPoints < 100
-      ? "Silver"
-      : totalPoints < 150
-        ? "Gold"
-        : "Diamond";
 
-  // XP ring progress
-  const start =
-    totalPoints < 50
-      ? 0
-      : totalPoints < 100
-        ? 50
-        : totalPoints < 150
-          ? 100
-          : 150;
-  const end = totalPoints < 50 ? 50 : totalPoints < 100 ? 100 : 150;
-  const progress = Math.min((totalPoints - start) / (end - start), 1);
-  const circumference = 264;
-  const offset = circumference - progress * circumference;
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "text-yellow-500 bg-yellow-50";
+      case 2:
+        return "text-gray-400 bg-gray-50";
+      case 3:
+        return "text-orange-500 bg-orange-50";
+      default:
+        return "text-gray-500 bg-gray-50";
+    }
+  };
+
+  const getRankIcon = (rank: number) => {
+    if (rank <= 3) {
+      return <Medal className="w-4 h-4" />;
+    }
+    return <span className="text-[10px] font-bold">{rank}</span>;
+  };
 
   return (
     <div className="min-h-screen bg-[#f3f7f5] font-sans text-gray-900 pb-12">
       <div className="max-w-[1400px] mx-auto px-8 xl:px-12 pt-8 flex flex-col gap-8">
         {/* TOP ROW: Welcome */}
         <div className="grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 lg:col-span-8 xl:col-span-6 flex flex-col gap-2">
+          <div className="col-span-12 flex flex-col gap-2">
             <h1 className="text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight text-gray-900 leading-tight">
               Welcome back, {name}!
             </h1>
-            <p className="text-gray-500 font-medium text-sm leading-relaxed max-w-lg">
-              Your contribution helped to create a cleaner and more hygienic
-              environment for all Singapore residents to enjoy.
+            <p className="text-gray-500 font-medium text-sm leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+              Your contribution helped to create a cleaner and more hygienic environment for all Singapore residents to enjoy.
             </p>
           </div>
         </div>
 
         {/* MAIN CONTENT + RIGHT PANEL */}
-        <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-12 gap-8 items-start">
           {/* LEFT — Events */}
-          <div className="col-span-8 flex flex-col gap-8">
+          <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
             {/* Stat Cards — single horizontal row */}
             <div className="flex flex-row gap-4">
               {/* Clean-up Hours */}
@@ -291,111 +279,129 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
             </section>
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="col-span-4 flex flex-col gap-6 sticky top-24">
-            {/* XP Ring */}
-            <div className="col-span-3 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-3">
-              {/* <p className="text-xs font-black uppercase tracking-widest text-gray-400">
-                Impact Points
-              </p> */}
-              <div className="relative w-36 h-36">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    strokeWidth="8"
-                    stroke="#f3f7f5"
-                    fill="transparent"
-                    r="42"
-                    cx="50"
-                    cy="50"
-                  />
-                  <circle
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    strokeLinecap="round"
-                    stroke="#96c93d"
-                    fill="transparent"
-                    r="42"
-                    cx="50"
-                    cy="50"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-gray-900 leading-none">
-                    {totalPoints}
-                  </span>
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                    Points
-                  </span>
-                </div>
+          {/* RIGHT PANEL — Leaderboards */}
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-8 sticky top-24">
+            <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-gray-100 overflow-hidden h-[450px]">
+              {/* Tab Navigation */}
+              <div className="flex p-1 bg-gray-50 rounded-[2rem] mb-4">
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className={`cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                    activeTab === "users"
+                      ? "bg-[#96c93d] text-white shadow-lg"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <Trophy className={`w-4 h-4 ${activeTab === "users" ? "text-white" : "text-gray-300"}`} />
+                  Users
+                </button>
+                <button
+                  onClick={() => setActiveTab("orgs")}
+                  className={`cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                    activeTab === "orgs"
+                      ? "bg-[#96c93d] text-white shadow-lg"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <Building2 className={`w-4 h-4 ${activeTab === "orgs" ? "text-white" : "text-gray-300"}`} />
+                  Orgs
+                </button>
               </div>
-              {/* Display the user earned badge */}
-              <p className="text-xs text-gray-500 font-medium text-center leading-relaxed max-w-[180px]">
-                {badgeName ? `Earned ${badgeName} Badge` : "No Badge Yet"}
-              </p>
-              <p className="text-xs text-gray-500 font-medium text-center leading-relaxed max-w-[180px]">
-                {nextBadge ? (
+
+              <div className="px-6 pb-8 flex flex-col gap-3 animate-in fade-in duration-500">
+                {activeTab === "users" ? (
                   <>
-                    <span className="font-black text-gray-800">
-                      {" "}
-                      {nextBadge.pointsNeeded} pts{" "}
-                    </span>{" "}
-                    until your
-                    <span className="font-black text-[#08351e]">
-                      {" "}
-                      {nextBadge.label}{" "}
-                    </span>{" "}
-                    badge!
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">Top Performers</h3>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                      {userLeaderboard.length > 0 ? (
+                        userLeaderboard.map((user, idx) => (
+                          <div
+                            key={user.userId}
+                            className="flex items-center gap-4 pb-2 rounded-2xl hover:bg-gray-50 transition-colors group"
+                          >
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getRankColor(
+                                idx + 1
+                              )}`}
+                            >
+                              {getRankIcon(idx + 1)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm text-gray-900 truncate group-hover:text-[#08351e] transition-colors">
+                                {user.userName}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-black text-[#08351e] uppercase tracking-widest">
+                                  {user.totalPoints} pts
+                                </span>
+                                <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                                <span className="text-[10px] font-medium text-gray-400">
+                                  {user.totalTimeLogged} hrs
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-12 text-center flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                            <Trophy className="w-6 h-6" />
+                          </div>
+                          <p className="text-xs text-gray-400 font-medium">No performer data yet</p>
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="font-black text-[#08351e]">
-                      All badges earned!
-                    </span>
-                  </div>
-                )}
-              </p>
-            </div>
-
-            {/* Event Guidelines */}
-            <div className="bg-[#f0fdf4] rounded-3xl p-6 border border-[#bbf7d0] shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-[#08351e] p-1.5 rounded-lg">
-                  <CalendarDays className="w-4 h-4 text-white" />
-                </div>
-                <h3 className="font-extrabold text-gray-900 text-sm tracking-tight">
-                  Event Guidelines
-                </h3>
-              </div>
-              <div className="flex flex-col gap-2.5">
-                {[
-                  "Ensure you are properly hydrated",
-                  "Wear covered shoes and safety gloves",
-                  "Separate recyclables",
-                  "Log hours accurately (max 2h)",
-                ].map((guideline) => (
-                  <div key={guideline} className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-[#08351e] flex items-center justify-center shrink-0 mt-0.5">
-                      <svg
-                        className="w-2.5 h-2.5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">Top Organizations</h3>
                     </div>
-                    <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                      {guideline}
-                    </p>
-                  </div>
-                ))}
+
+                    <div className="flex flex-col gap-4">
+                      {orgLeaderboard.length > 0 ? (
+                        orgLeaderboard.map((org, idx) => (
+                          <div
+                            key={org.orgId}
+                            className="flex items-center gap-4 pb-2 rounded-2xl hover:bg-gray-50 transition-colors group"
+                          >
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                idx === 0 ? "bg-[#96c93d] text-[#08351e]" : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {getRankIcon(idx + 1)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm text-gray-900 truncate group-hover:text-[#08351e] transition-colors">
+                                {org.orgName}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-black text-[#08351e] uppercase tracking-widest">
+                                  {org.totalHours.toFixed(1)} hrs
+                                </span>
+                                <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                                <span className="text-[10px] font-medium text-gray-400">
+                                  {org.memberCount} members
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-12 text-center flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                            <Building2 className="w-6 h-6" />
+                          </div>
+                          <p className="text-xs text-gray-400 font-medium">No organization data yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, Clock, StopCircle } from "lucide-react";
+import { LogOut } from "lucide-react";
 import logo from "../../../assets/publicHygineCouncil.png";
-import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { StatsOverview } from "../../../components/sections/user/StatsOverview";
 import { WelcomeSection } from "../../../components/sections/user/WelcomeSection";
 import { CommunityEvents } from "../../../components/sections/user/CommunityEvents";
 import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
-import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
-import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
 import { DesktopDashboardView } from "../../../components/sections/user/DesktopDashboardView";
+import { Leaderboard } from "../../../components/sections/user/Leaderboard";
 import { apiService } from "../../../services/apiService";
 import type {
   EventData,
   UserStats,
   DashboardEvent,
 } from "../../../services/apiService";
-import { toast } from "sonner";
 import { useAuth } from "../../../hooks/useAuth";
 
 export const UserDashboard: React.FC = () => {
@@ -28,11 +25,12 @@ export const UserDashboard: React.FC = () => {
   // Joined events from /dashboard (active events the user already joined)
   const [activeEvents, setActiveEvents] = useState<DashboardEvent[]>([]);
 
-  const [dashboardLocation, setDashboardLocation] = useState<string>("");
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [userName, setUserName] = useState<string>(
     currentUser?.name?.split(" ")[0] || "",
   );
+  const [userLeaderboard, setUserLeaderboard] = useState<any[]>([]);
+  const [orgLeaderboard, setOrgLeaderboard] = useState<any[]>([]);
 
   // Load dashboard data: stats + joined events
   const loadDashboard = useCallback(async () => {
@@ -44,39 +42,19 @@ export const UserDashboard: React.FC = () => {
         setUserName(data.profile.name.split(" ")[0]);
       }
     }
-  }, []);
 
-  const {
-    state,
-    activeEventId,
-    activeLogId,
-    remainingSeconds,
-    elapsedSeconds,
-    restoredFromStorage,
-    initializeTimer,
-    openDurationPicker,
-    cancelDurationPicker,
-    handleCheckIn,
-    initiateCheckout,
-    cancelCheckout,
-    completeSession,
-  } = useCleanUpSession();
+    // Load global leaderboards
+    const [uLeaderboard, oLeaderboard] = await Promise.all([
+      apiService.getUserLeaderboard(5),
+      apiService.getOrganizationLeaderboard(5),
+    ]);
+    setUserLeaderboard(uLeaderboard);
+    setOrgLeaderboard(oLeaderboard);
+  }, []);
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
-
-  // Make sure we load the timer as soon as user enters the page
-  useEffect(() => {
-    async function loadActiveTimer() {
-      const timerData = await apiService.getTimer();
-      // Only initialize if we got valid server-side timer state
-      if (timerData && timerData.logId && timerData.checkInTime) {
-        initializeTimer(timerData);
-      }
-    }
-    loadActiveTimer();
-  }, [initializeTimer]);
 
   // Load all events from /events for the Upcoming Events section
   useEffect(() => {
@@ -97,122 +75,7 @@ export const UserDashboard: React.FC = () => {
   };
   const initials = getInitials(currentUser?.name || "Jane Doe");
 
-  // True only when the session was restored from backend timer that had expired
-  // (timer had already completed). Used to force the form with no X dismiss button.
-  const isMandatory = state === "logging_activity" && restoredFromStorage;
-
   // keep events load (already done above in separate useEffect)
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-            );
-            const data = await res.json();
-            if (data && data.display_name) {
-              setDashboardLocation(data.display_name);
-            }
-          } catch (e) {
-            console.error("Failed to reverse geocode:", e);
-          }
-        },
-        (error) => {
-          console.warn("Geolocation denied or error:", error);
-        },
-      );
-    }
-  }, []);
-
-  // ── Format mm:ss / hh:mm:ss for the countdown timer ──────────────────────
-  const formatTime = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    if (h > 0)
-      return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
-  // ── Step 2: User selects duration → call checkInEvent API ───────────────
-  const handleDurationSelected = async (durationSecs: number) => {
-    if (!activeEventId) return;
-    // User ID is extracted from JWT token by the backend
-    const resultId = await apiService.checkInEvent({
-      eventId: activeEventId,
-      checkInTime: new Date().toISOString(),
-      hoursEnrolled: (durationSecs / 3600).toString(),
-    });
-    if (resultId) {
-      handleCheckIn(resultId, durationSecs);
-      toast.success("Checked in! Your session has started.");
-    } else {
-      cancelDurationPicker();
-      toast.error("Already checked in for this event.");
-    }
-  };
-
-  const calculateCheckOutTime = async () => {
-    const timerData = await apiService.getTimer();
-    const now = new Date();
-
-    if (timerData && timerData.checkInTime && timerData.hoursEnrolled) {
-      const checkInDate = new Date(timerData.checkInTime);
-      let durationMs = 0;
-      const hoursStr = timerData.hoursEnrolled.toLowerCase();
-
-      if (hoursStr.endsWith("min")) {
-        durationMs = parseFloat(hoursStr) * 60 * 1000;
-      } else if (hoursStr.endsWith("hours") || hoursStr.endsWith("hour")) {
-        durationMs = parseFloat(hoursStr) * 3600 * 1000;
-      } else {
-        durationMs = parseFloat(hoursStr) * 3600 * 1000;
-      }
-
-      const maxCheckOutDate = new Date(checkInDate.getTime() + durationMs);
-
-      // Validation:
-      // 1. If user checks out BEFORE the max time, use current timestamp.
-      // 2. If user checks out AFTER the max time, cap it at the max duration.
-      return now < maxCheckOutDate
-        ? now.toISOString()
-        : maxCheckOutDate.toISOString();
-    }
-    return now.toISOString(); // fallback
-  };
-
-  // ── Step 4: User submits the log activity form → checkOutEvent API ──────
-  const handleSubmitReport = async (
-    weight: number,
-    type: string,
-    finalLocation: string,
-    photo?: File,
-  ) => {
-    if (!activeLogId) return;
-
-    const checkOutTime = await calculateCheckOutTime();
-
-    const checkoutSuccess = await apiService.checkOutEvent(activeLogId, {
-      checkOutTime,
-      garbageWeight: weight,
-      garbageType: type,
-      eventLocation: finalLocation,
-      wasteImage: photo, // pass file directly — sent as multipart
-    });
-
-    if (checkoutSuccess) {
-      completeSession();
-      toast.success("Report submitted! Great job 🌿");
-      // Re-fetch dashboard to show updated hours, weight, carbon & points
-      await loadDashboard();
-    } else {
-      toast.error("Failed to submit report. Please try again.");
-    }
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -229,7 +92,6 @@ export const UserDashboard: React.FC = () => {
   const activeEventIds = new Set(activeEvents.map((e) => e.eventId));
   const upcomingEvents = events.filter((e) => !activeEventIds.has(e.eventId));
 
-  // Convert DashboardEvent to EventData shape for components that need it
   const activeEventsAsEventData: EventData[] = activeEvents.map((e) => ({
     eventId: e.eventId,
     startDate: e.startDate,
@@ -246,10 +108,6 @@ export const UserDashboard: React.FC = () => {
     updatedAt: "",
   }));
 
-  // The stop button is disabled until at least 30 minutes (1800 seconds) have elapsed,
-  // or until the timer fully completes.
-  const stopButtonDisabled = elapsedSeconds < 1800 && remainingSeconds > 0;
-
   return (
     <div className="min-h-screen bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
       {/* ── Unified Top Navigation ──────────────────────────────────────────── */}
@@ -263,64 +121,6 @@ export const UserDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 relative shrink-0">
-          {/* Session controls: shown on ALL screen sizes */}
-          <div className="flex items-center gap-2 mr-1">
-            {state === "idle" && activeEvents.length > 0 && (
-              /* Start Clean-up — visible on both mobile and desktop */
-              <button
-                onClick={() => {
-                  if (userStats && (userStats.todayHours || 0) >= 2) {
-                    toast.error(
-                      "Daily limit of 2 hours reached! See you tomorrow",
-                    );
-                    return;
-                  }
-                  openDurationPicker(activeEvents[0].eventId);
-                }}
-                disabled={activeEvents.length === 0}
-                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all rounded-full shadow-md cursor-pointer sm:px-5 sm:py-2.5 sm:text-sm active:scale-95 ${
-                  userStats && (userStats.todayHours || 0) >= 2
-                    ? "bg-gray-400 grayscale"
-                    : "bg-[#96c93d] hover:bg-[#86b537]"
-                }`}
-              >
-                {(userStats?.todayHours || 0) >= 2
-                  ? "Limit Reached"
-                  : "Start Clean-up"}
-              </button>
-            )}
-
-            {state === "checked_in" && (
-              <div className="hidden lg:flex items-center gap-2">
-                {/* Live countdown pill */}
-                <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2.5 rounded-full text-[#08351e] shadow-sm">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-mono font-bold tabular-nums text-sm">
-                    {formatTime(remainingSeconds)}
-                  </span>
-                </div>
-                {/* Stop Clean-up */}
-                <button
-                  onClick={stopButtonDisabled ? undefined : initiateCheckout}
-                  disabled={stopButtonDisabled}
-                  className={`px-5 py-2.5 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
-                    stopButtonDisabled
-                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                      : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                  }`}
-                  title={
-                    stopButtonDisabled
-                      ? "Must complete at least 30 minutes before stopping"
-                      : undefined
-                  }
-                >
-                  <StopCircle className="w-4 h-4" />
-                  <span>Stop Clean-up</span>
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Profile Dropdown */}
           <div className="relative" ref={menuRef}>
             <button
@@ -372,43 +172,12 @@ export const UserDashboard: React.FC = () => {
           stats={userStats}
         />
 
-        {/* Mobile Active Session Banner */}
-        {state === "checked_in" && (
-          <div className="bg-linear-to-r from-[#08351e] to-[#0f5431] rounded-[2rem] px-6 py-5 flex items-center justify-between shadow-lg shadow-green-900/10 border border-[#13613b]">
-            <div className="flex items-center gap-4">
-              <div className="bg-[#9bf8b7]/20 p-2.5 rounded-full shadow-inner border border-[#9bf8b7]/10 shrink-0">
-                <Clock className="w-5 h-5 text-[#9bf8b7]" />
-              </div>
-              <div>
-                <p className="text-[10px] text-[#a7d0b8] font-bold uppercase tracking-widest mb-0.5">
-                  Time Remaining
-                </p>
-                <div className="text-white font-mono font-extrabold text-3xl tabular-nums leading-none tracking-tight">
-                  {formatTime(remainingSeconds)}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={stopButtonDisabled ? undefined : initiateCheckout}
-              disabled={stopButtonDisabled}
-              className={`text-white text-sm font-extrabold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition-all shrink-0 ${
-                stopButtonDisabled
-                  ? "bg-red-500/40 border border-red-500/40 cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-600 border border-red-500 shadow-red-500/20 active:scale-95 cursor-pointer"
-              }`}
-              title={
-                stopButtonDisabled
-                  ? "Must complete at least 30 minutes before stopping"
-                  : undefined
-              }
-            >
-              <StopCircle className="w-5 h-5" />
-              Stop
-            </button>
-          </div>
-        )}
-
         <StatsOverview stats={userStats} />
+
+        <Leaderboard
+          userLeaderboard={userLeaderboard}
+          orgLeaderboard={orgLeaderboard}
+        />
 
         <div className="flex flex-col gap-8 mt-2 min-w-0">
           {/* <RewardsSection /> */}
@@ -418,7 +187,7 @@ export const UserDashboard: React.FC = () => {
             // currentUserId={currentUser?.id ?? null}
             // onJoinClick={setSelectedEventToJoin}
           />
-          <EventGuidelines />
+          {/* <EventGuidelines /> */}
         </div>
       </main>
 
@@ -431,6 +200,8 @@ export const UserDashboard: React.FC = () => {
           // currentUserId={currentUser?.id ?? null}
           // onJoinClick={setSelectedEventToJoin}
           stats={userStats}
+          userLeaderboard={userLeaderboard}
+          orgLeaderboard={orgLeaderboard}
         />
       </div>
 
@@ -449,28 +220,6 @@ export const UserDashboard: React.FC = () => {
           </p>
         </div>
       </footer>
-
-      {/* ── Overlays ────────────────────────────────────────────────────────── */}
-
-      {/* Step 2: Duration Picker Modal */}
-      {state === "selecting_duration" && (
-        <DurationSelectModal
-          onSelect={handleDurationSelected}
-          onCancel={cancelDurationPicker}
-          todayHours={userStats?.todayHours || 0}
-        />
-      )}
-
-      {/* Step 3→4: Log Activity Form (also shown when timer hits zero natively by hooks if not in background) */}
-      {state === "logging_activity" && (
-        <LogActivityForm
-          elapsedSeconds={elapsedSeconds}
-          location={dashboardLocation}
-          onCancel={isMandatory ? undefined : cancelCheckout}
-          onSubmit={handleSubmitReport}
-          isMandatory={isMandatory}
-        />
-      )}
     </div>
   );
 };

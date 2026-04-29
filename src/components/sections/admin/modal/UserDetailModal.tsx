@@ -13,15 +13,17 @@ import {
   Award,
   Clock,
   Trash2,
+  Loader2,
 } from "lucide-react";
-import type { UserProfile } from "../../../../types/api.types";
+import type { UserProfile, FullUserProfile } from "../../../../types/api.types";
 import type { LeaderboardEntry } from "../../../../types/api.types";
 import { format } from "date-fns";
 
 interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserProfile | null;
+  user: UserProfile | FullUserProfile | null;
+  loading?: boolean;
   leaderboardEntry?: LeaderboardEntry | null;
 }
 
@@ -60,13 +62,16 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   isOpen,
   onClose,
   user,
+  loading,
   leaderboardEntry,
 }) => {
   if (!isOpen || !user) return null;
 
+  const isFull = "totalTimeLogged" in user;
   const roleStyle = ROLE_STYLES[user.role?.toLowerCase()] || ROLE_STYLES.user;
-  const totalHours = leaderboardEntry?.totalHours ?? 0;
-  const totalWaste = leaderboardEntry?.garbageWeightCollected ?? 0;
+  const totalHours = isFull ? (user as FullUserProfile).totalTimeLogged : (leaderboardEntry?.totalHours ?? 0);
+  const totalWaste = isFull ? (user as FullUserProfile).totalWasteCollected : (leaderboardEntry?.garbageWeightCollected ?? 0);
+  const eventCount = isFull ? (user as FullUserProfile).eventsJoinedCount : (user.joinedEvents?.length ?? 0);
   const badgeInfo = getBadgeInfo(totalHours);
 
   const initials = user.name
@@ -238,7 +243,11 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 style={{ color: "#EC5594" }}
               />
               <p className="text-xl font-bold text-[#1A2A3A] mt-1">
-                {user.joinedEvents?.length ?? 0}
+                {loading ? (
+                  <Loader2 size={16} className="animate-spin mx-auto text-[#EC5594]" />
+                ) : (
+                  eventCount
+                )}
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7A88]">
                 Events

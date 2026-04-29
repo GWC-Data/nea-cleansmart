@@ -10,7 +10,7 @@ interface LogActivityFormProps {
     type: string,
     finalLocation: string,
     photo?: File,
-  ) => void;
+  ) => Promise<void> | void;
   isMandatory?: boolean;
 }
 
@@ -62,18 +62,26 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weight) return;
+    if (!weight || isSubmitting) return;
     const typesJoined =
       selectedTypes.length > 0 ? selectedTypes.join(", ") : "mixed";
     const finalLocation = location || manualLocation;
-    onSubmit(
-      parseFloat(weight),
-      typesJoined,
-      finalLocation,
-      photoFile ?? undefined,
-    );
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit(
+        parseFloat(weight),
+        typesJoined,
+        finalLocation,
+        photoFile ?? undefined,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -255,9 +263,10 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
           <button
             type="submit"
             form="logForm"
-            className="w-full bg-secondary hover:bg-secondary-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] text-base"
+            disabled={isSubmitting}
+            className="w-full bg-secondary hover:bg-secondary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] text-base"
           >
-            Submit Report
+            {isSubmitting ? "Submitting..." : "Submit Report"}
           </button>
         </div>
       </div>

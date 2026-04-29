@@ -428,9 +428,9 @@ export const apiService = {
    * Check in to an event
    * User ID is extracted from JWT token on backend
    * @param payload Check-in data (eventId, optional: checkInTime, groupId, garbageWeight, garbageType)
-   * @returns The created event log ID or null if failed
+   * @returns The created event log ID, or an object with error message, or null on network failure
    */
-  async checkInEvent(payload: CheckInPayload): Promise<number | null> {
+  async checkInEvent(payload: CheckInPayload): Promise<number | { error: string } | null> {
     try {
       const response = await fetch(`${BASE}/event-logs`, {
         method: "POST",
@@ -439,15 +439,23 @@ export const apiService = {
         }),
         body: JSON.stringify(payload),
       });
+
       if (!response.ok) {
-        throw new Error(`Failed to check in: ${response.statusText}`);
+        // Parse the backend error message so UI can show the right toast
+        try {
+          const errData = await response.json();
+          return { error: errData.message || `Server error (${response.status})` };
+        } catch {
+          return { error: `Server error (${response.status})` };
+        }
       }
+
       const data = await response.json();
       const logRecord = data.eventLog || data;
-      return logRecord?.id || null;
+      return logRecord?.id ?? null;
     } catch (error) {
       console.error("checkInEvent error:", error);
-      return null;
+      return { error: "Network error. Please check your connection." };
     }
   },
 
@@ -456,12 +464,12 @@ export const apiService = {
    * Updates the event log with check-out time and waste information
    * @param logId The event log ID
    * @param payload Check-out data (checkOutTime, garbageWeight, garbageType)
-   * @returns Success status
+   * @returns true on success, or an object with error message on failure
    */
   async checkOutEvent(
     logId: number,
     payload: CheckOutPayload,
-  ): Promise<boolean> {
+  ): Promise<true | { error: string }> {
     try {
       // Build FormData — required since backend uses multer
       const formData = new FormData();
@@ -472,7 +480,7 @@ export const apiService = {
         formData.append("eventLocation", payload.eventLocation);
       }
       if (payload.wasteImage) {
-        formData.append("wasteImage", payload.wasteImage); // field name must match multer
+        formData.append("wasteImage", payload.wasteImage);
       }
 
       const response = await fetch(`${BASE}/event-logs/${logId}`, {
@@ -482,12 +490,17 @@ export const apiService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to check out: ${response.statusText}`);
+        try {
+          const errData = await response.json();
+          return { error: errData.message || `Server error (${response.status})` };
+        } catch {
+          return { error: `Server error (${response.status})` };
+        }
       }
       return true;
     } catch (error) {
       console.error("checkOutEvent error:", error);
-      return false;
+      return { error: "Network error. Please check your connection." };
     }
   },
 
@@ -734,9 +747,36 @@ export const apiService = {
         throw new Error(`Failed to fetch leaderboard: ${response.statusText}`);
       }
       const data = await response.json();
-      return data.users || [];
+      return data.topUsers || data.users || [];
     } catch (error) {
       console.error("getUserLeaderboard error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Get organization leaderboard (top performers)
+   * No authentication required
+   * @param limit Number of top organizations to fetch (default: 5)
+   * @returns Array of top organizations with stats
+   */
+  async getOrganizationLeaderboard(limit: number = 5): Promise<any[]> {
+    try {
+      const response = await fetch(
+        `${BASE}/organizations/leaderboard/top?limit=${limit}`,
+        {
+          method: "GET",
+        },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch organization leaderboard: ${response.statusText}`,
+        );
+      }
+      const data = await response.json();
+      return data.leaderboard || [];
+    } catch (error) {
+      console.error("getOrganizationLeaderboard error:", error);
       return [];
     }
   },

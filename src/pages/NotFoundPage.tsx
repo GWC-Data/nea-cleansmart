@@ -24,8 +24,8 @@ export const NotFoundPage: React.FC = () => {
             Oops! Page not found
           </h2>
           <p className="text-lg text-slate-600">
-            The link you followed may be broken, or the page may have been removed.
-            Let's get you back on track.
+            The link you followed may be broken, or the page may have been
+            removed. Let's get you back on track.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

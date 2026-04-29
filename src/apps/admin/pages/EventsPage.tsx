@@ -171,7 +171,7 @@ export const EventsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((event) => {
-            const eventDate = new Date(event.date);
+            const eventDate = new Date(event.startDate);
             const isDeleting = deleteState.eventId === event.eventId;
             const confirmDelete =
               deleteState.eventId === event.eventId && !deleteState.loading;
