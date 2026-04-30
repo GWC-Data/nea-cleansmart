@@ -16,10 +16,11 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { EventFormModal } from "../../../components/admin/EventFormModal";
+import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
 import { adminApiService } from "../../../services/adminApiService";
-import type { EventData } from "../../../types/apiTypes";
+import type { EventData } from "../../../types/api.types";
 import { format } from "date-fns";
+import { getEventImageUrl } from "../../../utils/imageUtils";
 
 interface DeleteState {
   eventId: string | null;
@@ -30,7 +31,6 @@ export const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"active" | "past">("active");
   const [formOpen, setFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [deleteState, setDeleteState] = useState<DeleteState>({
@@ -52,21 +52,15 @@ export const EventsPage: React.FC = () => {
     loadEvents();
   }, [loadEvents]);
 
-  const now = new Date();
-
   const filtered = useMemo(() => {
-    const byTab =
-      tab === "active"
-        ? events.filter((e) => new Date(e.date) >= now)
-        : events.filter((e) => new Date(e.date) < now);
-    if (!search) return byTab;
+    if (!search) return events;
     const q = search.toLowerCase();
-    return byTab.filter(
+    return events.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
         e.location.toLowerCase().includes(q),
     );
-  }, [events, tab, search, now]);
+  }, [events, search]);
 
   const handleDelete = async (eventId: string) => {
     setDeleteState({ eventId, loading: true });
@@ -109,7 +103,7 @@ export const EventsPage: React.FC = () => {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90"
+          className="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90"
           style={{ background: "#86B537" }}
         >
           <PlusCircle size={16} />
@@ -117,30 +111,9 @@ export const EventsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tabs + Search */}
+      {/* Search */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-[#E8EDF2] p-4">
-        {/* Tabs */}
-        <div
-          className="flex gap-1 rounded-lg p-1"
-          style={{ background: "#F5F7FA" }}
-        >
-          {(["active", "past"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
-                tab === t
-                  ? "bg-white text-[#1A2A3A] shadow-sm"
-                  : "text-[#6B7A88] hover:text-[#1A2A3A]"
-              }`}
-            >
-              {t === "active" ? "Active Events" : "Past Events"}
-            </button>
-          ))}
-        </div>
-
-        {/* Search */}
-        <div className="relative">
+        <div className="relative flex-1 max-w-sm">
           <Search
             size={13}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
@@ -148,8 +121,8 @@ export const EventsPage: React.FC = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search events..."
-            className="pl-8 pr-4 py-2 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+            placeholder="Search events by name or location..."
+            className="w-full pl-8 pr-4 py-2 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
           />
         </div>
       </div>
@@ -180,28 +153,25 @@ export const EventsPage: React.FC = () => {
             <CalendarDays size={32} style={{ color: "#A0AAB5" }} />
           </div>
           <p className="mt-4 text-[#1A2A3A] font-semibold text-base">
-            No {tab} events found
+            No events found
           </p>
           <p className="text-[#8A9AA8] text-sm mt-1">
-            {tab === "active"
-              ? 'Create a new event using the "Create Event" button above.'
-              : "Past events will appear here once events conclude."}
+            Create a new event using the "Create Event" button above to get
+            started.
           </p>
-          {tab === "active" && (
-            <button
-              onClick={openCreate}
-              className="mt-4 px-5 py-2.5 rounded-lg text-white text-sm font-semibold inline-flex items-center gap-2"
-              style={{ background: "#86B537" }}
-            >
-              <PlusCircle size={15} />
-              Create First Event
-            </button>
-          )}
+          {/* <button
+            onClick={openCreate}
+            className="mt-4 px-5 py-2.5 rounded-lg text-white text-sm font-semibold inline-flex items-center gap-2"
+            style={{ background: "#86B537" }}
+          >
+            <PlusCircle size={15} />
+            Create First Event
+          </button> */}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((event) => {
-            const eventDate = new Date(event.date);
+            const eventDate = new Date(event.startDate);
             const isDeleting = deleteState.eventId === event.eventId;
             const confirmDelete =
               deleteState.eventId === event.eventId && !deleteState.loading;
@@ -212,10 +182,10 @@ export const EventsPage: React.FC = () => {
                 className="bg-white rounded-xl border border-[#E8EDF2] hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group"
               >
                 {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0">
+                <div className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0">
                   {event.eventImage ? (
                     <img
-                      src={event.eventImage}
+                      src={getEventImageUrl(event.eventImage)}
                       alt={event.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -234,15 +204,6 @@ export const EventsPage: React.FC = () => {
                       {format(eventDate, "d")}
                     </p>
                   </div>
-
-                  {/* Past label */}
-                  {tab === "past" && (
-                    <div className="absolute top-3 right-3 bg-[#1A2A3A]/70 rounded-md px-2 py-0.5">
-                      <span className="text-white text-[10px] font-medium">
-                        Past
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Card Body */}
@@ -288,7 +249,7 @@ export const EventsPage: React.FC = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleDelete(event.eventId)}
-                          className="flex-1 py-1.5 rounded-md text-white text-xs font-semibold transition"
+                          className="cursor-pointer flex-1 py-1.5 rounded-md text-white text-xs font-semibold transition"
                           style={{ background: "#108ACB" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = "#0E6EAD";
@@ -310,7 +271,7 @@ export const EventsPage: React.FC = () => {
                           onClick={() =>
                             setDeleteState({ eventId: null, loading: false })
                           }
-                          className="flex-1 py-1.5 rounded-md bg-[#F5F7FA] text-[#6B7A88] text-xs font-semibold transition hover:bg-[#E8EDF2]"
+                          className="cursor-pointer flex-1 py-1.5 rounded-md bg-[#F5F7FA] text-[#6B7A88] text-xs font-semibold transition hover:bg-[#E8EDF2]"
                         >
                           Cancel
                         </button>
@@ -321,7 +282,7 @@ export const EventsPage: React.FC = () => {
                     <div className="mt-auto flex gap-2 pt-1">
                       <button
                         onClick={() => openEdit(event)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors"
+                        className="cursor-pointer  flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors"
                         style={{ background: "#E8F2FA", color: "#108ACB" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#D4EAF8";
@@ -341,7 +302,7 @@ export const EventsPage: React.FC = () => {
                           })
                         }
                         disabled={isDeleting}
-                        className="flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                        className="cursor-pointer flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
                         style={{ background: "#F0F7E4", color: "#86B537" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#E6F3DA";

@@ -1,29 +1,30 @@
 import { ENV } from "../config/env";
-import bcrypt from "bcryptjs";
 import type {
   LoginPayload,
   RegisterPayload,
   AuthResponse,
   UserProfile,
 } from "../types/auth.types";
+import bcrypt from "bcryptjs";
+
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 
 const BASE = ENV.API_BASE_URL;
-// We use a fixed salt so the frontend always generates the exact same hash for the same password.
-// Be aware that frontend hashing is not a replacement for HTTPS.
-const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
 /**
  * Creates a new user account.
  * Maps to: POST /users
+ * Password is sent as plaintext over HTTPS; backend handles bcrypt hashing.
  */
 export const registerUser = async (
   payload: RegisterPayload,
 ): Promise<UserProfile> => {
-  // Hash password before sending
-  const hashedPassword = bcrypt.hashSync(payload.password, FRONTEND_SALT);
-  const securePayload = { ...payload, password: hashedPassword };
+  const securePayload = { 
+    ...payload, 
+    password: bcrypt.hashSync(payload.password, FRONTEND_SALT) 
+  };
 
   const res = await fetch(`${BASE}/users`, {
     method: "POST",
@@ -48,9 +49,11 @@ export const registerUser = async (
 export const loginUser = async (
   payload: LoginPayload,
 ): Promise<AuthResponse> => {
-  // Hash password before sending
-  const hashedPassword = bcrypt.hashSync(payload.password, FRONTEND_SALT);
-  const securePayload = { ...payload, password: hashedPassword };
+  // Password hashed before sending
+  const securePayload = { 
+    ...payload,
+    password: bcrypt.hashSync(payload.password, FRONTEND_SALT)
+  };
 
   const res = await fetch(`${BASE}/auth/login`, {
     method: "POST",

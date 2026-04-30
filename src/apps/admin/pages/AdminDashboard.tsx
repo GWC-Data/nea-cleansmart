@@ -21,14 +21,14 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { StatCard } from "../../../components/admin/StatCard";
+import { StatCard } from "../../../components/sections/admin/StatCard";
 import { adminApiService } from "../../../services/adminApiService";
 import type { PlatformStats } from "../../../types/admin.types";
 import type {
   EventData,
   EventLog,
   LeaderboardEntry,
-} from "../../../types/apiTypes";
+} from "../../../types/api.types";
 import { formatDistanceToNow, format } from "date-fns";
 
 function groupEventsByMonth(events: EventData[]) {

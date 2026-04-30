@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { loginUser, registerUser } from "../services/authService";
+import { orgApiService } from "../services/orgApiService";
 import { useAuthContext } from "../context/AuthContext";
 import { saveAdminToken } from "../utils/tokenUtils";
 import type { LoginFormState, RegisterFormState } from "../types/auth.types";
@@ -52,6 +53,29 @@ export const useAuth = () => {
     }
   };
 
+  const handleOrganizationRegister = async (
+    formData: RegisterFormState,
+    onSuccess: () => void,
+  ) => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await orgApiService.createOrganization({
+        orgName: formData.organizationName!,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        password: formData.password,
+        address: formData.address,
+      });
+      onSuccess();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // ─── Login ─────────────────────────────────────────────────────────────────
 
   /**
@@ -60,7 +84,7 @@ export const useAuth = () => {
    */
   const handleLogin = async (
     formData: LoginFormState,
-    onSuccess: () => void,
+    onSuccess: (role: string) => void,
   ) => {
     setError(null);
     setIsSubmitting(true);
@@ -70,16 +94,19 @@ export const useAuth = () => {
       if (user.role === "admin") {
         // Save to the isolated admin token key — do NOT touch user AuthContext
         saveAdminToken(accessToken, tokenExpiry);
-        // Signal to LoginRoute that it should navigate to /admin/dashboard
-        sessionStorage.setItem("login_role", "admin");
-        onSuccess();
+        onSuccess("admin");
         return;
       }
 
-      // Normal volunteer login
+      // Normal user or organization login
       onLoginSuccess(accessToken, user, tokenExpiry);
-      await refreshUserProfile();
-      onSuccess();
+
+      // refreshUserProfile only works for regular users (/users/details endpoint)
+      if (user.role === "user") {
+        await refreshUserProfile();
+      }
+
+      onSuccess(user.role);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -95,6 +122,7 @@ export const useAuth = () => {
     isLoading,
     handleLogin,
     handleRegister,
+    handleOrganizationRegister,
     logout,
     refreshUserProfile,
   };

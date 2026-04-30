@@ -5,13 +5,17 @@
  */
 
 import { ENV } from "../config/env";
+import bcrypt from "bcryptjs";
+
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 import { getAdminToken } from "../utils/tokenUtils";
 import type {
   EventData,
   UserProfile,
   EventLog,
   LeaderboardEntry,
-} from "../types/apiTypes";
+  FullUserProfile,
+} from "../types/api.types";
 import type { CreateEventPayload, PlatformStats } from "../types/admin.types";
 
 const BASE = ENV.API_BASE_URL;
@@ -46,7 +50,7 @@ export const adminApiService = {
       const response = await fetch(`${BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password: bcrypt.hashSync(password, FRONTEND_SALT) }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -135,14 +139,15 @@ export const adminApiService = {
         form.append("name", payload.name);
         form.append("description", payload.description);
         form.append("location", payload.location);
-        form.append("date", payload.date);
+        form.append("startDate", payload.startDate);
+        form.append("endDate", payload.endDate);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
         form.append("eventImage", payload.eventImage);
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, ...rest } = payload;
+        const { eventImage: _img, eventType, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 
@@ -183,14 +188,15 @@ export const adminApiService = {
         if (payload.description)
           form.append("description", payload.description);
         if (payload.location) form.append("location", payload.location);
-        if (payload.date) form.append("date", payload.date);
+        if (payload.startDate) form.append("startDate", payload.startDate);
+        if (payload.endDate) form.append("endDate", payload.endDate);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
         form.append("eventImage", payload.eventImage);
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, ...rest } = payload;
+        const { eventImage: _img, eventType, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 
@@ -239,7 +245,7 @@ export const adminApiService = {
    */
   async getAllUsers(): Promise<UserProfile[]> {
     try {
-      const response = await fetch(`${BASE}/users-profiles`, {
+      const response = await fetch(`${BASE}/users`, {
         method: "GET",
         headers: adminHeaders(),
       });
@@ -250,6 +256,31 @@ export const adminApiService = {
     } catch (error) {
       console.error("adminApiService.getAllUsers error:", error);
       return [];
+    }
+  },
+
+  /**
+   * Create a new user (admin/public endpoint)
+   */
+  async createUser(payload: any): Promise<UserProfile | null> {
+    try {
+      const response = await fetch(`${BASE}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(
+          err.message || `Failed to create user: ${response.statusText}`,
+        );
+      }
+      const data = await response.json();
+      return data.user || null;
+    } catch (error) {
+      console.error("adminApiService.createUser error:", error);
+      throw error;
     }
   },
 
@@ -271,6 +302,28 @@ export const adminApiService = {
     } catch (error) {
       console.error("adminApiService.getTopLeaderboard error:", error);
       return [];
+    }
+  },
+
+  /**
+   * Get full user profile with stats (admin only)
+   */
+  async getFullUserProfile(userId: string): Promise<FullUserProfile | null> {
+    try {
+      const response = await fetch(`${BASE}/users/full-profile/${userId}`, {
+        method: "GET",
+        headers: adminHeaders(),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return {
+        ...data,
+        eventsJoinedCount: data.eventsJoined,
+        groupsJoinedCount: data.groupsJoined,
+      };
+    } catch (error) {
+      console.error(`adminApiService.getFullUserProfile(${userId}) error:`, error);
+      return null;
     }
   },
 
@@ -329,7 +382,7 @@ export const adminApiService = {
       ]);
 
       const now = new Date();
-      const activeEvents = events.filter((e) => new Date(e.date) >= now).length;
+      const activeEvents = events.filter((e) => new Date(e.startDate) >= now).length;
       const totalHoursLogged = leaderboard.reduce(
         (sum, e) => sum + (e.totalHours || 0),
         0,

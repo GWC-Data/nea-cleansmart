@@ -1,10 +1,10 @@
 import React from "react";
 
-import { LoginForm } from "../../../components/auth/LoginForm";
+import { LoginForm } from "../../../components/sections/auth/LoginForm";
 import heroBg from "../../../assets/logIn.png";
 
 interface LoginPageProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role: string) => void;
   onNavigateToRegister: () => void;
 }
 

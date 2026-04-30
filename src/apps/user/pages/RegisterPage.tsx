@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { RegisterForm } from "../../../components/auth/RegisterForm";
+import { RegisterForm } from "../../../components/sections/auth/RegisterForm";
 import heroBg from "../../../assets/signUp.png";
 
 interface RegisterPageProps {

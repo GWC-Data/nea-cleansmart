@@ -11,8 +11,11 @@ export interface CreateEventPayload {
   description: string;
   details?: string;
   location: string;
-  date: string; // ISO string
+  startDate: string;
+  endDate: string;
+  time?: string;
   rewards?: string;
+  eventType?: "public" | "private";
   eventImage?: File;
 }
 

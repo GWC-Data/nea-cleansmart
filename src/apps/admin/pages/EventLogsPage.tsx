@@ -16,10 +16,10 @@ import {
   List,
   Timer,
 } from "lucide-react";
-import { DataTable } from "../../../components/admin/DataTable";
-import type { Column } from "../../../components/admin/DataTable";
+import { DataTable } from "../../../components/sections/admin/DataTable";
+import type { Column } from "../../../components/sections/admin/DataTable";
 import { adminApiService } from "../../../services/adminApiService";
-import type { EventLog, EventData } from "../../../types/apiTypes";
+import type { EventLog, EventData } from "../../../types/api.types";
 import { format, formatDistanceToNow } from "date-fns";
 
 function fmtTime(ts: string | null | undefined) {
@@ -195,7 +195,8 @@ export const EventLogsPage: React.FC = () => {
       if (search) {
         const q = search.toLowerCase();
         const userName = log.user?.name ?? "";
-        const eventName = log.event?.name ?? "";
+        const matchingEvent = events.find((e) => e.eventId === log.eventId);
+        const eventName = log.event?.name || matchingEvent?.name || "";
         if (
           !userName.toLowerCase().includes(q) &&
           !eventName.toLowerCase().includes(q)
@@ -205,7 +206,7 @@ export const EventLogsPage: React.FC = () => {
       }
       return true;
     });
-  }, [allLogs, statusFilter, eventFilter, dateFrom, dateTo, search]);
+  }, [allLogs, statusFilter, eventFilter, dateFrom, dateTo, search, events]);
 
   const columns: Column<EventLog & Record<string, unknown>>[] = [
     {
@@ -255,21 +256,28 @@ export const EventLogsPage: React.FC = () => {
     {
       key: "_event",
       label: "Event",
-      render: (row) => (
-        <div>
-          <p className="font-medium text-[#1A2A3A] text-sm max-w-[180px] truncate">
-            {row.event?.name ?? "—"}
-          </p>
-          {row.eventLocation && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <MapPin size={10} className="text-[#8A9AA8]" />
-              <span className="text-[10px] text-[#8A9AA8] truncate max-w-[150px]">
-                {row.eventLocation}
-              </span>
-            </div>
-          )}
-        </div>
-      ),
+      render: (row) => {
+        const matchingEvent = events.find((e) => e.eventId === row.eventId);
+        const eventName = row.event?.name || matchingEvent?.name || "—";
+        const location =
+          row.eventLocation || row.event?.location || matchingEvent?.location;
+
+        return (
+          <div>
+            <p className="font-medium text-[#1A2A3A] text-sm max-w-[180px] truncate">
+              {eventName}
+            </p>
+            {location && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <MapPin size={10} className="text-[#8A9AA8]" />
+                <span className="text-[10px] text-[#8A9AA8] truncate max-w-[150px]">
+                  {location}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "checkInTime",
