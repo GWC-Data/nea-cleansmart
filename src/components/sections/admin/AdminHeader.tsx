@@ -7,7 +7,8 @@
 
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Menu, UserCheck, ChevronRight } from "lucide-react";
+import { Menu, Bell, ChevronRight } from "lucide-react";
+import { orgApiService } from "../../../services/orgApiService";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -22,8 +23,27 @@ const PAGE_LABELS: Record<string, { label: string; accent: string }> = {
 };
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
+  const [pendingCount, setPendingCount] = React.useState(0);
   const location = useLocation();
   const pathname = location.pathname;
+
+  const fetchPendingCount = React.useCallback(async () => {
+    try {
+      const orgs = await orgApiService.getAllOrganizations();
+      const pending = orgs.filter((o: any) => o.status === 'pending').length;
+      setPendingCount(pending);
+    } catch (err) {
+      console.error("Failed to fetch pending org count:", err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchPendingCount();
+    // Refresh count when location changes (in case an approval happened)
+    const interval = setInterval(fetchPendingCount, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [fetchPendingCount, pathname]);
+
   const currentPageInfo = Object.entries(PAGE_LABELS).find(([key]) =>
     pathname.endsWith(key),
   )?.[1] || { label: "Admin", accent: "#509CD1" };
@@ -61,14 +81,20 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
 
         {/* Right Section: Notifications */}
         <div className="flex items-center gap-2">
-          {/* Organization Requests Link */}
           <Link
             to="/admin/requests"
-            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#108ACB]"
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#108ACB] relative group"
             aria-label="Organization Requests"
           >
-            <UserCheck size={18} />
-            <span className="text-sm font-medium">Requests</span>
+            <div className="relative">
+              <Bell size={20} className="group-hover:animate-shake" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                  {pendingCount}
+                </span>
+              )}
+            </div>
+            {/* <span className="text-sm font-medium hidden sm:inline">Requests</span> */}
           </Link>
         </div>
       </div>

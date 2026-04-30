@@ -69,6 +69,7 @@ export interface RegisterFormState {
   gender?: string;
   organizationName?: string;
   phoneNumber?: string;
+  address?: string;
 }
 
 /** Local state shape for the login form */

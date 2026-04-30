@@ -14,7 +14,7 @@ import { FloatingInput } from "../../ui/FloatingInput";
 import { apiService } from "../../../services/apiService";
 
 interface LoginFormProps {
-  onSuccess: () => void;
+  onSuccess: (role: string) => void;
   onNavigateToRegister: () => void;
 }
 
@@ -41,7 +41,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   React.useEffect(() => {
     if (error)
-      toast.error("Email or password is incorrect", { duration: 5000 });
+      toast.error(error, { duration: 5000 });
   }, [error]);
 
   const handleSubmit = (e: React.FormEvent) => {

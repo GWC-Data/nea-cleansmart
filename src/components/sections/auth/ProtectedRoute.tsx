@@ -21,9 +21,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Not logged in — save intended path and redirect to login
+  // Not logged in — save intended path (only for user paths) and redirect to login
   if (!currentUser) {
-    sessionStorage.setItem("redirect_after_login", location.pathname);
+    const isUserPath = !location.pathname.startsWith("/org") && !location.pathname.startsWith("/admin");
+    if (isUserPath) {
+      sessionStorage.setItem("redirect_after_login", location.pathname);
+    }
     return <Navigate to="/login" replace />;
   }
 

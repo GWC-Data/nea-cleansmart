@@ -84,13 +84,14 @@ export interface LeaderboardEntry {
 }
 
 export interface OrganizationProfile {
-  orgId: string;
+  orgId?: string;
+  orgName: string;
   name: string;
   email: string;
-  role: "organization";
+  password: string;
   address?: string;
   phone?: string;
-  isApproved?: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface OrganizationDashboard {

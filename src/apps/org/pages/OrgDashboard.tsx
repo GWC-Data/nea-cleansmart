@@ -69,28 +69,28 @@ export const OrgDashboard: React.FC = () => {
   }, []);
 
   const handleEventSubmit = async (values: any, imageFile: File | null) => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    const newEvent: EventData = {
-      eventId: Math.random().toString(36).substr(2, 9),
-      name: values.name,
-      description: values.description,
-      details: values.details || "",
-      location: values.location,
-      startDate: values.startDate,
-      endDate: values.endDate,
-      rewards: values.rewards || "",
-      joinsCount: 0,
-      participants: [],
-      eventType: values.eventType,
-      userCount: values.userCount ? Number(values.userCount) : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
-    };
-    setOrgEvents((prev) => [newEvent, ...prev]);
-    toast.success(
-      `${values.eventType === "private" ? "Private" : "Public"} event created!`,
-    );
+    // await new Promise((resolve) => setTimeout(resolve, 800));
+    // const newEvent: EventData = {
+    //   eventId: Math.random().toString(36).substr(2, 9),
+    //   name: values.name,
+    //   description: values.description,
+    //   details: values.details || "",
+    //   location: values.location,
+    //   startDate: values.startDate,
+    //   endDate: values.endDate,
+    //   rewards: values.rewards || "",
+    //   joinsCount: 0,
+    //   participants: [],
+    //   eventType: values.eventType,
+    //   userCount: values.userCount ? Number(values.userCount) : undefined,
+    //   createdAt: new Date().toISOString(),
+    //   updatedAt: new Date().toISOString(),
+    //   eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
+    // };
+    // setOrgEvents((prev) => [newEvent, ...prev]);
+    // toast.success(
+    //   `${values.eventType === "private" ? "Private" : "Public"} event created!`,
+    // );
   };
 
   const handleUserAdded = (user: UserProfile) => {
@@ -165,12 +165,12 @@ export const OrgDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button
+            {/* <button
               onClick={() => setAddUserModalOpen(true)}
               className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 text-sm font-semibold transition-all cursor-pointer"
             >
               <Users size={16} /> Add Member
-            </button>
+            </button> */}
             <button
               onClick={() => setEventFormOpen(true)}
               className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer bg-[#86B537] hover:bg-[#7aa632]"
@@ -419,7 +419,7 @@ export const OrgDashboard: React.FC = () => {
       <EventFormModal
         isOpen={eventFormOpen}
         onClose={() => setEventFormOpen(false)}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
       />

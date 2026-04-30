@@ -19,19 +19,16 @@ const LoginRoute = () => {
   const navigate = useNavigate();
   return (
     <LoginPage
-      onLoginSuccess={() => {
-        // If an admin just logged in, useAuth sets "login_role" = "admin" in sessionStorage
-        const isAdmin = sessionStorage.getItem("login_role") === "admin";
-        sessionStorage.removeItem("login_role");
-
-        if (isAdmin) {
+      onLoginSuccess={(role) => {
+        if (role === "admin") {
           // Restore any deep-link the admin tried to reach before being redirected
-          const adminRedirect = sessionStorage.getItem(
-            "admin_redirect_after_login",
-          );
+          const adminRedirect = sessionStorage.getItem("admin_redirect_after_login");
           sessionStorage.removeItem("admin_redirect_after_login");
           navigate(adminRedirect || "/admin/dashboard");
+        } else if (role === "organization") {
+          navigate("/org/dashboard");
         } else {
+          // Regular user — honour any stored deep-link
           const redirectTo = sessionStorage.getItem("redirect_after_login");
           sessionStorage.removeItem("redirect_after_login");
           navigate(redirectTo || "/dashboard");

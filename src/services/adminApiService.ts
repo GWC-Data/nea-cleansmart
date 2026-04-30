@@ -5,6 +5,9 @@
  */
 
 import { ENV } from "../config/env";
+import bcrypt from "bcryptjs";
+
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 import { getAdminToken } from "../utils/tokenUtils";
 import type {
   EventData,
@@ -47,7 +50,7 @@ export const adminApiService = {
       const response = await fetch(`${BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password: bcrypt.hashSync(password, FRONTEND_SALT) }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));

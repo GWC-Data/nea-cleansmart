@@ -5,13 +5,16 @@
  */
 
 import { ENV } from "../config/env";
-import { getToken } from "../utils/tokenUtils";
-import type { OrganizationDashboard } from "../types/api.types";
+import { getToken, getAdminToken } from "../utils/tokenUtils";
+import type { OrganizationDashboard, OrganizationProfile } from "../types/api.types";
+import bcrypt from "bcryptjs";
+
+const FRONTEND_SALT = "$2a$10$Xxxxxxxxxxxxxxxxxxxxxx";
 
 const BASE = ENV.API_BASE_URL;
 
 const getAuthHeaders = (extra: Record<string, string> = {}): Record<string, string> => {
-  const token = getToken();
+  const token = getAdminToken() || getToken();
   return {
     ...extra,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -22,20 +25,70 @@ export const orgApiService = {
   /**
    * Create a new organization (registration)
    */
-  async createOrganization(payload: any): Promise<any> {
+  async createOrganization(payload: OrganizationProfile): Promise<any> {
     try {
+      // Hash password before sending
+      const securePayload = { 
+        ...payload,
+        password: bcrypt.hashSync(payload.password, FRONTEND_SALT)
+      };
+
       const response = await fetch(`${BASE}/organizations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(securePayload),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to create organization");
+        console.error("Backend error response:", err);
+        const msg = err.message || err.msg || err.error || (Array.isArray(err.errors) ? err.errors.map((e: any) => e.msg).join(", ") : null);
+        throw new Error(msg || "Failed to create organization");
       }
       return await response.json();
     } catch (error) {
       console.error("orgApiService.createOrganization error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all organizations (Admin only)
+   */
+  async getAllOrganizations(): Promise<any[]> {
+    try {
+      const response = await fetch(`${BASE}/organizations`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch organizations");
+      }
+      const data = await response.json();
+      return data.organizations || [];
+    } catch (error) {
+      console.error("orgApiService.getAllOrganizations error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Update organization (Admin only - for approval/rejection)
+   */
+  async updateOrganization(orgId: string, payload: any): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/organizations/${orgId}`, {
+        method: "PUT",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to update organization");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("orgApiService.updateOrganization error:", error);
       throw error;
     }
   },

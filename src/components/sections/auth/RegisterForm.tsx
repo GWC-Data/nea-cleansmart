@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Building2,
   Phone,
+  MapPin,
 } from "lucide-react";
 import type { RegisterFormState } from "../../../types/auth.types";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ const INITIAL_STATE: RegisterFormState = {
   gender: "",
   organizationName: "",
   phoneNumber: "",
+  address: "",
 };
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -79,6 +81,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       setValidationError("Phone Number is required.");
       return false;
     }
+    if (activeTab === "organization" && !form.address?.trim()) {
+      setValidationError("Address is required.");
+      return false;
+    }
     if (form.password.length < 6) {
       setValidationError("Password must be at least 6 characters.");
       return false;
@@ -119,9 +125,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     genderFocused || isGenderDropdownOpen || !!form.gender;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 md:space-y-7">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
       {/* Tabs */}
-      <div className="flex bg-[#F0F4F8] p-1.5 rounded-xl mb-8 relative border border-[#E8EDF2]">
+      <div className="flex bg-[#F0F4F8] p-1 rounded-xl mb-4 relative border border-[#E8EDF2]">
         <button
           type="button"
           onClick={() => {
@@ -341,7 +347,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       )}
 
       {activeTab === "organization" && (
-        <div className="space-y-5 md:space-y-7">
+        <div className="space-y-4 md:space-y-5">
           {/* Organization Name */}
           <FloatingInput
             id="reg-org-name"
@@ -390,6 +396,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             icon={<Mail className="w-5 h-5" />}
           />
 
+          {/* Address */}
+          <FloatingInput
+            id="reg-address-org"
+            name="address"
+            type="text"
+            label={
+              <>
+                Address <span className="text-red-500">*</span>
+              </>
+            }
+            value={form.address || ""}
+            onChange={handleChange}
+            required={activeTab === "organization"}
+            icon={<MapPin className="w-5 h-5" />}
+          />
+
           {/* Phone Number */}
           <FloatingInput
             id="reg-phone-org"
@@ -406,7 +428,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             icon={<Phone className="w-5 h-5" />}
           />
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:gap-y-7">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4">
             {/* Password */}
             <FloatingInput
               id="reg-password-org"
