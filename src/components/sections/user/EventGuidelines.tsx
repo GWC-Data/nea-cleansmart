@@ -10,7 +10,7 @@ export const EventGuidelines: React.FC = () => {
   ];
 
   return (
-    <div className="bg-[#f0fdf4] rounded-[2rem] p-6 xl:p-8 border border-[#bbf7d0] shadow-sm hover:shadow-md transition-all duration-300">
+    <div className="bg-[#ffffff] rounded-[2rem] p-6 border border-[#ffffff] shadow-sm hover:shadow-md transition-all duration-300">
       <div className="flex items-center gap-3 mb-6">
         <div className="bg-[#08351e] p-2 rounded-xl shadow-lg shadow-green-900/10">
           <CalendarDays className="w-5 h-5 text-white" />
@@ -19,9 +19,9 @@ export const EventGuidelines: React.FC = () => {
           <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
             Event Guidelines
           </h3>
-          <p className="text-[10px] text-green-700 font-bold uppercase tracking-widest">
+          {/* <p className="text-[10px] text-green-700 font-bold uppercase tracking-widest">
             Safety & Participation
-          </p>
+          </p> */}
         </div>
       </div>
 

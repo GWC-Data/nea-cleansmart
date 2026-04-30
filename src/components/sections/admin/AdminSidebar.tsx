@@ -199,7 +199,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Logout Button - Changed from pink to blue */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-[#6B7A88] hover:text-[#108ACB] hover:bg-[#E8F2FA] text-[13px] font-medium"
+            className="cursor-pointer w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-[#6B7A88] hover:text-[#108ACB] hover:bg-[#E8F2FA] text-[13px] font-medium"
           >
             <LogOut size={16} />
             <span>Sign Out</span>

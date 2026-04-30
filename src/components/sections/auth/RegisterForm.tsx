@@ -134,7 +134,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             setActiveTab("user");
             setValidationError(null);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
+          className={`cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
             activeTab === "user"
               ? "text-white bg-[#509CD1] shadow-[0_4px_12px_rgba(80,156,209,0.3)] transform scale-[1.02]"
               : "text-[#6B7A88] hover:text-[#1A2A3A] hover:bg-[#E8EDF2]"
@@ -152,7 +152,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             setActiveTab("organization");
             setValidationError(null);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
+          className={`cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all duration-300 rounded-lg z-10 ${
             activeTab === "organization"
               ? "text-white bg-[#86B537] shadow-[0_4px_12px_rgba(134,181,55,0.3)] transform scale-[1.02]"
               : "text-[#6B7A88] hover:text-[#1A2A3A] hover:bg-[#E8EDF2]"

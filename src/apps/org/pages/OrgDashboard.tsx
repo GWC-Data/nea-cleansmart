@@ -68,7 +68,10 @@ export const OrgDashboard: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleEventSubmit = async (values: any, imageFile: File | null) => {
+  const handleEventSubmit = async (
+    values: any,
+    // imageFile: File | null
+  ) => {
     // await new Promise((resolve) => setTimeout(resolve, 800));
     // const newEvent: EventData = {
     //   eventId: Math.random().toString(36).substr(2, 9),
@@ -87,10 +90,13 @@ export const OrgDashboard: React.FC = () => {
     //   updatedAt: new Date().toISOString(),
     //   eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
     // };
-    // setOrgEvents((prev) => [newEvent, ...prev]);
-    // toast.success(
-    //   `${values.eventType === "private" ? "Private" : "Public"} event created!`,
-    // );
+    setOrgEvents((prev) => [
+      // newEvent,
+      ...prev,
+    ]);
+    toast.success(
+      `${values.eventType === "private" ? "Private" : "Public"} event created!`,
+    );
   };
 
   const handleUserAdded = (user: UserProfile) => {
@@ -419,7 +425,7 @@ export const OrgDashboard: React.FC = () => {
       <EventFormModal
         isOpen={eventFormOpen}
         onClose={() => setEventFormOpen(false)}
-        onSuccess={() => { }}
+        onSuccess={() => {}}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
       />

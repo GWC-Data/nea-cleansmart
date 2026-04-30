@@ -76,7 +76,8 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               Welcome back, {name}!
             </h1>
             <p className="text-gray-500 font-medium text-sm leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
-              Your contribution helped to create a cleaner and more hygienic environment for all Singapore residents to enjoy.
+              Your contribution helped to create a cleaner and more hygienic
+              environment for all Singapore residents to enjoy.
             </p>
           </div>
         </div>
@@ -162,11 +163,24 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               ) : (
                 <div className="grid grid-cols-2 gap-5">
                   {activeEvents.map((event) => {
-                    const eventDate = new Date(event.startDate);
-                    const month = eventDate
-                      .toLocaleDateString("en-US", { month: "short" })
-                      .toUpperCase();
-                    const day = eventDate.getDate();
+                    const startDate = new Date(event.startDate);
+                    const endDate = event.endDate
+                      ? new Date(event.endDate)
+                      : null;
+                    const isValidStart = !isNaN(startDate.getTime());
+                    const isValidEnd = endDate && !isNaN(endDate.getTime());
+
+                    const startMonth = isValidStart
+                      ? startDate
+                          .toLocaleDateString("en-US", { month: "short" })
+                          .toUpperCase()
+                      : "TBD";
+                    const endMonth = isValidEnd
+                      ? endDate
+                          .toLocaleDateString("en-US", { month: "short" })
+                          .toUpperCase()
+                      : "TBD";
+
                     return (
                       <div
                         key={event.eventId}
@@ -180,13 +194,55 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                             alt={event.name}
                           />
                           {/* Date badge */}
-                          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5 shadow-sm text-center min-w-[48px]">
-                            <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest leading-none">
-                              {month}
-                            </p>
-                            <p className="text-lg font-black text-gray-900 leading-tight">
-                              {day}
-                            </p>
+                          <div className="absolute top-3 left-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
+                            {isValidStart &&
+                            isValidEnd &&
+                            startDate.getDate() !== endDate.getDate() ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                  <p className="text-xs font-black text-gray-900 leading-none">
+                                    {startMonth}
+                                  </p>
+                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {startDate.getDate()}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <p className="text-sm font-black text-gray-900 leading-none">
+                                  {isValidStart ? startDate.getDate() : "—"}
+                                </p>
+                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
+                                  {startMonth}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute top-3 right-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
+                            {isValidStart &&
+                            isValidEnd &&
+                            startDate.getDate() !== endDate.getDate() ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                  <p className="text-xs font-black text-gray-900 leading-none">
+                                    {endMonth}
+                                  </p>
+                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {endDate.getDate()}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <p className="text-sm font-black text-gray-900 leading-none">
+                                  {isValidEnd ? endDate.getDate() : "—"}
+                                </p>
+                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
+                                  {endMonth}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="p-4 flex flex-col gap-1.5">
@@ -229,11 +285,24 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               ) : (
                 <div className="grid grid-cols-2 gap-5">
                   {upcomingEvents.map((event) => {
-                    const eventDate = new Date(event.startDate);
-                    const month = eventDate
-                      .toLocaleDateString("en-US", { month: "short" })
-                      .toUpperCase();
-                    const day = eventDate.getDate();
+                    const startDate = new Date(event.startDate);
+                    const endDate = event.endDate
+                      ? new Date(event.endDate)
+                      : null;
+                    const isValidStart = !isNaN(startDate.getTime());
+                    const isValidEnd = endDate && !isNaN(endDate.getTime());
+
+                    const startMonth = isValidStart
+                      ? startDate
+                          .toLocaleDateString("en-US", { month: "short" })
+                          .toUpperCase()
+                      : "TBD";
+                    const endMonth = isValidEnd
+                      ? endDate
+                          .toLocaleDateString("en-US", { month: "short" })
+                          .toUpperCase()
+                      : "TBD";
+
                     return (
                       <div
                         key={event.eventId}
@@ -247,13 +316,39 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                             alt={event.name}
                           />
                           {/* Date badge */}
-                          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5 shadow-sm text-center min-w-[48px]">
-                            <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest leading-none">
-                              {month}
-                            </p>
-                            <p className="text-lg font-black text-gray-900 leading-tight">
-                              {day}
-                            </p>
+                          <div className="absolute top-3 left-3 bg-white rounded-xl px-2 py-1.5 shadow-sm text-center min-w-[54px] flex items-center justify-center">
+                            {isValidStart &&
+                            isValidEnd &&
+                            startDate.getDate() !== endDate.getDate() ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                  <p className="text-sm font-black text-gray-900 leading-none">
+                                    {startDate.getDate()}
+                                  </p>
+                                  <p className="text-[8px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {startMonth}
+                                  </p>
+                                </div>
+                                <div className="w-1 h-5 bg-gray-100" />
+                                <div className="flex flex-col">
+                                  <p className="text-sm font-black text-gray-900 leading-none">
+                                    {endDate.getDate()}
+                                  </p>
+                                  <p className="text-[8px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {endMonth}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <p className="text-sm font-black text-gray-900 leading-none">
+                                  {isValidStart ? startDate.getDate() : "—"}
+                                </p>
+                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
+                                  {startMonth}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="p-4 flex flex-col gap-1.5">
@@ -292,7 +387,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <Trophy className={`w-4 h-4 ${activeTab === "users" ? "text-white" : "text-gray-300"}`} />
+                  <Trophy
+                    className={`w-4 h-4 ${activeTab === "users" ? "text-white" : "text-gray-300"}`}
+                  />
                   Users
                 </button>
                 <button
@@ -303,7 +400,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <Building2 className={`w-4 h-4 ${activeTab === "orgs" ? "text-white" : "text-gray-300"}`} />
+                  <Building2
+                    className={`w-4 h-4 ${activeTab === "orgs" ? "text-white" : "text-gray-300"}`}
+                  />
                   Orgs
                 </button>
               </div>
@@ -312,7 +411,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 {activeTab === "users" ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">Top Performers</h3>
+                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">
+                        Top Performers
+                      </h3>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -324,7 +425,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                           >
                             <div
                               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getRankColor(
-                                idx + 1
+                                idx + 1,
                               )}`}
                             >
                               {getRankIcon(idx + 1)}
@@ -350,7 +451,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                           <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
                             <Trophy className="w-6 h-6" />
                           </div>
-                          <p className="text-xs text-gray-400 font-medium">No performer data yet</p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            No performer data yet
+                          </p>
                         </div>
                       )}
                     </div>
@@ -358,7 +461,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                 ) : (
                   <>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">Top Organizations</h3>
+                      <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">
+                        Top Organizations
+                      </h3>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -370,7 +475,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                           >
                             <div
                               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                idx === 0 ? "bg-[#96c93d] text-[#08351e]" : "bg-gray-100 text-gray-500"
+                                idx === 0
+                                  ? "bg-[#96c93d] text-[#08351e]"
+                                  : "bg-gray-100 text-gray-500"
                               }`}
                             >
                               {getRankIcon(idx + 1)}
@@ -396,7 +503,9 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                           <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
                             <Building2 className="w-6 h-6" />
                           </div>
-                          <p className="text-xs text-gray-400 font-medium">No organization data yet</p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            No organization data yet
+                          </p>
                         </div>
                       )}
                     </div>

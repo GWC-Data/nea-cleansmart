@@ -4,7 +4,6 @@ import logo from "../../../assets/publicHygineCouncil.png";
 import { StatsOverview } from "../../../components/sections/user/StatsOverview";
 import { WelcomeSection } from "../../../components/sections/user/WelcomeSection";
 import { CommunityEvents } from "../../../components/sections/user/CommunityEvents";
-import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 import { DesktopDashboardView } from "../../../components/sections/user/DesktopDashboardView";
 import { Leaderboard } from "../../../components/sections/user/Leaderboard";
 import { apiService } from "../../../services/apiService";

@@ -70,7 +70,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
     const typesJoined =
       selectedTypes.length > 0 ? selectedTypes.join(", ") : "mixed";
     const finalLocation = location || manualLocation;
-    
+
     setIsSubmitting(true);
     try {
       await onSubmit(
@@ -264,7 +264,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
             type="submit"
             form="logForm"
             disabled={isSubmitting}
-            className="w-full bg-secondary hover:bg-secondary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] text-base"
+            className="cursor-pointer w-full bg-secondary hover:bg-secondary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] text-base"
           >
             {isSubmitting ? "Submitting..." : "Submit Report"}
           </button>

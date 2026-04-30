@@ -7,9 +7,7 @@ import {
   Users,
   Medal,
   Share2,
-  Trophy,
   Clock,
-  Trash2,
   Gift,
   StopCircle,
   Sparkles,
@@ -18,7 +16,6 @@ import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
 import type {
   EventData,
-  LeaderboardEntry,
   EventLeaderboard,
   UserStats,
 } from "../../../services/apiService";
@@ -30,33 +27,84 @@ import { DurationSelectModal } from "../../../components/sections/user/modal/Dur
 import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
 import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 
+const MedalIcon: React.FC<{ label: string; className?: string }> = ({
+  label,
+  className,
+}) => {
+  const isDiamond = label === "Diamond";
+  const isGold = label === "Gold";
+
+  const place = isDiamond ? "1st" : isGold ? "2nd" : "3rd";
+  const mainColor = isDiamond ? "#009cdc" : isGold ? "#e39c03" : "#94a1b2";
+  const textColor = isDiamond ? "#2b3441" : isGold ? "#2b3441" : "#2b3441";
+
+  return (
+    <div className={`relative flex items-center justify-center ${className}`}>
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
+        {/* Scalloped edge */}
+        <path
+          d="M50 5 L58 10 L68 7 L73 16 L83 16 L83 27 L92 32 L89 42 L95 50 L89 58 L92 68 L83 73 L83 83 L73 84 L68 93 L58 90 L50 95 L42 90 L32 93 L27 84 L17 83 L17 73 L8 68 L11 58 L5 50 L11 42 L8 32 L17 27 L17 16 L27 16 L32 7 L42 10 Z"
+          fill={mainColor}
+        />
+        {/* Inner circle line */}
+        {/* <circle
+          cx="50"
+          cy="50"
+          r="38"
+          fill="none"
+          stroke={textColor}
+          strokeWidth="0.5"
+          strokeDasharray="1 1"
+          opacity="0.5"
+        /> */}
+
+        {/* Text */}
+        <text
+          x="50"
+          y="65"
+          textAnchor="middle"
+          fill={textColor}
+          fontSize="26"
+          fontWeight="900"
+          fontFamily="serif"
+        >
+          {place.slice(0, -2)}
+          <tspan fontSize="10" dy="-10">
+            {place.slice(-2)}
+          </tspan>
+        </text>
+      </svg>
+    </div>
+  );
+};
+
 const BADGES = [
   {
     label: "Silver",
     points: 50,
     hours: 5,
-    color: "bg-[#bbf7d0]",
-    border: "border-green-200",
-    icon: "text-[#0a4527]",
-    ring: "ring-green-400",
+    color: "bg-[#eff1f2]",
+    border: "border-slate-100",
+    icon: "text-slate-400",
+    ring: "ring-slate-200",
   },
   {
     label: "Gold",
     points: 100,
     hours: 10,
-    color: "bg-[#fde68a]",
-    border: "border-yellow-200",
-    icon: "text-yellow-800",
-    ring: "ring-yellow-400",
+    color: "bg-[#f3e68a]",
+    border: "border-yellow-100",
+    icon: "text-yellow-400",
+    ring: "ring-yellow-200",
   },
   {
     label: "Diamond",
     points: 150,
     hours: 15,
-    color: "bg-[#e2e8f0]",
-    border: "border-slate-200",
-    icon: "text-slate-700",
-    ring: "ring-slate-400",
+    color: "bg-[#caf4fb]",
+    border: "border-blue-100",
+    icon: "text-blue-400",
+    ring: "ring-blue-200",
   },
 ];
 
@@ -65,17 +113,24 @@ const RewardsBadgesCard: React.FC<{
   rewards: string;
   userTotalHours: number;
   isActiveEvent?: boolean;
-}> = ({ rewards, userTotalHours, isActiveEvent = true }) => {
+}> = ({ rewards, userTotalHours }) => {
   const highestEarned = [...BADGES]
     .reverse()
     .find((b) => userTotalHours >= b.hours);
-  const nextBadge = BADGES.find((b) => userTotalHours < b.hours);
+  // const nextBadge = BADGES.find((b) => userTotalHours < b.hours);
   return (
-    <div className="bg-[#fcf8f2] rounded-[2rem] p-6 shadow-sm border border-orange-50/50">
-      <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-1">
-        Rewards & Badges
-      </h3>
-      <p className="text-xs text-gray-400 font-medium mb-5 leading-relaxed">
+    <div className="bg-[#ffffff] rounded-[2rem] p-6 shadow-sm border border-orange-50/50">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="bg-[#08351e] p-2 rounded-xl shadow-lg shadow-green-900/10">
+          <Medal className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
+            Badges
+          </h3>
+        </div>
+      </div>
+      <p className="text-xs text-gray-400 font-medium mb-3 leading-relaxed">
         Complete clean-up hours to unlock badges and rewards.
       </p>
       {/* {isActiveEvent && nextBadge && (
@@ -97,6 +152,7 @@ const RewardsBadgesCard: React.FC<{
           </div>
         </div>
       )} */}
+      {/* Badge */}
       <div className="flex flex-col lg:flex-row gap-3">
         {BADGES.map((badge) => {
           const isEarned = userTotalHours >= badge.hours;
@@ -107,14 +163,9 @@ const RewardsBadgesCard: React.FC<{
               className={`flex items-center lg:flex-col lg:justify-center gap-4 lg:gap-3 rounded-2xl px-4 py-3 lg:py-5 lg:px-2 border shadow-sm transition-all lg:flex-1 ${isCurrent ? `${badge.color} border-transparent ring-2 ${badge.ring} scale-[1.02]` : isEarned ? `${badge.color} border-transparent opacity-70` : "bg-white border-gray-100"}`}
             >
               <div
-                className={`p-3 lg:p-4 rounded-full border shrink-0
-                ${
-                  isEarned
-                    ? "bg-white/60 " + badge.border
-                    : badge.color + " " + badge.border
-                }`}
+                className={`p-1 rounded-full shrink-0 flex items-center justify-center`}
               >
-                <Medal className={`w-5 h-5 lg:w-7 lg:h-7 ${badge.icon}`} />
+                <MedalIcon label={badge.label} className="w-16 h-16" />
               </div>
               <div className="flex-1 lg:flex-none w-full flex flex-col items-start lg:items-center">
                 <div className="flex items-center gap-2 lg:flex-col lg:gap-1.5">
@@ -143,110 +194,22 @@ const RewardsBadgesCard: React.FC<{
           );
         })}
       </div>
-      <div className="mt-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
-        {/* Gift icons and Reward title should in single line */}
-        <div className="flex items-center gap-2">
-          <Gift className="w-4 h-4 text-yellow-500" />
-          <p className="font-bold text-[14px] text-gray-700">Rewards: </p>
+
+      {/* Reward */}
+      <div className="mt-7 border-t border-gray-100">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="bg-[#08351e] p-2 rounded-xl shadow-lg shadow-green-900/10">
+            <Gift className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
+              Rewards
+            </h3>
+          </div>
         </div>
         <p className="text-xs text-gray-500 font-medium leading-relaxed">
           {rewards}
         </p>
-      </div>
-    </div>
-  );
-};
-
-// ── Leaderboard Card ─────────────────────────────────────────────────────────
-const LeaderboardCard: React.FC<{
-  leaderboard: LeaderboardEntry[];
-  currentUserId: string | null;
-  /** Tailwind classes applied to the scrollable entries wrapper */
-  scrollClass?: string;
-}> = ({ leaderboard, currentUserId, scrollClass = "" }) => {
-  if (leaderboard.length === 0) {
-    return (
-      <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
-        <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-1 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-yellow-500" /> Leaderboard
-        </h3>
-        <p className="text-xs text-gray-400 font-medium mt-3">
-          No activity logged yet. Be the first!
-        </p>
-      </div>
-    );
-  }
-
-  // const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-600"];
-
-  return (
-    <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
-      <h3 className="font-extrabold text-gray-900 text-[15px] tracking-tight mb-4 flex items-center gap-2">
-        <Trophy className="w-4 h-4 text-yellow-500" /> Leaderboard
-      </h3>
-      <div
-        className={`flex flex-col gap-2 overflow-y-auto pr-1 ${scrollClass}`}
-      >
-        {leaderboard.map((entry) => {
-          const isCurrentUser = entry.userId === currentUserId;
-          // const hours = Math.floor(entry.totalHours);
-          // const mins = Math.round((entry.totalHours - hours) * 60);
-
-          return (
-            <div
-              key={entry.userId}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all
-                ${
-                  isCurrentUser
-                    ? "bg-[#f0fdf4] border-2 border-[#08351e] shadow-sm"
-                    : "bg-gray-50 border border-gray-100"
-                }`}
-            >
-              {/* Rank */}
-              <div className="w-7 shrink-0 text-center">
-                <span className="text-xs font-bold text-gray-400">
-                  #{entry.rank}
-                </span>
-              </div>
-
-              {/* Avatar */}
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0
-                ${isCurrentUser ? "bg-[#08351e] text-white" : "bg-gray-200 text-gray-600"}`}
-              >
-                {entry.userName.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Name & hours */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p
-                    className={`text-sm font-extrabold truncate ${isCurrentUser ? "text-[#08351e]" : "text-gray-800"}`}
-                  >
-                    {entry.userName}
-                  </p>
-                  {isCurrentUser && (
-                    <span className="text-[9px] font-bold bg-[#08351e] text-white px-1.5 py-0.5 rounded-full shrink-0">
-                      You
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
-                  <Trash2 className="w-3 h-3" />
-                  {entry.garbageWeightCollected}kg
-                </p>
-              </div>
-
-              {/* Total hours badge */}
-              <div
-                className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0
-                ${isCurrentUser ? "bg-[#08351e] text-white" : "bg-gray-200 text-gray-600"}`}
-              >
-                {entry.totalHours.toFixed(2)}h
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
@@ -505,7 +468,9 @@ export const EventDetailPage: React.FC = () => {
       await loadData();
     } else {
       // checkoutResult is { error: string }
-      toast.error(checkoutResult.error || "Failed to submit report. Please try again.");
+      toast.error(
+        checkoutResult.error || "Failed to submit report. Please try again.",
+      );
     }
   };
 
@@ -623,19 +588,61 @@ export const EventDetailPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2 text-sm text-gray-500 font-medium">
-        <span className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[#08351e] shrink-0" />
-          {formattedDate}
-        </span>
-        <span className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-[#08351e] shrink-0" />
-          {event.location}
-        </span>
-        <span className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-[#08351e] shrink-0" />
-          {event.joinsCount} participant{event.joinsCount !== 1 ? "s" : ""}
-        </span>
+      <div
+        className={`flex ${compact ? "flex-row items-center justify-between" : "flex-col gap-2"} text-sm text-gray-500 font-medium`}
+      >
+        <div className="flex flex-col gap-2">
+          <span className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#08351e] shrink-0" />
+            {formattedDate}
+          </span>
+          <span className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-[#08351e] shrink-0" />
+            {event.location}
+          </span>
+          <span className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#08351e] shrink-0" />
+            {event.joinsCount} participant{event.joinsCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {compact && (
+          <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                stroke="#f3f4f6"
+                strokeWidth="6"
+                fill="transparent"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                stroke="#08351e"
+                strokeWidth="6"
+                strokeDasharray={213.6}
+                strokeDashoffset={
+                  213.6 -
+                  Math.min((userStats?.totalPoints ?? 0) / 150, 1) * 213.6
+                }
+                strokeLinecap="round"
+                fill="transparent"
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-lg font-black text-[#08351e] leading-none">
+                {userStats?.totalPoints ?? 0}
+              </span>
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                points
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <hr className="border-gray-100" />
@@ -677,7 +684,7 @@ export const EventDetailPage: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-end gap-4">
-          <div className="flex flex-1">
+          <div className="hidden lg:flex flex-1">
             {/* Start Clean-up — only for active (joined) events */}
             {isActiveEvent && sessionState === "idle" && (
               <button
@@ -743,6 +750,96 @@ export const EventDetailPage: React.FC = () => {
 
       {/* Mobile & Tablet */}
       <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
+        {/* Mobile Action Area */}
+        <div className="flex justify-end items-center -mb-2">
+          {isActiveEvent && sessionState === "idle" && (
+            <button
+              onClick={() => {
+                if (userStats && (userStats.todayHours || 0) >= 2) {
+                  toast.error(
+                    "Daily limit of 2 hours reached! See you tomorrow",
+                  );
+                  return;
+                }
+                openDurationPicker(eventId);
+              }}
+              className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                userStats && (userStats.todayHours || 0) >= 2
+                  ? "bg-gray-400 grayscale cursor-not-allowed"
+                  : "bg-[#96c93d] hover:bg-[#86b537]"
+              }`}
+            >
+              {userStats && (userStats.todayHours || 0) >= 2
+                ? "Daily Limit Reached"
+                : "Start Clean-up"}
+            </button>
+          )}
+
+          {isActiveEvent && sessionState === "checked_in" && (
+            <div className="flex justify-evenly w-full gap-3">
+              <div className="flex items-center gap-1.5">
+                {/* Hours */}
+                <div className="flex flex-col items-center gap-1">
+                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                      {Math.floor(remainingSeconds / 3600)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                    Hrs
+                  </span>
+                </div>
+                {/* Minutes */}
+                <div className="flex flex-col items-center gap-1">
+                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                      {Math.floor((remainingSeconds % 3600) / 60)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                    Min
+                  </span>
+                </div>
+                {/* Seconds */}
+                <div className="flex flex-col items-center gap-1">
+                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                      {Math.floor(remainingSeconds % 60)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                    Sec
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                disabled={stopButtonDisabled}
+                className={`w-44 h-10 cursor-pointer font-extrabold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all ${
+                  stopButtonDisabled
+                    ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                    : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                }`}
+                title={
+                  stopButtonDisabled
+                    ? "Must complete at least 30 minutes before stopping"
+                    : undefined
+                }
+              >
+                <StopCircle className="w-4 h-4" />
+                <span>Stop Clean-up</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="w-full h-52 sm:h-64 rounded-[1.5rem] overflow-hidden shadow-sm">
           <img
             src={getEventImageUrl(event.eventImage)}
@@ -753,30 +850,14 @@ export const EventDetailPage: React.FC = () => {
 
         <EventInfoCard compact />
 
-        {/* Active event extras — leaderboard + badges */}
-        {isActiveEvent && (
-          <>
-            {/* Leaderboard commented out */}
-            {/* <LeaderboardCard
-              leaderboard={leaderboardData?.leaderboard ?? []}
-              currentUserId={currentUser?.id ?? null}
-              scrollClass="max-h-[calc(5*4.75rem)]"
-            /> */}
-            <RewardsBadgesCard
-              rewards={event.rewards}
-              userTotalHours={userTotalHours}
-            />
-          </>
-        )}
+        {/* Rewards & Badges section */}
+        <RewardsBadgesCard
+          rewards={event.rewards}
+          userTotalHours={isActiveEvent ? userTotalHours : 0}
+          isActiveEvent={isActiveEvent}
+        />
 
-        {/* Upcoming event — show rewards but no leaderboard */}
-        {!isActiveEvent && (
-          <RewardsBadgesCard
-            rewards={event.rewards}
-            userTotalHours={0}
-            isActiveEvent={false}
-          />
-        )}
+        <EventGuidelines />
       </div>
 
       {/* Desktop */}
@@ -812,14 +893,14 @@ export const EventDetailPage: React.FC = () => {
                           ? { label: "Diamond", pointsNeeded: 150 - pts }
                           : null;
                   const nextBadge = getNextBadge(totalPoints);
-                  const hasBadge = totalPoints >= 50;
-                  const badgeName = !hasBadge
-                    ? null
-                    : totalPoints < 100
-                      ? "Silver"
-                      : totalPoints < 150
-                        ? "Gold"
-                        : "Diamond";
+                  // const hasBadge = totalPoints >= 50;
+                  // const badgeName = !hasBadge
+                  //   ? null
+                  //   : totalPoints < 100
+                  //     ? "Silver"
+                  //     : totalPoints < 150
+                  //       ? "Gold"
+                  //       : "Diamond";
                   const start =
                     totalPoints < 50
                       ? 0

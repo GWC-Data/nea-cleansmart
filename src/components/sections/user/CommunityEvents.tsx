@@ -45,12 +45,35 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
           <div className="w-full overflow-x-auto snap-x hide-scrollbar scroll-smooth">
             <div className="flex gap-4 min-w-max pb-2">
               {eventList.map((event) => {
-                const eventDate = new Date(event.startDate);
-                const formattedDate = eventDate.toLocaleDateString("en-US", {
-                  // weekday: "short",
+                const startDate = new Date(event.startDate);
+                const endDate = event.endDate ? new Date(event.endDate) : null;
+
+                const isValidStart = !isNaN(startDate.getTime());
+                const isValidEnd = endDate && !isNaN(endDate.getTime());
+
+                const formatOptions: Intl.DateTimeFormatOptions = {
                   month: "short",
                   day: "numeric",
-                });
+                };
+
+                let formattedDate = isValidStart
+                  ? startDate.toLocaleDateString("en-US", formatOptions)
+                  : "Date TBD";
+
+                if (isValidStart && isValidEnd) {
+                  const startStr = startDate.toLocaleDateString(
+                    "en-US",
+                    formatOptions,
+                  );
+                  const endStr = endDate.toLocaleDateString(
+                    "en-US",
+                    formatOptions,
+                  );
+
+                  if (startStr !== endStr) {
+                    formattedDate = `${startStr} - ${endStr}`;
+                  }
+                }
 
                 return (
                   <div
