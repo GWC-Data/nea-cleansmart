@@ -11,8 +11,6 @@ const userSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["user", "admin"]),
-  age: z.coerce.number().min(1, "Age must be at least 1"),
-  gender: z.enum(["Male", "Female", "Prefer not to say"]),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -35,14 +33,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<UserFormValues>({
     resolver: zodResolver(userSchema) as any,
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      role: "user",
-      age: 18,
-      gender: "Male",
-    },
   });
 
   const onSubmit = async (data: UserFormValues) => {
@@ -170,18 +160,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 <Calendar size={12} /> Age
               </label>
               <input
-                {...register("age")}
                 type="number"
                 placeholder="25"
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.age ? "border-red-500" : "border-gray-100"
-                } bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#86B537]/20 focus:border-[#86B537] transition-all font-medium text-sm`}
+                className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#86B537]/20 focus:border-[#86B537] transition-all font-medium text-sm`}
               />
-              {errors.age && (
-                <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-tight">
-                  {errors.age.message}
-                </p>
-              )}
             </div>
 
             {/* Gender */}
@@ -189,10 +171,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                 <Users size={12} /> Gender
               </label>
-              <select
-                {...register("gender")}
-                className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#86B537]/20 focus:border-[#86B537] transition-all font-medium text-sm"
-              >
+              <select className="w-full p`x-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#86B537]/20 focus:border-[#86B537] transition-all font-medium text-sm">
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Prefer not to say">Prefer not to say</option>
