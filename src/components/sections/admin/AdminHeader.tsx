@@ -8,7 +8,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Menu, Bell, ChevronRight } from "lucide-react";
-import { orgApiService } from "../../../services/orgApiService";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -27,22 +26,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  const fetchPendingCount = React.useCallback(async () => {
-    try {
-      const orgs = await orgApiService.getAllOrganizations();
-      const pending = orgs.filter((o: any) => o.status === 'pending').length;
-      setPendingCount(pending);
-    } catch (err) {
-      console.error("Failed to fetch pending org count:", err);
-    }
-  }, []);
-
   React.useEffect(() => {
-    fetchPendingCount();
-    // Refresh count when location changes (in case an approval happened)
-    const interval = setInterval(fetchPendingCount, 10000); // Poll every 10s
-    return () => clearInterval(interval);
-  }, [fetchPendingCount, pathname]);
+    // Stopped calling /organizations endpoint per user request
+    setPendingCount(0);
+  }, [pathname]);
 
   const currentPageInfo = Object.entries(PAGE_LABELS).find(([key]) =>
     pathname.endsWith(key),

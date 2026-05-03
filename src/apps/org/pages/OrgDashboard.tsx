@@ -94,8 +94,8 @@ export const OrgDashboard: React.FC = () => {
       // newEvent,
       ...prev,
     ]);
-    toast.success(
-      `${values.eventType === "private" ? "Private" : "Public"} event created!`,
+    toast.error(
+      `${values.eventType === "private" ? " Currently having an error while creating the private event" : " Currently having an error while creating the public event"}`,
     );
   };
 

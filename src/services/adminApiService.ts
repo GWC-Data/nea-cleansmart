@@ -141,13 +141,15 @@ export const adminApiService = {
         form.append("location", payload.location);
         form.append("startDate", payload.startDate);
         form.append("endDate", payload.endDate);
+        if (payload.eventType) form.append("eventType", payload.eventType);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
+        // File should be last
         form.append("eventImage", payload.eventImage);
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, eventType, ...rest } = payload;
+        const { eventImage: _img, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 
@@ -190,13 +192,15 @@ export const adminApiService = {
         if (payload.location) form.append("location", payload.location);
         if (payload.startDate) form.append("startDate", payload.startDate);
         if (payload.endDate) form.append("endDate", payload.endDate);
+        if (payload.eventType) form.append("eventType", payload.eventType);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
+        // File should be last
         form.append("eventImage", payload.eventImage);
         body = form;
       } else {
         headers = adminHeaders({ "Content-Type": "application/json" });
-        const { eventImage: _img, eventType, ...rest } = payload;
+        const { eventImage: _img, ...rest } = payload;
         body = JSON.stringify(rest);
       }
 
