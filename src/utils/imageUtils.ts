@@ -9,8 +9,22 @@ export function getEventImageUrl(imagePath: string | null | undefined): string {
 
   if (!imagePath) return FALLBACK;
 
-  // Convert Windows backslashes to forward slashes
-  const normalized = imagePath.replace(/\\/g, "/");
+  // If it's already a full URL, return it
+  if (imagePath.startsWith("http")) return imagePath;
 
-  return `${ENV.API_BASE_URL}/${normalized}`;
+  // Convert Windows backslashes to forward slashes and remove leading slash if present
+  let normalized = imagePath.replace(/\\/g, "/");
+  if (normalized.startsWith("/")) {
+    normalized = normalized.substring(1);
+  }
+
+  const baseUrl = ENV.API_BASE_URL.endsWith("/")
+    ? ENV.API_BASE_URL.slice(0, -1)
+    : ENV.API_BASE_URL;
+
+  const finalUrl = `${baseUrl}/${normalized}`;
+  
+  // console.debug(`[Image] Resolving ${imagePath} -> ${finalUrl}`);
+  
+  return finalUrl;
 }

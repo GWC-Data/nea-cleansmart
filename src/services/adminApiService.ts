@@ -97,11 +97,16 @@ export const adminApiService = {
       if (!response.ok)
         throw new Error(`Failed to fetch events: ${response.statusText}`);
       const data = await response.json();
-      const events = data.events || [];
-      return events.map((e: EventData & { event_image?: string }) => ({
-        ...e,
-        eventImage: e.eventImage || e.event_image || null,
-      }));
+      const rawEvents = data.events || [];
+      const normalizedEvents = rawEvents.map((e: any) => {
+        const eventImage = e.eventImage || e.event_image || null;
+        return {
+          ...e,
+          eventImage: eventImage && eventImage !== "" ? eventImage : null,
+        };
+      });
+      // console.debug("adminApiService.getAllEvents normalized:", normalizedEvents);
+      return normalizedEvents;
     } catch (error) {
       console.error("adminApiService.getAllEvents error:", error);
       return [];
@@ -119,7 +124,12 @@ export const adminApiService = {
       });
       if (!response.ok) return null;
       const data = await response.json();
-      return data.event || null;
+      const event = data.event || null;
+      if (event) {
+        const img = event.eventImage || event.event_image || null;
+        event.eventImage = img && img !== "" ? img : null;
+      }
+      return event;
     } catch (error) {
       console.error("adminApiService.getEventById error:", error);
       return null;
@@ -166,7 +176,12 @@ export const adminApiService = {
         );
       }
       const data = await response.json();
-      return data.event || null;
+      const event = data.event || null;
+      if (event) {
+        const img = event.eventImage || event.event_image || null;
+        event.eventImage = img && img !== "" ? img : null;
+      }
+      return event;
     } catch (error) {
       console.error("adminApiService.createEvent error:", error);
       throw error;
@@ -217,7 +232,12 @@ export const adminApiService = {
         );
       }
       const data = await response.json();
-      return data.event || null;
+      const event = data.event || null;
+      if (event) {
+        const img = event.eventImage || event.event_image || null;
+        event.eventImage = img && img !== "" ? img : null;
+      }
+      return event;
     } catch (error) {
       console.error("adminApiService.updateEvent error:", error);
       throw error;
