@@ -180,4 +180,117 @@ export const orgApiService = {
       throw error;
     }
   },
+
+  /**
+   * Create a new event (Organization)
+   */
+  async createEvent(payload: any): Promise<any> {
+    try {
+      let body: FormData | string;
+      let headers = getAuthHeaders();
+
+      if (payload.eventImage) {
+        const form = new FormData();
+        form.append("name", payload.name);
+        form.append("description", payload.description);
+        form.append("location", payload.location);
+        form.append("startDate", payload.startDate);
+        form.append("endDate", payload.endDate);
+        if (payload.eventType) form.append("eventType", payload.eventType);
+        if (payload.details) form.append("details", payload.details);
+        if (payload.rewards) form.append("rewards", payload.rewards);
+        // File should be last
+        form.append("eventImage", payload.eventImage);
+        body = form;
+      } else {
+        headers = getAuthHeaders({ "Content-Type": "application/json" });
+        const { eventImage: _img, ...rest } = payload;
+        body = JSON.stringify(rest);
+      }
+
+      const response = await fetch(`${BASE}/events`, {
+        method: "POST",
+        headers,
+        body,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(
+          err.message || `Failed to create event: ${response.statusText}`,
+        );
+      }
+      const data = await response.json();
+      const event = data.event || null;
+      if (event) {
+        const img = event.eventImage || event.event_image || null;
+        event.eventImage = img && img !== "" ? img : null;
+      }
+      return event;
+    } catch (error) {
+      console.error("orgApiService.createEvent error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create an event request
+   */
+  async createEventRequest(payload: any): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/event-requests`, {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to create event request");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("orgApiService.createEventRequest error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get my event requests
+   */
+  async getMyEventRequests(): Promise<any[]> {
+    try {
+      const response = await fetch(`${BASE}/event-requests/my`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch event requests");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("orgApiService.getMyEventRequests error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Update event request status
+   */
+  async updateEventRequestStatus(requestId: string, status: "approved" | "rejected"): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/event-requests/${requestId}/status`, {
+        method: "PUT",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to update event request status");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("orgApiService.updateEventRequestStatus error:", error);
+      throw error;
+    }
+  },
 };

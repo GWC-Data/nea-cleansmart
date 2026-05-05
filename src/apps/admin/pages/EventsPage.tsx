@@ -38,13 +38,13 @@ export const EventsPage: React.FC = () => {
     loading: false,
   });
 
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
+  const loadEvents = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await adminApiService.getAllEvents();
       setEvents(data);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -76,6 +76,31 @@ export const EventsPage: React.FC = () => {
       toast.error("Failed to delete event");
     } finally {
       setDeleteState({ eventId: null, loading: false });
+    }
+  };
+
+  // const handleStatusUpdate = async (eventId: string, status: "approved" | "rejected") => {
+  //   try {
+  //     await adminApiService.updateEventStatus(eventId, status);
+  //     toast.success(`Event ${status} successfully`);
+  //     loadEvents();
+  //   } catch (error) {
+  //     toast.error(`Failed to ${status} event`);
+  //   }
+  // };
+  const handleFormSuccess = (newEvent?: EventData) => {
+    if (newEvent) {
+      setEvents((prev) => {
+        const exists = prev.find((e) => e.eventId === newEvent.eventId);
+        if (exists) {
+          return prev.map((e) => (e.eventId === newEvent.eventId ? newEvent : e));
+        }
+        return [newEvent, ...prev];
+      });
+      // Optionally refresh in background to ensure sync
+      loadEvents(true);
+    } else {
+      loadEvents();
     }
   };
 
@@ -251,34 +276,45 @@ export const EventsPage: React.FC = () => {
                           onClick={() => handleDelete(event.eventId)}
                           className="cursor-pointer flex-1 py-1.5 rounded-md text-white text-xs font-semibold transition"
                           style={{ background: "#108ACB" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#0E6EAD";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#108ACB";
-                          }}
                         >
                           {deleteState.loading ? (
-                            <Loader2
-                              size={12}
-                              className="animate-spin mx-auto"
-                            />
+                            <Loader2 size={12} className="animate-spin mx-auto" />
                           ) : (
                             "Confirm"
                           )}
                         </button>
                         <button
-                          onClick={() =>
-                            setDeleteState({ eventId: null, loading: false })
-                          }
+                          onClick={() => setDeleteState({ eventId: null, loading: false })}
                           className="cursor-pointer flex-1 py-1.5 rounded-md bg-[#F5F7FA] text-[#6B7A88] text-xs font-semibold transition hover:bg-[#E8EDF2]"
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    /* Action buttons - Updated delete button to use blue/green */
+                  ) : 
+                  // event.status === "pending" ? (
+                  //   <div className="mt-auto flex flex-col gap-2 pt-1">
+                  //     <div className="text-xs font-semibold text-[#F5A623] bg-[#FFF8E7] px-2 py-1 rounded w-fit self-start mb-1 border border-[#FFE8B3]">
+                  //       ⏳ Pending Approval
+                  //     </div>
+                  //     <div className="flex gap-2">
+                  //       <button
+                  //         onClick={() => handleStatusUpdate(event.eventId, "approved")}
+                  //         className="cursor-pointer flex-1 py-1.5 rounded-md bg-[#86B537] text-white text-xs font-semibold transition hover:bg-[#7aa632]"
+                  //       >
+                  //         Approve
+                  //       </button>
+                  //       <button
+                  //         onClick={() => handleStatusUpdate(event.eventId, "rejected")}
+                  //         className="cursor-pointer flex-1 py-1.5 rounded-md bg-[#E8F2FA] text-[#108ACB] text-xs font-semibold transition hover:bg-[#D4EAF8]"
+                  //       >
+                  //         Reject
+                  //       </button>
+                  //     </div>
+                  //   </div>
+                  // ) : 
+                  (
+                    /* Action buttons */
                     <div className="mt-auto flex gap-2 pt-1">
                       <button
                         onClick={() => openEdit(event)}
@@ -330,7 +366,7 @@ export const EventsPage: React.FC = () => {
       <EventFormModal
         isOpen={formOpen}
         onClose={() => setFormOpen(false)}
-        onSuccess={loadEvents}
+        onSuccess={handleFormSuccess}
         editingEvent={editingEvent}
       />
     </div>

@@ -37,8 +37,6 @@ export function DataTable<T extends Record<string, unknown>>({
   emptySubtext = "Adjust your filters to see results.",
   onRowClick,
 }: DataTableProps<T>) {
-  console.log("columns", columns);
-  console.log("data", data);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 

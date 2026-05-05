@@ -19,6 +19,20 @@ export interface EventData {
   eventImage?: string | null;
   eventType?: "public" | "private";
   userCount?: number;
+  status?: "pending" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventRequest {
+  requestId: string;
+  name: string;
+  organizationEmail: string;
+  date: string;
+  time: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
