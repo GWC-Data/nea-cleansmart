@@ -234,6 +234,36 @@ export const orgApiService = {
   },
 
   /**
+   * Get current organization's profile (used for session rehydration on page refresh).
+   * Hits the /organization/dashboard endpoint and extracts the profile object,
+   * mapping it to a shape compatible with UserProfile so AuthContext can set currentUser.
+   */
+  async getOrgProfile(): Promise<{ id: string; name: string; email: string; role: string; createdAt: string; updatedAt: string } | null> {
+    try {
+      const response = await fetch(`${BASE}/organization/dashboard`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const profile = data.profile;
+      if (!profile) return null;
+      // Map org profile fields to the UserProfile shape expected by AuthContext
+      return {
+        id: profile.orgId || profile.id || "",
+        name: profile.name || "",
+        email: profile.email || "",
+        role: profile.role || "organization",
+        createdAt: profile.createdAt || new Date().toISOString(),
+        updatedAt: profile.updatedAt || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("orgApiService.getOrgProfile error:", error);
+      return null;
+    }
+  },
+
+  /**
    * Create an event request
    */
   async createEventRequest(payload: any): Promise<any> {
