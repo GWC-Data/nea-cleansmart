@@ -54,15 +54,24 @@ export const OrgDashboard: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [myRequests, setMyRequests] = useState<EventRequest[]>([]);
 
-  const loadData = async () => {
-    const allEvents = await apiService.getEvents();
-    setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
-    setOrgEvents(allEvents.filter((e) => e.eventType === "private" || e.status === "pending"));
-    const dashData = await orgApiService.getDashboard();
-    if (dashData) setUserStats(dashData.stats as any);
-    
-    const requests = await orgApiService.getMyEventRequests();
-    setMyRequests(requests);
+  const [loading, setLoading] = useState(false);
+
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const allEvents = await apiService.getEvents();
+      setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
+      setOrgEvents(
+        allEvents.filter((e) => e.eventType === "private" || e.status === "pending")
+      );
+      const dashData = await orgApiService.getDashboard();
+      if (dashData) setUserStats(dashData.stats as any);
+
+      const requests = await orgApiService.getMyEventRequests();
+      setMyRequests(requests);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -490,7 +499,7 @@ export const OrgDashboard: React.FC = () => {
           setEventFormOpen(false);
           setSearchParams({});
         }}
-        onSuccess={() => {}}
+        onSuccess={() => loadData(true)}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
       />
@@ -498,7 +507,7 @@ export const OrgDashboard: React.FC = () => {
       <EventRequestModal
         isOpen={eventRequestOpen}
         onClose={() => setEventRequestOpen(false)}
-        onSuccess={() => loadData()}
+        onSuccess={() => loadData(true)}
       />
 
       <AddUserModal

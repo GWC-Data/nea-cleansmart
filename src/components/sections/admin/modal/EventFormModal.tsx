@@ -152,6 +152,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
     try {
       if (onSubmitOverride) {
         await onSubmitOverride(values, imageFile);
+        onSuccess();
       } else {
         const payload = {
           ...values,
