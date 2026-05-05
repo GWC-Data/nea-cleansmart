@@ -93,6 +93,7 @@ export const adminApiService = {
       const response = await fetch(`${BASE}/events`, {
         method: "GET",
         headers: adminHeaders(),
+        cache: "no-store",
       });
       if (!response.ok)
         throw new Error(`Failed to fetch events: ${response.statusText}`);
@@ -240,6 +241,27 @@ export const adminApiService = {
       return event;
     } catch (error) {
       console.error("adminApiService.updateEvent error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update event status (admin only)
+   */
+  async updateEventStatus(eventId: string, status: "pending" | "approved" | "rejected"): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE}/events/${eventId}/status`, {
+        method: "PUT",
+        headers: adminHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to update status");
+      }
+      return true;
+    } catch (error) {
+      console.error("adminApiService.updateEventStatus error:", error);
       throw error;
     }
   },
@@ -436,6 +458,52 @@ export const adminApiService = {
         totalPoints: 0,
         completedSessions: 0,
       };
+    }
+  },
+
+  // ============================================================
+  // EVENT REQUESTS
+  // ============================================================
+
+  /**
+   * Get all event requests
+   */
+  async getAllEventRequests(): Promise<any[]> {
+    try {
+      const response = await fetch(`${BASE}/event-requests`, {
+        method: "GET",
+        headers: adminHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch event requests");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("adminApiService.getAllEventRequests error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Update event request status
+   */
+  async updateEventRequestStatus(requestId: string, status: "approved" | "rejected"): Promise<any> {
+    try {
+      console.log("adminApiService.updateEventRequestStatus", requestId, status);
+      const response = await fetch(`${BASE}/event-requests/${requestId}/status`, {
+        method: "PUT",
+        headers: adminHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ id: requestId, status }),
+      });
+      console.log("adminApiService.updateEventRequestStatus", response);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to update event request status");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("adminApiService.updateEventRequestStatus error:", error);
+      throw error;
     }
   },
 };

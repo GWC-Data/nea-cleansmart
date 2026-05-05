@@ -22,6 +22,7 @@ export interface EventData {
   participants: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
+  status?: "pending" | "approved" | "rejected";
   createdAt: string;
   updatedAt: string;
 }
@@ -350,44 +351,44 @@ export const apiService = {
    * @param eventId The event ID
    * @returns List of participants
    */
-  async getEventParticipants(eventId: string): Promise<any> {
-    try {
-      const response = await fetch(`${BASE}/events/${eventId}/participants`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch participants: ${response.statusText}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getEventParticipants error:", error);
-      return null;
-    }
-  },
+  // async getEventParticipants(eventId: string): Promise<any> {
+  //   try {
+  //     const response = await fetch(`${BASE}/events/${eventId}/participants`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(`Failed to fetch participants: ${response.statusText}`);
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getEventParticipants error:", error);
+  //     return null;
+  //   }
+  // },
 
   /**
    * Get user's joined events
    * User ID is extracted from JWT token on backend
    * @returns Array of events the current user has joined
    */
-  async getUserJoinedEvents(): Promise<any> {
-    try {
-      const response = await fetch(`${BASE}/events/joined`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch joined events: ${response.statusText}`,
-        );
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getUserJoinedEvents error:", error);
-      return null;
-    }
-  },
+  // async getUserJoinedEvents(): Promise<any> {
+  //   try {
+  //     const response = await fetch(`${BASE}/events/joined`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch joined events: ${response.statusText}`,
+  //       );
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getUserJoinedEvents error:", error);
+  //     return null;
+  //   }
+  // },
 
   // ============================================================
   // EVENT LOGS (CHECK-IN/CHECK-OUT) ENDPOINTS
@@ -510,50 +511,50 @@ export const apiService = {
    * @param payload Update data (any subset of fields)
    * @returns Success status
    */
-  async updateEventLog(
-    logId: string,
-    payload: Partial<CheckOutPayload>,
-  ): Promise<boolean> {
-    try {
-      const response = await fetch(`${BASE}/event-logs/${logId}`, {
-        method: "PUT",
-        headers: getAuthHeaders({
-          "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to update event log: ${response.statusText}`);
-      }
-      return true;
-    } catch (error) {
-      console.error("updateEventLog error:", error);
-      return false;
-    }
-  },
+  // async updateEventLog(
+  //   logId: string,
+  //   payload: Partial<CheckOutPayload>,
+  // ): Promise<boolean> {
+  //   try {
+  //     const response = await fetch(`${BASE}/event-logs/${logId}`, {
+  //       method: "PUT",
+  //       headers: getAuthHeaders({
+  //         "Content-Type": "application/json",
+  //       }),
+  //       body: JSON.stringify(payload),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(`Failed to update event log: ${response.statusText}`);
+  //     }
+  //     return true;
+  //   } catch (error) {
+  //     console.error("updateEventLog error:", error);
+  //     return false;
+  //   }
+  // },
 
   /**
    * Get user's event logs and stats
    * User ID is extracted from JWT token on backend
    * @returns Event logs with calculated statistics
    */
-  async getUserEventLogs(): Promise<UserEventLogsResponse | null> {
-    try {
-      const response = await fetch(`${BASE}/event-logs/user`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch user event logs: ${response.statusText}`,
-        );
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getUserEventLogs error:", error);
-      return null;
-    }
-  },
+  // async getUserEventLogs(): Promise<UserEventLogsResponse | null> {
+  //   try {
+  //     const response = await fetch(`${BASE}/event-logs/user`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch user event logs: ${response.statusText}`,
+  //       );
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getUserEventLogs error:", error);
+  //     return null;
+  //   }
+  // },
 
   /**
    * Get user's event logs by date
@@ -561,69 +562,69 @@ export const apiService = {
    * @param date Date string in format YYYY-MM-DD
    * @returns Event logs for that day with stats
    */
-  async getUserEventLogsByDate(date: string): Promise<any | null> {
-    try {
-      const response = await fetch(`${BASE}/event-logs/user/date/${date}`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch event logs for date: ${response.statusText}`,
-        );
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getUserEventLogsByDate error:", error);
-      return null;
-    }
-  },
+  // async getUserEventLogsByDate(date: string): Promise<any | null> {
+  //   try {
+  //     const response = await fetch(`${BASE}/event-logs/user/date/${date}`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch event logs for date: ${response.statusText}`,
+  //       );
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getUserEventLogsByDate error:", error);
+  //     return null;
+  //   }
+  // },
 
   /**
    * Get user's rewards summary
    * User ID is extracted from JWT token on backend
    * @returns Rewards summary with badges and achievements
    */
-  async getUserRewardsSummary(): Promise<RewardsSummary | null> {
-    try {
-      const response = await fetch(`${BASE}/event-logs/user/rewards`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch rewards summary: ${response.statusText}`,
-        );
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getUserRewardsSummary error:", error);
-      return null;
-    }
-  },
+  // async getUserRewardsSummary(): Promise<RewardsSummary | null> {
+  //   try {
+  //     const response = await fetch(`${BASE}/event-logs/user/rewards`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch rewards summary: ${response.statusText}`,
+  //       );
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getUserRewardsSummary error:", error);
+  //     return null;
+  //   }
+  // },
 
   /**
    * Get event logs by event
    * @param eventId The event ID
    * @returns Event logs for that event with stats
    */
-  async getEventLogsByEvent(eventId: string): Promise<any | null> {
-    try {
-      const response = await fetch(`${BASE}/event-logs/event/${eventId}`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch event logs for event: ${response.statusText}`,
-        );
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("getEventLogsByEvent error:", error);
-      return null;
-    }
-  },
+  // async getEventLogsByEvent(eventId: string): Promise<any | null> {
+  //   try {
+  //     const response = await fetch(`${BASE}/event-logs/event/${eventId}`, {
+  //       method: "GET",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to fetch event logs for event: ${response.statusText}`,
+  //       );
+  //     }
+  //     return await response.json();
+  //   } catch (error) {
+  //     console.error("getEventLogsByEvent error:", error);
+  //     return null;
+  //   }
+  // },
 
   // ============================================================
   // DASHBOARD ENDPOINT
@@ -682,52 +683,52 @@ export const apiService = {
    * @param data Fields to update (name, email, age, gender, groupId, etc.)
    * @returns Updated user profile
    */
-  async updateUserProfile(
-    data: Partial<UserProfile>,
-  ): Promise<UserProfile | null> {
-    try {
-      const response = await fetch(`${BASE}/users`, {
-        method: "PUT",
-        headers: getAuthHeaders({
-          "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to update user profile: ${response.statusText}`,
-        );
-      }
-      const result = await response.json();
-      return result.user || null;
-    } catch (error) {
-      console.error("updateUserProfile error:", error);
-      return null;
-    }
-  },
+  // async updateUserProfile(
+  //   data: Partial<UserProfile>,
+  // ): Promise<UserProfile | null> {
+  //   try {
+  //     const response = await fetch(`${BASE}/users`, {
+  //       method: "PUT",
+  //       headers: getAuthHeaders({
+  //         "Content-Type": "application/json",
+  //       }),
+  //       body: JSON.stringify(data),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to update user profile: ${response.statusText}`,
+  //       );
+  //     }
+  //     const result = await response.json();
+  //     return result.user || null;
+  //   } catch (error) {
+  //     console.error("updateUserProfile error:", error);
+  //     return null;
+  //   }
+  // },
 
   /**
    * Delete current user account
    * User ID is extracted from JWT token on backend
    * @returns Success status
    */
-  async deleteUserAccount(): Promise<boolean> {
-    try {
-      const response = await fetch(`${BASE}/users`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Failed to delete user account: ${response.statusText}`,
-        );
-      }
-      return true;
-    } catch (error) {
-      console.error("deleteUserAccount error:", error);
-      return false;
-    }
-  },
+  // async deleteUserAccount(): Promise<boolean> {
+  //   try {
+  //     const response = await fetch(`${BASE}/users`, {
+  //       method: "DELETE",
+  //       headers: getAuthHeaders(),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         `Failed to delete user account: ${response.statusText}`,
+  //       );
+  //     }
+  //     return true;
+  //   } catch (error) {
+  //     console.error("deleteUserAccount error:", error);
+  //     return false;
+  //   }
+  // },
 
   /**
    * Get user leaderboard (top performers)

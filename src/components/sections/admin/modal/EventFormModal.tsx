@@ -39,7 +39,7 @@ export type EventFormFields = z.infer<typeof eventSchema>;
 interface EventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (data?: EventData) => void;
   editingEvent?: EventData | null;
   showEventTypeToggle?: boolean;
   onSubmitOverride?: (
@@ -77,7 +77,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       startDate: "",
       endDate: "",
       rewards: "",
-      eventType: "private",
+      eventType: "public",
       userCount: "",
     },
   });
@@ -97,7 +97,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         startDate: editingEvent.startDate ? editingEvent.startDate.split("T")[0] : "",
         endDate: editingEvent.endDate ? editingEvent.endDate.split("T")[0] : "",
         rewards: editingEvent.rewards || "",
-        eventType: editingEvent.eventType || "private",
+        eventType: editingEvent.eventType || "public",
         userCount: editingEvent.userCount || "",
       });
       setImagePreview(editingEvent.eventImage || null);
@@ -119,7 +119,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
         startDate: "",
         endDate: "",
         rewards: "",
-        eventType: "private",
+        eventType: "public",
         userCount: "",
       });
       setImagePreview(null);
@@ -133,6 +133,14 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check if file size exceeds 1MB
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("Please upload an image smaller than 1MB");
+      e.target.value = ""; // Clear the input
+      return;
+    }
+
     setImageFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setImagePreview(ev.target?.result as string);
@@ -151,15 +159,19 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           ...(imageFile ? { eventImage: imageFile } : {}),
         };
 
-        if (editingEvent) {
-          await adminApiService.updateEvent(editingEvent.eventId, payload);
-          toast.success("Event updated successfully!");
-        } else {
-          await adminApiService.createEvent(payload);
-          toast.success("Event created successfully!");
+        const result = editingEvent
+          ? await adminApiService.updateEvent(editingEvent.eventId, payload)
+          : await adminApiService.createEvent(payload);
+
+        if (result) {
+          toast.success(
+            editingEvent
+              ? "Event updated successfully!"
+              : "Event created successfully!",
+          );
+          onSuccess(result);
         }
       }
-      onSuccess();
       onClose();
     } catch (error) {
       toast.error(
@@ -431,7 +443,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                     {imageFile ? imageFile.name : "Click to upload image"}
                   </p>
                   <p className="text-[12px] text-[#A0AAB5] mt-0.5">
-                    PNG, JPG up to 5MB
+                    PNG, JPG less than 1MB
                   </p>
                 </div>
                 <input

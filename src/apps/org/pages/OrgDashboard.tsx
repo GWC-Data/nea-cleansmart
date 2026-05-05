@@ -9,14 +9,17 @@ import {
   Award,
   ChevronRight,
   Clock,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
 import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
-import type { EventData, UserProfile } from "../../../types/api.types";
+import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal";
+import type { EventData, UserProfile, EventRequest } from "../../../types/api.types";
 import { apiService } from "../../../services/apiService";
+import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";
 import { getEventImageUrl } from "../../../utils/imageUtils";
@@ -24,11 +27,9 @@ import { getEventImageUrl } from "../../../utils/imageUtils";
 function formatCleanupTime(hours: number): { value: string; unit: string } {
   if (!hours) return { value: "0", unit: "h" };
   if (hours < 1) {
-    // If less than an hour, show minutes
     const mins = Math.round(hours * 60);
     return { value: mins.toString(), unit: "m" };
   }
-  // Otherwise show hours with 1 decimal place
   const floored = Math.floor(hours * 10) / 10;
   return { value: floored.toFixed(1), unit: "h" };
 }
@@ -36,10 +37,14 @@ function formatCleanupTime(hours: number): { value: string; unit: string } {
 export const OrgDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [eventFormOpen, setEventFormOpen] = useState(false);
+  const [eventRequestOpen, setEventRequestOpen] = useState(false);
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"org" | "public">("org");
 
@@ -47,21 +52,37 @@ export const OrgDashboard: React.FC = () => {
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [myRequests, setMyRequests] = useState<EventRequest[]>([]);
+
+  const loadData = async () => {
+    const allEvents = await apiService.getEvents();
+    setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
+    setOrgEvents(allEvents.filter((e) => e.eventType === "private" || e.status === "pending"));
+    const dashData = await orgApiService.getDashboard();
+    if (dashData) setUserStats(dashData.stats as any);
+    
+    const requests = await orgApiService.getMyEventRequests();
+    setMyRequests(requests);
+  };
 
   useEffect(() => {
-    async function loadData() {
-      const allEvents = await apiService.getEvents();
-      setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
-      const dashData = await apiService.getDashboard();
-      if (dashData) setUserStats(dashData.stats);
-    }
     loadData();
   }, []);
+
+  useEffect(() => {
+    const finalizeId = searchParams.get("finalizeEvent");
+    if (finalizeId) {
+      setEventFormOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -70,33 +91,27 @@ export const OrgDashboard: React.FC = () => {
 
   const handleEventSubmit = async (
     values: any,
-    // imageFile: File | null
+    imageFile: File | null
   ) => {
-    // await new Promise((resolve) => setTimeout(resolve, 800));
-    // const newEvent: EventData = {
-    //   eventId: Math.random().toString(36).substr(2, 9),
-    //   name: values.name,
-    //   description: values.description,
-    //   details: values.details || "",
-    //   location: values.location,
-    //   startDate: values.startDate,
-    //   endDate: values.endDate,
-    //   rewards: values.rewards || "",
-    //   joinsCount: 0,
-    //   participants: [],
-    //   eventType: values.eventType,
-    //   userCount: values.userCount ? Number(values.userCount) : undefined,
-    //   createdAt: new Date().toISOString(),
-    //   updatedAt: new Date().toISOString(),
-    //   eventImage: imageFile ? URL.createObjectURL(imageFile) : null,
-    // };
-    setOrgEvents((prev) => [
-      // newEvent,
-      ...prev,
-    ]);
-    toast.error(
-      `${values.eventType === "private" ? " Currently having an error while creating the private event" : " Currently having an error while creating the public event"}`,
-    );
+    try {
+      const payload = {
+        ...values,
+        ...(imageFile ? { eventImage: imageFile } : {}),
+      };
+      await orgApiService.createEvent(payload);
+      
+      const finalizeId = searchParams.get("finalizeEvent");
+      if (finalizeId) {
+        setSearchParams({});
+        toast.success("Event finalized successfully!");
+      } else {
+        toast.success("Event submitted successfully and is pending approval.");
+      }
+      
+      await loadData();
+    } catch (error) {
+      throw error; // Let EventFormModal handle the error display and loading state
+    }
   };
 
   const handleUserAdded = (user: UserProfile) => {
@@ -130,32 +145,85 @@ export const OrgDashboard: React.FC = () => {
           />
         </div>
 
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-            className="w-9 h-9 rounded-full bg-[#86B537] text-white flex items-center justify-center text-xs font-bold hover:shadow-md transition-all cursor-pointer ring-2 ring-transparent hover:ring-[#86B537]/20"
-          >
-            {initials}
-          </button>
-          {profileMenuOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-2.5 border-b border-gray-50 mb-1">
-                <p className="text-sm font-bold text-gray-800">
-                  {currentUser?.name || "Jane Doe"}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {currentUser?.email || "jane@example.com"}
-                </p>
+        <div className="flex items-center gap-4">
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative p-2 text-gray-500 hover:text-[#86B537] hover:bg-gray-50 rounded-full transition-colors"
+            >
+              <Bell size={20} />
+              {myRequests.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
+            </button>
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-3 w-80 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-2 z-50 animate-in fade-in slide-in-from-top-2 max-h-96 overflow-y-auto">
+                <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                  <p className="text-sm font-bold text-gray-800">Notifications</p>
+                </div>
+                {myRequests.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-500">No notifications yet.</div>
+                ) : (
+                  <div className="flex flex-col">
+                    {myRequests.map((req) => (
+                      <div key={req.requestId} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                        <p className="text-sm font-medium text-gray-900">{req.name}</p>
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{req.description}</p>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            req.status === 'approved' ? 'bg-green-100 text-green-700' :
+                            req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {req.status.toUpperCase()}
+                          </span>
+                          {req.status === 'approved' && (
+                            <button
+                              onClick={() => {
+                                setNotificationsOpen(false);
+                                setSearchParams({ finalizeEvent: req.requestId });
+                              }}
+                              className="text-xs font-semibold text-[#86B537] hover:underline"
+                            >
+                              Finalize Event
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="h-px bg-gray-50 my-1 w-full" />
-              <button
-                onClick={handleLogout}
-                className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" /> LogOut
-              </button>
-            </div>
-          )}
+            )}
+          </div>
+
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="w-9 h-9 rounded-full bg-[#86B537] text-white flex items-center justify-center text-xs font-bold hover:shadow-md transition-all cursor-pointer ring-2 ring-transparent hover:ring-[#86B537]/20"
+            >
+              {initials}
+            </button>
+            {profileMenuOpen && (
+              <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-2.5 border-b border-gray-50 mb-1">
+                  <p className="text-sm font-bold text-gray-800">
+                    {currentUser?.name || "Jane Doe"}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {currentUser?.email || "jane@example.com"}
+                  </p>
+                </div>
+                <div className="h-px bg-gray-50 my-1 w-full" />
+                <button
+                  onClick={handleLogout}
+                  className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" /> LogOut
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -171,17 +239,11 @@ export const OrgDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            {/* <button
-              onClick={() => setAddUserModalOpen(true)}
-              className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 text-sm font-semibold transition-all cursor-pointer"
-            >
-              <Users size={16} /> Add Member
-            </button> */}
             <button
-              onClick={() => setEventFormOpen(true)}
-              className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer bg-[#86B537] hover:bg-[#7aa632]"
+              onClick={() => setEventRequestOpen(true)}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-[#86B537] text-white rounded-lg text-sm font-bold hover:bg-[#7aa632] hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
-              <Plus size={16} /> Create Event
+              <Plus className="w-4 h-4" /> Create Event
             </button>
           </div>
         </div>
@@ -424,10 +486,19 @@ export const OrgDashboard: React.FC = () => {
       {/* Modals */}
       <EventFormModal
         isOpen={eventFormOpen}
-        onClose={() => setEventFormOpen(false)}
+        onClose={() => {
+          setEventFormOpen(false);
+          setSearchParams({});
+        }}
         onSuccess={() => {}}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
+      />
+
+      <EventRequestModal
+        isOpen={eventRequestOpen}
+        onClose={() => setEventRequestOpen(false)}
+        onSuccess={() => loadData()}
       />
 
       <AddUserModal
