@@ -676,7 +676,7 @@ export const EventDetailPage: React.FC = () => {
       <header className="bg-white px-5 sm:px-8 lg:px-12 py-4 sticky top-0 z-40 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate(-1)}
             className="cursor-pointer flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back

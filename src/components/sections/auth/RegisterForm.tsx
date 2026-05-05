@@ -170,14 +170,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
       {activeTab === "user" && (
         <>
-          {/* Full Name */}
+          {/* User Name */}
           <FloatingInput
             id="reg-name"
             name="name"
             type="text"
             label={
               <>
-                Full Name <span className="text-red-500">*</span>
+                User Name <span className="text-red-500">*</span>
               </>
             }
             value={form.name}

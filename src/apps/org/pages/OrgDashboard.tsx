@@ -7,7 +7,6 @@ import {
   Trash2,
   MapPin,
   Award,
-  ChevronRight,
   Clock,
   Bell,
 } from "lucide-react";
@@ -15,15 +14,15 @@ import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
-import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
+// import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
 import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal";
-import type { EventData, UserProfile, EventRequest } from "../../../types/api.types";
+import type { EventData /* , UserProfile, */, EventRequest } from "../../../types/api.types";
 import { apiService } from "../../../services/apiService";
 import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";
-// import { getEventImageUrl } from "../../../utils/imageUtils";
-import { LazyEventImage } from "../../../components/ui/LazyEventImage";
+import { getEventImageUrl } from "../../../utils/imageUtils";
+// import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
   if (!hours) return { value: "0", unit: "h" };
@@ -46,10 +45,10 @@ export const OrgDashboard: React.FC = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventRequestOpen, setEventRequestOpen] = useState(false);
-  const [addUserModalOpen, setAddUserModalOpen] = useState(false);
+  // const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"org" | "public">("org");
 
-  const [orgUsers, setOrgUsers] = useState<UserProfile[]>([]);
+  // const [orgUsers, setOrgUsers] = useState<UserProfile[]>([]);
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -120,17 +119,17 @@ export const OrgDashboard: React.FC = () => {
       
       await loadData();
     } catch (error) {
-      throw error; // Let EventFormModal handle the error display and loading state
+      throw error;
     }
   };
 
-  const handleUserAdded = (user: UserProfile) => {
-    if (!orgUsers.find((u) => u.id === user.id)) {
-      setOrgUsers((prev) => [...prev, user]);
-    } else {
-      toast.error("User is already in the organization.");
-    }
-  };
+  // const handleUserAdded = (user: UserProfile) => {
+  //   if (!orgUsers.find((u) => u.id === user.id)) {
+  //     setOrgUsers((prev) => [...prev, user]);
+  //   } else {
+  //     toast.error("User is already in the organization.");
+  //   }
+  // };
 
   const getInitials = (name?: string) => {
     if (!name) return "O";
@@ -156,6 +155,7 @@ export const OrgDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Bell / Notifications - EVENT REQUEST FLOW (commented out) */}
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -330,11 +330,11 @@ export const OrgDashboard: React.FC = () => {
                 Team Size
               </span>
             </div>
-            <div className="relative z-10">
+            {/* <div className="relative z-10">
               <p className="text-4xl font-black text-gray-900 tracking-tight">
                 {orgUsers.length}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -386,8 +386,8 @@ export const OrgDashboard: React.FC = () => {
                     className="group bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#86B537]/30 hover:shadow-sm transition-all flex flex-col gap-3"
                   >
                     <div className="h-32 rounded-xl bg-gray-50 overflow-hidden relative">
-                      <LazyEventImage
-                        imagePath={event.eventImage}
+                      <img
+                        src={getEventImageUrl(event.eventImage)}
                         alt={event.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -427,12 +427,12 @@ export const OrgDashboard: React.FC = () => {
                 <h3 className="font-bold text-gray-900 text-sm">
                   Team Members
                 </h3>
-                <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {/* <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                   {orgUsers.length}
-                </span>
+                </span> */}
               </div>
 
-              {orgUsers.length === 0 ? (
+              {/* {orgUsers.length === 0 ? (
                 <div className="text-center py-6">
                   <Users className="mx-auto text-gray-300 mb-2" size={24} />
                   <p className="text-xs text-gray-500 font-medium">
@@ -465,7 +465,7 @@ export const OrgDashboard: React.FC = () => {
                     </button>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -505,11 +505,11 @@ export const OrgDashboard: React.FC = () => {
         onSuccess={() => loadData()}
       />
 
-      <AddUserModal
+      {/* <AddUserModal
         isOpen={addUserModalOpen}
         onClose={() => setAddUserModalOpen(false)}
         onUserAdded={handleUserAdded}
-      />
+      /> */}
     </div>
   );
 };
