@@ -21,6 +21,7 @@ import { adminApiService } from "../../../services/adminApiService";
 import type { EventData } from "../../../types/api.types";
 import { format } from "date-fns";
 import { getEventImageUrl } from "../../../utils/imageUtils";
+import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 interface DeleteState {
   eventId: string | null;
@@ -208,17 +209,11 @@ export const EventsPage: React.FC = () => {
               >
                 {/* Image */}
                 <div className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0">
-                  {event.eventImage ? (
-                    <img
-                      src={getEventImageUrl(event.eventImage)}
-                      alt={event.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <CalendarDays size={32} className="text-[#A0AAB5]" />
-                    </div>
-                  )}
+                  <LazyEventImage
+                    imagePath={event.eventImage}
+                    alt={event.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
 
                   {/* Date overlay badge */}
                   <div className="absolute top-3 left-3 bg-white rounded-lg px-2.5 py-1.5 shadow-sm text-center min-w-[44px]">

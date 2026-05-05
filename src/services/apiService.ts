@@ -227,7 +227,6 @@ export const apiService = {
       const response = await fetch(`${BASE}/events`, {
         method: "GET",
         headers: getAuthHeaders(),
-        cache: "no-store",
       });
       if (!response.ok) {
         throw new Error(`Failed to fetch events: ${response.statusText}`);
@@ -253,7 +252,6 @@ export const apiService = {
       const response = await fetch(`${BASE}/events/upcoming`, {
         method: "GET",
         headers: getAuthHeaders(),
-        cache: "no-store",
       });
       if (!response.ok) {
         throw new Error(

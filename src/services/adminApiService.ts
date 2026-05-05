@@ -93,7 +93,6 @@ export const adminApiService = {
       const response = await fetch(`${BASE}/events`, {
         method: "GET",
         headers: adminHeaders(),
-        cache: "no-store",
       });
       if (!response.ok)
         throw new Error(`Failed to fetch events: ${response.statusText}`);

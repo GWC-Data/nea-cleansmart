@@ -23,6 +23,7 @@ import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";
 import { getEventImageUrl } from "../../../utils/imageUtils";
+import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
   if (!hours) return { value: "0", unit: "h" };
@@ -385,17 +386,11 @@ export const OrgDashboard: React.FC = () => {
                     className="group bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#86B537]/30 hover:shadow-sm transition-all flex flex-col gap-3"
                   >
                     <div className="h-32 rounded-xl bg-gray-50 overflow-hidden relative">
-                      {event.eventImage ? (
-                        <img
-                          src={getEventImageUrl(event.eventImage)}
-                          alt={event.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <CalendarDays className="text-gray-300" size={24} />
-                        </div>
-                      )}
+                      <LazyEventImage
+                        imagePath={event.eventImage}
+                        alt={event.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                       <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-center shadow-sm">
                         <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">
                           {new Date(event.startDate).toLocaleDateString(
