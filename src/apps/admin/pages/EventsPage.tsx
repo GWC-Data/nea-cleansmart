@@ -20,7 +20,7 @@ import { EventFormModal } from "../../../components/sections/admin/modal/EventFo
 import { adminApiService } from "../../../services/adminApiService";
 import type { EventData } from "../../../types/api.types";
 import { format } from "date-fns";
-import { getEventImageUrl } from "../../../utils/imageUtils";
+// import { getEventImageUrl } from "../../../utils/imageUtils";
 import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 interface DeleteState {

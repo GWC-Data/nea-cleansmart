@@ -22,7 +22,7 @@ import { apiService } from "../../../services/apiService";
 import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
 import { toast } from "sonner";
-import { getEventImageUrl } from "../../../utils/imageUtils";
+// import { getEventImageUrl } from "../../../utils/imageUtils";
 import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
@@ -55,10 +55,10 @@ export const OrgDashboard: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [myRequests, setMyRequests] = useState<EventRequest[]>([]);
 
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
-  const loadData = async (silent = false) => {
-    if (!silent) setLoading(true);
+  const loadData = async () => {
+    // if (!silent) setLoading(true);
     try {
       const allEvents = await apiService.getEvents();
       setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
@@ -70,8 +70,8 @@ export const OrgDashboard: React.FC = () => {
 
       const requests = await orgApiService.getMyEventRequests();
       setMyRequests(requests);
-    } finally {
-      if (!silent) setLoading(false);
+    } catch (error) {
+      console.error("Failed to load data", error);
     }
   };
 
@@ -494,7 +494,7 @@ export const OrgDashboard: React.FC = () => {
           setEventFormOpen(false);
           setSearchParams({});
         }}
-        onSuccess={() => loadData(true)}
+        onSuccess={() => loadData()}
         showEventTypeToggle={true}
         onSubmitOverride={handleEventSubmit}
       />
@@ -502,7 +502,7 @@ export const OrgDashboard: React.FC = () => {
       <EventRequestModal
         isOpen={eventRequestOpen}
         onClose={() => setEventRequestOpen(false)}
-        onSuccess={() => loadData(true)}
+        onSuccess={() => loadData()}
       />
 
       <AddUserModal
