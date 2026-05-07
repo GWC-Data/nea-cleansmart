@@ -41,8 +41,8 @@ export const orgApiService = {
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         console.error("Backend error response:", err);
-        const msg = err.message || err.msg || err.error || (Array.isArray(err.errors) ? err.errors.map((e: any) => e.msg).join(", ") : null);
-        throw new Error(msg || "Failed to create organization");
+        const msg = err.hint.field || "Failed to create organization";
+        throw new Error(msg);
       }
       return await response.json();
     } catch (error) {
@@ -259,6 +259,24 @@ export const orgApiService = {
       };
     } catch (error) {
       console.error("orgApiService.getOrgProfile error:", error);
+      return null;
+    }
+  },
+
+  /**
+   * Get organization details from the /organization/details endpoint
+   */
+  async getOrganizationDetails(): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/organization/details`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.user || null;
+    } catch (error) {
+      console.error("orgApiService.getOrganizationDetails error:", error);
       return null;
     }
   },

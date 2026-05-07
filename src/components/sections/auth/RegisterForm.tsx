@@ -15,6 +15,25 @@ import type { RegisterFormState } from "../../../types/auth.types";
 import { toast } from "sonner";
 import { FloatingInput } from "../../ui/FloatingInput";
 
+interface Country {
+  code: string;
+  name: string;
+  flag: string;
+  minLength: number;
+  maxLength: number;
+  placeholder: string;
+}
+
+const COUNTRIES_FALLBACK: Country[] = [
+  { code: "+65", name: "Singapore", flag: "🇸🇬", minLength: 8, maxLength: 8, placeholder: "8225 2118" },
+  { code: "+91", name: "India", flag: "🇮🇳", minLength: 10, maxLength: 10, placeholder: "98765 43210" },
+  { code: "+1", name: "United States", flag: "🇺🇸", minLength: 10, maxLength: 10, placeholder: "201 555 0123" },
+  { code: "+44", name: "United Kingdom", flag: "🇬🇧", minLength: 10, maxLength: 10, placeholder: "7911 123456" },
+  { code: "+60", name: "Malaysia", flag: "🇲🇾", minLength: 9, maxLength: 10, placeholder: "12 345 6789" },
+  { code: "+62", name: "Indonesia", flag: "🇮🇩", minLength: 9, maxLength: 13, placeholder: "812 3456 7890" },
+  { code: "+61", name: "Australia", flag: "🇦🇺", minLength: 9, maxLength: 9, placeholder: "412 345 678" },
+];
+
 interface RegisterFormProps {
   onSuccess: () => void;
   onNavigateToLogin: () => void;
@@ -44,6 +63,76 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
   const [genderFocused, setGenderFocused] = useState(false);
   const genderDropdownRef = React.useRef<HTMLDivElement>(null);
+  const [countries, setCountries] = useState<Country[]>(COUNTRIES_FALLBACK);
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(COUNTRIES_FALLBACK[0]);
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [countryFocused, setCountryFocused] = useState(false);
+  const countryDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,flag");
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        const mappedCountries: Country[] = data
+          .map((item: any) => {
+            const root = item.idd?.root || "";
+            const suffix = item.idd?.suffixes?.[0] || "";
+            const code = root + suffix;
+            
+            if (!code) return null;
+            
+            // Match with our fallback countries to preserve exact phone digit validation and placeholders
+            const known = COUNTRIES_FALLBACK.find(
+              (c) => c.name.toLowerCase() === item.name?.common?.toLowerCase() || c.code === code
+            );
+            
+            return {
+              code,
+              name: item.name?.common || "",
+              flag: item.flag || "",
+              minLength: known ? known.minLength : 8,
+              maxLength: known ? known.maxLength : 15,
+              placeholder: known ? known.placeholder : "1234 5678"
+            };
+          })
+          .filter((c: any): c is Country => c !== null && !!c.name && !!c.code);
+          
+        // Sort alphabetically
+        mappedCountries.sort((a, b) => a.name.localeCompare(b.name));
+        
+        setCountries(mappedCountries);
+        
+        // Auto-detect user country via IP Geolocation
+        try {
+          const geoRes = await fetch("https://ipapi.co/json/");
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            const matchedCountry = mappedCountries.find(
+              (c) => c.name.toLowerCase().includes(geoData.country_name?.toLowerCase()) || c.code === geoData.country_calling_code
+            );
+            if (matchedCountry) {
+              setSelectedCountry(matchedCountry);
+              return;
+            }
+          }
+        } catch (geoErr) {
+          console.warn("Geolocation detection failed:", geoErr);
+        }
+        
+        // Default to Singapore if geolocation fails or doesn't match
+        const defaultSG = mappedCountries.find((c) => c.code === "+65") || COUNTRIES_FALLBACK[0];
+        setSelectedCountry(defaultSG);
+        
+      } catch (err) {
+        console.error("Failed to fetch country codes dynamically:", err);
+      }
+    };
+    
+    fetchCountries();
+  }, []);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,6 +142,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       ) {
         setIsGenderDropdownOpen(false);
         setGenderFocused(false);
+      }
+      if (
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsCountryDropdownOpen(false);
+        setCountryFocused(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -77,9 +173,25 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       setValidationError("Valid email is required.");
       return false;
     }
-    if (activeTab === "organization" && !form.phoneNumber?.trim()) {
-      setValidationError("Phone Number is required.");
-      return false;
+    if (activeTab === "organization") {
+      if (!selectedCountry) {
+        setValidationError("Country code is required.");
+        return false;
+      }
+      const rawPhone = form.phoneNumber?.replace(/\s+/g, "") || "";
+      if (!rawPhone) {
+        setValidationError("Phone Number is required.");
+        return false;
+      }
+      const { minLength, maxLength, name: countryName } = selectedCountry;
+      if (rawPhone.length < minLength || rawPhone.length > maxLength) {
+        if (minLength === maxLength) {
+          setValidationError(`Phone number for ${countryName} must be exactly ${minLength} digits.`);
+        } else {
+          setValidationError(`Phone number for ${countryName} must be between ${minLength} and ${maxLength} digits.`);
+        }
+        return false;
+      }
     }
     if (activeTab === "organization" && !form.address?.trim()) {
       setValidationError("Address is required.");
@@ -114,7 +226,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     if (isSubmitting) return; // Prevent multiple rapid clicks/submits
     if (!validate()) return;
     if (activeTab === "organization") {
-      handleOrganizationRegister(form, onSuccess);
+      const combinedPhone = `${selectedCountry?.code} ${form.phoneNumber?.trim()}`;
+      handleOrganizationRegister({ ...form, phoneNumber: combinedPhone }, onSuccess);
     } else {
       handleRegister(form, onSuccess);
     }
@@ -123,6 +236,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   /* Gender floating-label helpers */
   const genderIsFloating =
     genderFocused || isGenderDropdownOpen || !!form.gender;
+
+  /* Country floating-label helpers */
+  const countryIsFloating =
+    countryFocused || isCountryDropdownOpen || !!selectedCountry;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
@@ -170,14 +287,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
       {activeTab === "user" && (
         <>
-          {/* User Name */}
+          {/* Full Name */}
           <FloatingInput
             id="reg-name"
             name="name"
             type="text"
             label={
               <>
-                User Name <span className="text-red-500">*</span>
+                Full Name <span className="text-red-500">*</span>
               </>
             }
             value={form.name}
@@ -364,14 +481,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             icon={<Building2 className="w-5 h-5" />}
           />
 
-          {/* Full Name */}
+          {/* User Name */}
           <FloatingInput
             id="reg-name-org"
             name="name"
             type="text"
             label={
               <>
-                Full Name <span className="text-red-500">*</span>
+                User Name <span className="text-red-500">*</span>
               </>
             }
             value={form.name}
@@ -412,21 +529,119 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             icon={<MapPin className="w-5 h-5" />}
           />
 
-          {/* Phone Number */}
-          <FloatingInput
-            id="reg-phone-org"
-            name="phoneNumber"
-            type="tel"
-            label={
-              <>
-                Phone Number <span className="text-red-500">*</span>
-              </>
-            }
-            value={form.phoneNumber || ""}
-            onChange={handleChange}
-            required={activeTab === "organization"}
-            icon={<Phone className="w-5 h-5" />}
-          />
+          {/* Country Code & Phone Number Field */}
+          <div className="flex items-center gap-2.5 w-full">
+            {/* Left icon */}
+            <div className="shrink-0 text-[#1d7fc4] w-5 flex justify-center">
+              <Phone className="w-5 h-5" />
+            </div>
+
+            {/* Container for Country Code and Phone Number fields with 35% and 65% width */}
+            <div className="flex-1 flex gap-x-3 w-full">
+              {/* Country Code (35% width) */}
+              <div style={{ width: "35%" }} className="relative" ref={countryDropdownRef}>
+                {/* Floating label */}
+                <label
+                  htmlFor="reg-country-code"
+                  className={[
+                    "absolute left-3.5 pointer-events-none select-none z-10",
+                    "transition-all duration-150 ease-out origin-left",
+                    countryIsFloating
+                      ? "-top-2 text-[11px] font-semibold bg-white px-1 leading-none"
+                      : "top-1/2 -translate-y-1/2 text-sm font-medium",
+                    countryFocused || isCountryDropdownOpen
+                      ? "text-[#1d7fc4]"
+                      : "text-gray-500",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  Code <span className="text-red-500">*</span>
+                </label>
+
+                {/* Trigger button */}
+                <button
+                  type="button"
+                  id="reg-country-code"
+                  onClick={() => {
+                    setIsCountryDropdownOpen((o) => !o);
+                    setCountryFocused(true);
+                  }}
+                  className={[
+                    "w-full bg-white rounded-lg px-3.5 pt-5 pb-2.5 text-sm text-left",
+                    "border-2 transition-all outline-none flex items-center justify-between",
+                    isCountryDropdownOpen || countryFocused
+                      ? "border-[#1d7fc4] ring-1 ring-[#1d7fc4]/30"
+                      : "border-gray-300 hover:border-gray-400",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <span
+                    className={
+                      selectedCountry
+                        ? "text-gray-900 text-sm"
+                        : "text-transparent text-sm"
+                    }
+                  >
+                    {selectedCountry ? `${selectedCountry.flag} ${selectedCountry.code}` : "placeholder"}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                      isCountryDropdownOpen
+                        ? "rotate-180 text-[#1d7fc4]"
+                        : "text-gray-400"
+                    }`}
+                  />
+                </button>
+
+                {/* Dropdown options */}
+                {isCountryDropdownOpen && (
+                  <div className="absolute z-20 w-[240px] max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-150">
+                    {countries.map((country) => (
+                      <button
+                        key={country.code}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCountry(country);
+                          setIsCountryDropdownOpen(false);
+                          setCountryFocused(false);
+                          setValidationError(null);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                          selectedCountry?.code === country.code
+                            ? "text-[#1d7fc4] font-bold bg-[#1d7fc4]/5"
+                            : "text-gray-700 font-medium hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{country.flag}</span>
+                        <span className="font-semibold shrink-0">{country.code}</span>
+                        <span className="text-gray-400 text-xs truncate">({country.name})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Phone Number Input (65% width) */}
+              <div style={{ width: "65%" }}>
+                <FloatingInput
+                  id="reg-phone-org"
+                  name="phoneNumber"
+                  type="tel"
+                  label={
+                    <>
+                      Phone Number <span className="text-red-500">*</span>
+                    </>
+                  }
+                  value={form.phoneNumber || ""}
+                  onChange={handleChange}
+                  required={activeTab === "organization"}
+                  placeholder={selectedCountry?.placeholder || "8225 2118"}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-x-3 gap-y-4">
             {/* Password */}
