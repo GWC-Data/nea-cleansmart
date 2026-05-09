@@ -102,7 +102,7 @@ export const useAuth = () => {
       onLoginSuccess(accessToken, user, tokenExpiry);
 
       // refreshUserProfile only works for regular users (/users/details endpoint)
-      if (user.role === "user") {
+      if (user.role === "user" || user.role === "organization") {
         await refreshUserProfile();
       }
 

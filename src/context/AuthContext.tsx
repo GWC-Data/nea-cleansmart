@@ -17,21 +17,6 @@ import React, {
 import type { UserProfile } from "../types/auth.types";
 import { getToken, saveToken, clearAuthData } from "../utils/tokenUtils";
 import { apiService } from "../services/apiService";
-import { orgApiService } from "../services/orgApiService";
-
-/**
- * Decode the `role` claim from a JWT without verifying the signature.
- * Safe for client-side use only — the backend always validates the token.
- */
-const getRoleFromToken = (token: string): string | null => {
-  try {
-    const payload = token.split(".")[1];
-    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return decoded?.role ?? null;
-  } catch {
-    return null;
-  }
-};
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 
@@ -77,7 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  /** Fetch and update user profile from backend */
   const refreshUserProfile = useCallback(async () => {
     try {
       const profile = await apiService.getUserProfile();
@@ -95,22 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const storedToken = getToken();
       if (storedToken) {
         setToken(storedToken);
-        const role = getRoleFromToken(storedToken);
-
-        if (role === "organization") {
-          // Organization users: fetch profile from the org dashboard endpoint.
-          // The /users/details endpoint is for User-table records only and would
-          // return null/error for org accounts, causing an unwanted logout on refresh.
-          const orgProfile = await orgApiService.getOrgProfile();
-          if (orgProfile) {
-            setCurrentUser(orgProfile as any);
-          }
-        } else if (role !== "admin") {
-          // Regular users: standard profile fetch.
-          // Admins use a separate token key and auth flow (AdminAuthContext), so
-          // we skip them here to avoid a superfluous /users/details call.
-          await refreshUserProfile();
-        }
+        await refreshUserProfile();
       }
       setIsLoading(false);
     };
