@@ -305,6 +305,25 @@ export const adminApiService = {
   },
 
   /**
+   * Get all organizations (admin endpoint)
+   */
+  async getAllOrganizations(): Promise<any[]> {
+    try {
+      const response = await fetch(`${BASE}/organizations`, {
+        method: "GET",
+        headers: adminHeaders(),
+      });
+      if (!response.ok)
+        throw new Error(`Failed to fetch organizations: ${response.statusText}`);
+      const data = await response.json();
+      return data.organizations || [];
+    } catch (error) {
+      console.error("adminApiService.getAllOrganizations error:", error);
+      return [];
+    }
+  },
+
+  /**
    * Create a new user (admin/public endpoint)
    */
   async createUser(payload: any): Promise<UserProfile | null> {

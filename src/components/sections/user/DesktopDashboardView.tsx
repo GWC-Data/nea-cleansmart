@@ -91,14 +91,14 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               {/* Clean-up Hours */}
               <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#eab308] shadow-sm flex-1">
                 <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
                     Clean-up Hours
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black text-gray-900">
+                    <span className="text-3xl font-black">
                       {hoursDisplay}
                     </span>
-                    <span className="text-sm font-bold text-gray-400">h</span>
+                    <span className="text-sm font-bold">h</span>
                   </div>
                 </div>
                 <div className="bg-[#fef9c3] p-2 rounded-xl shrink-0">
@@ -109,14 +109,14 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               {/* Waste Collected */}
               <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#22c55e] shadow-sm flex-1">
                 <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
                     Waste Collected
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black text-gray-900">
+                    <span className="text-3xl font-black">
                       {totalWeight}
                     </span>
-                    <span className="text-sm font-bold text-gray-400">kg</span>
+                    <span className="text-sm font-bold">kg</span>
                   </div>
                 </div>
                 <div className="bg-[#dcfce7] p-2 rounded-xl shrink-0">
@@ -127,14 +127,14 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               {/* Carbon Reduced */}
               <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#3b82f6] shadow-sm flex-1">
                 <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
                     Carbon Reduced
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black text-gray-900">
+                    <span className="text-3xl font-black">
                       {carbonReduced}
                     </span>
-                    <span className="text-sm font-bold text-gray-400">
+                    <span className="text-sm font-bold">
                       kg CO₂
                     </span>
                   </div>
@@ -147,16 +147,16 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
 
             {/* Active Events */}
             <section>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight mb-4">
+              <h2 className="text-xl font-black tracking-tight mb-4">
                 Active Events
               </h2>
               {activeEvents.length === 0 ? (
                 <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center">
                   <div className="text-3xl mb-3">🌱</div>
-                  <p className="text-sm font-semibold text-gray-400">
+                  <p className="text-sm font-semibold">
                     No events joined yet.
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs mt-1">
                     Join an upcoming event to get started!
                   </p>
                 </div>
@@ -316,26 +316,17 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                             alt={event.name}
                           />
                           {/* Date badge */}
-                          <div className="absolute top-3 left-3 bg-white rounded-xl px-2 py-1.5 shadow-sm text-center min-w-[54px] flex items-center justify-center">
+                          <div className="absolute top-3 left-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
                             {isValidStart &&
                             isValidEnd &&
                             startDate.getDate() !== endDate.getDate() ? (
                               <div className="flex items-center gap-2">
                                 <div className="flex flex-col">
-                                  <p className="text-sm font-black text-gray-900 leading-none">
-                                    {startDate.getDate()}
-                                  </p>
-                                  <p className="text-[8px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                  <p className="text-xs font-black text-gray-900 leading-none">
                                     {startMonth}
                                   </p>
-                                </div>
-                                <div className="w-1 h-5 bg-gray-100" />
-                                <div className="flex flex-col">
-                                  <p className="text-sm font-black text-gray-900 leading-none">
-                                    {endDate.getDate()}
-                                  </p>
-                                  <p className="text-[8px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
-                                    {endMonth}
+                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {startDate.getDate()}
                                   </p>
                                 </div>
                               </div>
@@ -346,6 +337,31 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                                 </p>
                                 <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
                                   {startMonth}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute top-3 right-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
+                            {isValidStart &&
+                            isValidEnd &&
+                            startDate.getDate() !== endDate.getDate() ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                  <p className="text-xs font-black text-gray-900 leading-none">
+                                    {endMonth}
+                                  </p>
+                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
+                                    {endDate.getDate()}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <p className="text-sm font-black text-gray-900 leading-none">
+                                  {isValidEnd ? endDate.getDate() : "—"}
+                                </p>
+                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
+                                  {endMonth}
                                 </p>
                               </div>
                             )}

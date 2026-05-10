@@ -6,8 +6,8 @@
  */
 
 import React from "react";
-import { useLocation, Link } from "react-router-dom";
-import { Menu, Bell, ChevronRight } from "lucide-react";
+import { useLocation /*, Link */ } from "react-router-dom"; // Commented out unused Link import
+import { Menu, /* Bell, */ ChevronRight } from "lucide-react"; // Commented out unused Bell import
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
@@ -22,14 +22,14 @@ const PAGE_LABELS: Record<string, { label: string; accent: string }> = {
 };
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
-  const [pendingCount, setPendingCount] = React.useState(0);
+  // const [pendingCount, setPendingCount] = React.useState(0); // Commented out unused state
   const location = useLocation();
   const pathname = location.pathname;
 
-  React.useEffect(() => {
+  // React.useEffect(() => {
     // Stopped calling /organizations endpoint per user request
-    setPendingCount(0);
-  }, [pathname]);
+    // setPendingCount(0); // Commented out unused setter
+  // }, [pathname]);
 
   const currentPageInfo = Object.entries(PAGE_LABELS).find(([key]) =>
     pathname.endsWith(key),
@@ -68,6 +68,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
 
         {/* Right Section: Notifications */}
         <div className="flex items-center gap-2">
+          {/* Commented out per user request: Organization event requests flow
           <Link
             to="/admin/requests"
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-[#6B7A88] hover:text-[#108ACB] relative group"
@@ -81,8 +82,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
                 </span>
               )}
             </div>
-            {/* <span className="text-sm font-medium hidden sm:inline">Requests</span> */}
           </Link>
+          */}
         </div>
       </div>
     </header>

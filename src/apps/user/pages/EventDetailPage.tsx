@@ -11,6 +11,7 @@ import {
   Gift,
   StopCircle,
   Sparkles,
+  QrCode,
 } from "lucide-react";
 import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
@@ -130,7 +131,7 @@ const RewardsBadgesCard: React.FC<{
           </h3>
         </div>
       </div>
-      <p className="text-xs text-gray-400 font-medium mb-3 leading-relaxed">
+      <p className="text-xs font-medium mb-3 leading-relaxed">
         Complete clean-up hours to unlock badges and rewards.
       </p>
       {/* {isActiveEvent && nextBadge && (
@@ -207,7 +208,7 @@ const RewardsBadgesCard: React.FC<{
             </h3>
           </div>
         </div>
-        <p className="text-xs text-gray-500 font-medium leading-relaxed">
+        <p className="text-xs font-medium leading-relaxed">
           {rewards}
         </p>
       </div>
@@ -313,6 +314,13 @@ export const EventDetailPage: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [dashboardLocation, setDashboardLocation] = useState("");
 
+  const [isEventStarted, setIsEventStarted] = useState(false);
+  const [eventCheckInTime, setEventCheckInTime] = useState<string | null>(null);
+  const [isScanningQR, setIsScanningQR] = useState(false);
+  const [stopModalOpen, setStopModalOpen] = useState(false);
+  const [totalWeightCollected, setTotalWeightCollected] = useState("");
+  const [elapsedOrgSeconds, setElapsedOrgSeconds] = useState(0);
+
   const {
     state: sessionState,
     activeEventId,
@@ -333,13 +341,16 @@ export const EventDetailPage: React.FC = () => {
     setDataLoading(true);
     try {
       if (!eventId) return;
-      const [found, dashboard] = await Promise.all([
+      const [found, dashboard, statusData] = await Promise.all([
         apiService.getEventById(eventId),
         apiService.getDashboard(),
+        apiService.getEventStatus(eventId)
       ]);
 
       setEvent(found);
       setUserStats(dashboard?.stats ?? null);
+      setIsEventStarted(statusData?.isStarted ?? false);
+      setEventCheckInTime(statusData?.checkInTime ?? null);
 
       const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
       setEventsJoined(joinedIds);
@@ -368,6 +379,21 @@ export const EventDetailPage: React.FC = () => {
     }
     loadActiveTimer();
   }, [initializeTimer]);
+
+  // Running timer for organization private events
+  useEffect(() => {
+    if (!isEventStarted || !eventCheckInTime) {
+      setElapsedOrgSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const diffMs = Date.now() - new Date(eventCheckInTime).getTime();
+      setElapsedOrgSeconds(Math.max(0, Math.floor(diffMs / 1000)));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isEventStarted, eventCheckInTime]);
 
   // Geolocation for checkout
   useEffect(() => {
@@ -485,6 +511,9 @@ export const EventDetailPage: React.FC = () => {
   // Derived from dashboard eventsJoined — true when this event is in the joined list
   const isActiveEvent = eventsJoined.includes(eventId);
 
+  // Check if the current user is an organization
+  const isOrganization = currentUser?.role === "organization";
+
   // Total hours for the current user from the leaderboard entry
   const userTotalHours = currentUser
     ? (leaderboardData?.leaderboard.find((e) => e.userId === currentUser.id)
@@ -569,6 +598,60 @@ export const EventDetailPage: React.FC = () => {
     navigate(-1);
   };
 
+  const handleStartEvent = async () => {
+    try {
+      const response = await apiService.startEvent(eventId);
+      if (response && response.success) {
+        setIsEventStarted(true);
+        setEventCheckInTime(response.checkInTime);
+        toast.success("Cleanup event started successfully! Let's clean up Singapore! 🌿");
+        await loadData();
+      } else {
+        toast.error(response?.message || "Failed to start cleanup event.");
+      }
+    } catch (err) {
+      toast.error("An error occurred while starting the event.");
+    }
+  };
+
+  const handleStopEvent = async () => {
+    const weightVal = parseFloat(totalWeightCollected);
+    if (isNaN(weightVal) || weightVal < 0) {
+      toast.error("Please enter a valid garbage weight in kg.");
+      return;
+    }
+
+    try {
+      const response = await apiService.stopEvent(eventId, weightVal);
+      if (response && response.success) {
+        setIsEventStarted(false);
+        setEventCheckInTime(null);
+        setStopModalOpen(false);
+        setTotalWeightCollected("");
+        toast.success(`Event stopped successfully! Distributed rewards among ${response.attendeesCount} participants! 🏆`);
+        await loadData();
+      } else {
+        toast.error(response?.message || "Failed to stop cleanup event.");
+      }
+    } catch (err) {
+      toast.error("An error occurred while stopping the event.");
+    }
+  };
+
+  const handleScanAttendance = async (userId: string) => {
+    try {
+      const success = await apiService.recordAttendance(eventId, userId);
+      if (success) {
+        toast.success("Attendance scanned and registered successfully! 🌿");
+        await loadData();
+      } else {
+        toast.error("Failed to scan attendance. Please ensure the user is registered for this event.");
+      }
+    } catch (err) {
+      toast.error("An error occurred while scanning attendance.");
+    }
+  };
+
   // Event Info Card (shared between mobile/desktop)
   const EventInfoCard: React.FC<{ compact?: boolean }> = ({ compact }) => (
     <div
@@ -637,7 +720,7 @@ export const EventDetailPage: React.FC = () => {
               <span className="text-lg font-black text-[#08351e] leading-none">
                 {userStats?.totalPoints ?? 0}
               </span>
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+              <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">
                 points
               </span>
             </div>
@@ -659,7 +742,7 @@ export const EventDetailPage: React.FC = () => {
       </div>
 
       {/* Join button — only for upcoming (not joined) events */}
-      {!isActiveEvent && (
+      {!isActiveEvent && !isOrganization && (
         <button
           onClick={() => setModalView("confirm")}
           className="cursor-pointer mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
@@ -685,57 +768,97 @@ export const EventDetailPage: React.FC = () => {
 
         <div className="flex items-center justify-end gap-4">
           <div className="hidden lg:flex flex-1">
-            {/* Start Clean-up — only for active (joined) events */}
-            {isActiveEvent && sessionState === "idle" && (
-              <button
-                onClick={() => {
-                  if (userStats && (userStats.todayHours || 0) >= 2) {
-                    toast.error(
-                      "Daily limit of 2 hours reached! See you tomorrow",
-                    );
-                    return;
-                  }
-                  openDurationPicker(eventId);
-                }}
-                className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                  userStats && (userStats.todayHours || 0) >= 2
-                    ? "bg-gray-400 grayscale cursor-not-allowed"
-                    : "bg-[#96c93d] hover:bg-[#86b537]"
-                }`}
-              >
-                {userStats && (userStats.todayHours || 0) >= 2
-                  ? "Daily Limit Reached"
-                  : "Start Clean-up"}
-              </button>
-            )}
-
-            {/* Active session countdown + Stop */}
-            {isActiveEvent && sessionState === "checked_in" && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-mono font-bold tabular-nums text-sm">
-                    {formatTime(remainingSeconds)}
-                  </span>
-                </div>
-                <button
-                  onClick={stopButtonDisabled ? undefined : initiateCheckout}
-                  disabled={stopButtonDisabled}
-                  className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
-                    stopButtonDisabled
-                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                      : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                  }`}
-                  title={
-                    stopButtonDisabled
-                      ? "Must complete at least 30 minutes before stopping"
-                      : undefined
-                  }
-                >
-                  <StopCircle className="w-4 h-4" />
-                  <span>Stop Clean-up</span>
-                </button>
+            {isOrganization ? (
+              <div className="flex items-center gap-4">
+                {!isEventStarted ? (
+                  <>
+                    <button
+                      onClick={() => setIsScanningQR(true)}
+                      className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                      title="Scan Attendance QR Code"
+                    >
+                      <QrCode className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleStartEvent}
+                      className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
+                    >
+                      Start Cleanup Event
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-mono font-bold tabular-nums text-sm">
+                        {formatTime(elapsedOrgSeconds)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setStopModalOpen(true)}
+                      className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                    >
+                      <StopCircle className="w-4 h-4" />
+                      <span>Stop Cleanup</span>
+                    </button>
+                  </>
+                )}
               </div>
+            ) : (
+              <>
+                {/* Start Clean-up — only for active (joined) events, exclude private org events */}
+                {isActiveEvent && sessionState === "idle" && event.eventType !== "private" && (
+                  <button
+                    onClick={() => {
+                      if (userStats && (userStats.todayHours || 0) >= 2) {
+                        toast.error(
+                          "Daily limit of 2 hours reached! See you tomorrow",
+                        );
+                        return;
+                      }
+                      openDurationPicker(eventId);
+                    }}
+                    className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                      userStats && (userStats.todayHours || 0) >= 2
+                        ? "bg-gray-400 grayscale cursor-not-allowed"
+                        : "bg-[#96c93d] hover:bg-[#86b537]"
+                    }`}
+                  >
+                    {userStats && (userStats.todayHours || 0) >= 2
+                      ? "Daily Limit Reached"
+                      : "Start Clean-up"}
+                  </button>
+                )}
+
+                {/* Active session countdown + Stop */}
+                {isActiveEvent && sessionState === "checked_in" && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-mono font-bold tabular-nums text-sm">
+                        {formatTime(remainingSeconds)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                      disabled={stopButtonDisabled}
+                      className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                        stopButtonDisabled
+                          ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                          : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                      }`}
+                      title={
+                        stopButtonDisabled
+                          ? "Must complete at least 30 minutes before stopping"
+                          : undefined
+                      }
+                    >
+                      <StopCircle className="w-4 h-4" />
+                      <span>Stop Clean-up</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div>
@@ -751,92 +874,132 @@ export const EventDetailPage: React.FC = () => {
       {/* Mobile & Tablet */}
       <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
         {/* Mobile Action Area */}
-        <div className="flex justify-end items-center -mb-2">
-          {isActiveEvent && sessionState === "idle" && (
-            <button
-              onClick={() => {
-                if (userStats && (userStats.todayHours || 0) >= 2) {
-                  toast.error(
-                    "Daily limit of 2 hours reached! See you tomorrow",
-                  );
-                  return;
-                }
-                openDurationPicker(eventId);
-              }}
-              className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                userStats && (userStats.todayHours || 0) >= 2
-                  ? "bg-gray-400 grayscale cursor-not-allowed"
-                  : "bg-[#96c93d] hover:bg-[#86b537]"
-              }`}
-            >
-              {userStats && (userStats.todayHours || 0) >= 2
-                ? "Daily Limit Reached"
-                : "Start Clean-up"}
-            </button>
-          )}
-
-          {isActiveEvent && sessionState === "checked_in" && (
-            <div className="flex justify-evenly w-full gap-3">
-              <div className="flex items-center gap-1.5">
-                {/* Hours */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
-                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
-                      {Math.floor(remainingSeconds / 3600)
-                        .toString()
-                        .padStart(2, "0")}
+        <div className="flex justify-end items-center -mb-2 w-full">
+          {isOrganization ? (
+            <div className="flex items-center gap-4 w-full justify-between">
+              {!isEventStarted ? (
+                <>
+                  <button
+                    onClick={() => setIsScanningQR(true)}
+                    className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                    title="Scan Attendance QR Code"
+                  >
+                    <QrCode className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleStartEvent}
+                    className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
+                  >
+                    Start Cleanup Event
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                    <Clock className="w-4 h-4" />
+                    <span className="font-mono font-bold tabular-nums text-sm">
+                      {formatTime(elapsedOrgSeconds)}
                     </span>
                   </div>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
-                    Hrs
-                  </span>
-                </div>
-                {/* Minutes */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
-                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
-                      {Math.floor((remainingSeconds % 3600) / 60)
-                        .toString()
-                        .padStart(2, "0")}
-                    </span>
-                  </div>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
-                    Min
-                  </span>
-                </div>
-                {/* Seconds */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
-                    <span className="text-xl font-black text-[#0083cf] tabular-nums">
-                      {Math.floor(remainingSeconds % 60)
-                        .toString()
-                        .padStart(2, "0")}
-                    </span>
-                  </div>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
-                    Sec
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={stopButtonDisabled ? undefined : initiateCheckout}
-                disabled={stopButtonDisabled}
-                className={`w-44 h-10 cursor-pointer font-extrabold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all ${
-                  stopButtonDisabled
-                    ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                    : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                }`}
-                title={
-                  stopButtonDisabled
-                    ? "Must complete at least 30 minutes before stopping"
-                    : undefined
-                }
-              >
-                <StopCircle className="w-4 h-4" />
-                <span>Stop Clean-up</span>
-              </button>
+                  <button
+                    onClick={() => setStopModalOpen(true)}
+                    className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <StopCircle className="w-4 h-4" />
+                    <span>Stop Cleanup</span>
+                  </button>
+                </>
+              )}
             </div>
+          ) : (
+            <>
+              {isActiveEvent && sessionState === "idle" && event.eventType !== "private" && (
+                <button
+                  onClick={() => {
+                    if (userStats && (userStats.todayHours || 0) >= 2) {
+                      toast.error(
+                        "Daily limit of 2 hours reached! See you tomorrow",
+                      );
+                      return;
+                    }
+                    openDurationPicker(eventId);
+                  }}
+                  className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                    userStats && (userStats.todayHours || 0) >= 2
+                      ? "bg-gray-400 grayscale cursor-not-allowed"
+                      : "bg-[#96c93d] hover:bg-[#86b537]"
+                  }`}
+                >
+                  {userStats && (userStats.todayHours || 0) >= 2
+                    ? "Daily Limit Reached"
+                    : "Start Clean-up"}
+                </button>
+              )}
+
+              {isActiveEvent && sessionState === "checked_in" && (
+                <div className="flex justify-evenly w-full gap-3">
+                  <div className="flex items-center gap-1.5">
+                    {/* Hours */}
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                        <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                          {Math.floor(remainingSeconds / 3600)
+                            .toString()
+                            .padStart(2, "0")}
+                        </span>
+                      </div>
+                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                        Hrs
+                      </span>
+                    </div>
+                    {/* Minutes */}
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                        <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                          {Math.floor((remainingSeconds % 3600) / 60)
+                            .toString()
+                            .padStart(2, "0")}
+                        </span>
+                      </div>
+                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                        Min
+                      </span>
+                    </div>
+                    {/* Seconds */}
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
+                        <span className="text-xl font-black text-[#0083cf] tabular-nums">
+                          {Math.floor(remainingSeconds % 60)
+                            .toString()
+                            .padStart(2, "0")}
+                        </span>
+                      </div>
+                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                        Sec
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                    disabled={stopButtonDisabled}
+                    className={`w-44 h-10 cursor-pointer font-extrabold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all ${
+                      stopButtonDisabled
+                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                        : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                    }`}
+                    title={
+                      stopButtonDisabled
+                        ? "Must complete at least 30 minutes before stopping"
+                        : undefined
+                    }
+                  >
+                    <StopCircle className="w-4 h-4" />
+                    <span>Stop Clean-up</span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -948,7 +1111,7 @@ export const EventDetailPage: React.FC = () => {
                           <span className="text-4xl xl:text-5xl font-black text-gray-900 leading-none">
                             {totalPoints}
                           </span>
-                          <span className="text-[10px] xl:text-xs font-black text-gray-400 uppercase tracking-widest mt-1">
+                          <span className="text-[10px] xl:text-xs font-black uppercase tracking-widest mt-1">
                             Points
                           </span>
                         </div>
@@ -1026,6 +1189,145 @@ export const EventDetailPage: React.FC = () => {
           onSubmit={handleSubmitReport}
           isMandatory={restoredFromStorage}
         />
+      )}
+      {/* QR Code Scanner Simulation Modal */}
+      {isScanningQR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-[#1e1e1e] text-white rounded-3xl shadow-2xl w-full max-w-md p-6 border border-gray-800 relative overflow-hidden animate-in zoom-in-95">
+            {/* Holographic Header */}
+            <div className="text-center mb-6">
+              <div className="mx-auto w-16 h-16 bg-[#E8F2FA]/10 text-[#0083cf] rounded-full flex items-center justify-center mb-3 animate-pulse border border-[#0083cf]/30">
+                <QrCode className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight text-white">QR Code Attendance Scanner</h3>
+              <p className="text-xs text-gray-400 mt-1">Simulating live camera feed for Singapore PHC cleanup</p>
+            </div>
+
+            {/* Simulated Live Camera Box */}
+            <div className="relative w-full aspect-video rounded-2xl bg-black border border-gray-800 flex flex-col items-center justify-center overflow-hidden mb-6 group">
+              {/* Camera Scanning Frame */}
+              <div className="absolute w-48 h-28 border-2 border-[#0083cf] rounded-xl flex items-center justify-center">
+                {/* Pulsing Target corners */}
+                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-4 border-l-4 border-green-400"></div>
+                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-4 border-r-4 border-green-400"></div>
+                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-4 border-l-4 border-green-400"></div>
+                <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-4 border-r-4 border-green-400"></div>
+                
+                {/* Laser scan line */}
+                <div className="w-full h-[2px] bg-green-400/80 shadow-[0_0_8px_rgba(74,222,128,0.8)] absolute top-0 animate-bounce"></div>
+              </div>
+
+              {/* Ticking scan indicators */}
+              <p className="absolute bottom-2 text-[10px] text-green-400 font-mono tracking-widest uppercase animate-pulse">
+                [ CAMERA LIVE - READY TO SCAN ]
+              </p>
+            </div>
+
+            {/* Registered Participants to Scan */}
+            <div className="mb-6 text-left">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Select Registered Attendee to Scan
+              </label>
+              {(() => {
+                let registered: string[] = event?.registeredParticipant || [];
+                if (typeof registered === 'string') {
+                  try { registered = JSON.parse(registered); } catch { registered = []; }
+                }
+
+                if (registered.length === 0) {
+                  return (
+                    <p className="text-sm text-yellow-500 font-semibold bg-yellow-500/10 px-4 py-3 rounded-xl border border-yellow-500/20 text-center">
+                      No registered participants left to scan!
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {registered.map((userId, idx) => (
+                      <div
+                        key={userId}
+                        onClick={() => {
+                          handleScanAttendance(userId);
+                          setIsScanningQR(false);
+                        }}
+                        className="cursor-pointer bg-[#2a2a2a] hover:bg-[#333] border border-gray-800 hover:border-[#0083cf]/50 p-3 rounded-xl flex items-center justify-between transition-all"
+                      >
+                        <div className="flex items-center gap-2.5 text-left">
+                          <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center font-bold text-xs shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-bold text-gray-200">Registered Participant</p>
+                            <p className="text-[10px] text-gray-500 font-mono truncate max-w-[200px]">{userId}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md shrink-0">
+                          SCAN QR
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <button
+              onClick={() => setIsScanningQR(false)}
+              className="cursor-pointer w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition-all text-sm"
+            >
+              Close Scanner
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stop Event & Weight Entry Modal */}
+      {stopModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-6 border border-gray-100 animate-in zoom-in-95">
+            <div className="text-center mb-5">
+              <div className="mx-auto w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-3">
+                <StopCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-black text-gray-900 text-center">Stop Clean-up Event</h3>
+              <p className="text-xs text-gray-500 mt-1 text-center">Enter the total garbage weight collected to split and distribute points.</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+                Total Garbage Weight (kg)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="e.g. 15.5"
+                  value={totalWeightCollected}
+                  onChange={(e) => setTotalWeightCollected(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#08351e] font-bold text-gray-800"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                  KG
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStopModalOpen(false)}
+                className="cursor-pointer flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStopEvent}
+                className="cursor-pointer flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-sm"
+              >
+                Stop Event
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { UserProfile, FullUserProfile } from "../../../../types/api.types";
-import type { LeaderboardEntry } from "../../../../types/api.types";
+// import type { LeaderboardEntry } from "../../../../types/api.types";
 import { format } from "date-fns";
 
 interface UserDetailModalProps {
@@ -24,7 +24,7 @@ interface UserDetailModalProps {
   onClose: () => void;
   user: UserProfile | FullUserProfile | null;
   loading?: boolean;
-  leaderboardEntry?: LeaderboardEntry | null;
+  // leaderboardEntry?: LeaderboardEntry | null;
 }
 
 function getBadgeInfo(totalHours: number) {
@@ -63,14 +63,13 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onClose,
   user,
   loading,
-  leaderboardEntry,
 }) => {
   if (!isOpen || !user) return null;
 
   const isFull = "totalTimeLogged" in user;
   const roleStyle = ROLE_STYLES[user.role?.toLowerCase()] || ROLE_STYLES.user;
-  const totalHours = isFull ? (user as FullUserProfile).totalTimeLogged : (leaderboardEntry?.totalHours ?? 0);
-  const totalWaste = isFull ? (user as FullUserProfile).totalWasteCollected : (leaderboardEntry?.garbageWeightCollected ?? 0);
+  const totalHours = isFull ? (user as FullUserProfile).totalTimeLogged : ((user as any).totalHours ?? 0);
+  const totalWaste = isFull ? (user as FullUserProfile).totalWasteCollected : ((user as any).totalGarbageWeight ?? 0);
   const eventCount = isFull ? (user as FullUserProfile).eventsJoinedCount : (user.joinedEvents?.length ?? 0);
   const badgeInfo = getBadgeInfo(totalHours);
 
