@@ -31,8 +31,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     }
     return <span className="text-[10px] font-bold">{rank}</span>;
   };
-  console.log("userLeaderboard", userLeaderboard);
-  console.log("orgLeaderboard", orgLeaderboard);
   return (
     <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col gap-4">
       {/* Tab Navigation */}

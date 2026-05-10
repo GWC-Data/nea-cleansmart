@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Camera, X } from "lucide-react";
+import { toast } from "sonner"; // For displaying field validation errors
 
 interface LogActivityFormProps {
   elapsedSeconds: number;
   location: string;
+  eventName?: string; // Added to display which event the report belongs to
   onCancel?: () => void;
   onSubmit: (
     weight: number,
@@ -26,6 +28,7 @@ const WASTE_TYPES = [
 export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   elapsedSeconds,
   location,
+  eventName,
   // onCancel,
   onSubmit,
   isMandatory,
@@ -66,10 +69,27 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weight || isSubmitting) return;
-    const typesJoined =
-      selectedTypes.length > 0 ? selectedTypes.join(", ") : "mixed";
+    if (isSubmitting) return;
+
     const finalLocation = location || manualLocation;
+
+    // Validation for all fields: Location, weight, and waste types
+    if (!finalLocation.trim()) {
+      toast.error("Please enter the cleanup location.");
+      return;
+    }
+
+    if (!weight.trim() || parseFloat(weight) <= 0) {
+      toast.error("Please enter a valid estimated weight collected.");
+      return;
+    }
+
+    if (selectedTypes.length === 0) {
+      toast.error("Please select at least one waste type.");
+      return;
+    }
+
+    const typesJoined = selectedTypes.join(", ");
 
     setIsSubmitting(true);
     try {
@@ -89,11 +109,15 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
       <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">
+              Log Activity
+            </h2>
             <p className="text-xs text-gray-500 font-medium">
               {isMandatory
                 ? "⚠️ Please complete your previous session report"
-                : "Session Report Checkout"}
+                : eventName
+                  ? `Event: ${eventName}`
+                  : "Session Report"}
             </p>
           </div>
           {/* {!isMandatory && ( // 👈 hide X when mandatory
@@ -116,7 +140,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Duration so far</span>
+              <span className="text-gray-500 font-medium">Duration</span>
               <span className="font-bold text-secondary">
                 {getDurationText()}
               </span>
@@ -142,7 +166,6 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                 </label>
                 <input
                   type="text"
-                  required
                   value={manualLocation}
                   onChange={(e) => setManualLocation(e.target.value)}
                   placeholder="e.g. East Coast Park"
@@ -169,6 +192,33 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
                   kg
                 </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-bold text-gray-900">
+                Select up to 3 waste types{" "}
+                <span className="text-red-500 font-medium">*</span>
+              </label>
+              <div className="space-y-2.5">
+                {WASTE_TYPES.map((type) => (
+                  <label
+                    key={type}
+                    className={`flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all shadow-sm ${selectedTypes.includes(type) ? "bg-soft border-secondary/40" : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTypes.includes(type)}
+                      onChange={() => handleToggleType(type)}
+                      className="mt-0.5 w-4 h-4 text-secondary bg-white border-gray-300 rounded focus:ring-secondary accent-secondary"
+                    />
+                    <span
+                      className={`text-sm leading-snug font-medium ${selectedTypes.includes(type) ? "text-primary-dark" : "text-gray-700"}`}
+                    >
+                      {type}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -228,33 +278,6 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                   </span>
                 </button>
               )}
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-gray-900">
-                Select up to 3 waste types{" "}
-                <span className="text-red-500 font-medium">*</span>
-              </label>
-              <div className="space-y-2.5">
-                {WASTE_TYPES.map((type) => (
-                  <label
-                    key={type}
-                    className={`flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all shadow-sm ${selectedTypes.includes(type) ? "bg-soft border-secondary/40" : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTypes.includes(type)}
-                      onChange={() => handleToggleType(type)}
-                      className="mt-0.5 w-4 h-4 text-secondary bg-white border-gray-300 rounded focus:ring-secondary accent-secondary"
-                    />
-                    <span
-                      className={`text-sm leading-snug font-medium ${selectedTypes.includes(type) ? "text-primary-dark" : "text-gray-700"}`}
-                    >
-                      {type}
-                    </span>
-                  </label>
-                ))}
-              </div>
             </div>
           </form>
         </div>

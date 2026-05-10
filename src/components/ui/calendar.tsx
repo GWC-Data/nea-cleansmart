@@ -631,7 +631,7 @@ export const Calendar = ({
   );
   const [startTime, setStartTime] = useState<string>(
     formatInTimeZone(
-      startOfDay(value?.start || new Date()),
+      value?.start || (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
       selectedTimezone,
       "HH:mm",
     ),
@@ -645,7 +645,7 @@ export const Calendar = ({
   );
   const [endTime, setEndTime] = useState<string>(
     formatInTimeZone(
-      endOfDay(value?.end || new Date()),
+      value?.end || (() => { const d = new Date(); d.setHours(18, 0, 0, 0); return d; })(),
       selectedTimezone,
       "HH:mm",
     ),
@@ -680,10 +680,20 @@ export const Calendar = ({
 
   const handleDateClick = (day: Date) => {
     if (mode === "start") {
-      onChange({ start: startOfDay(day), end: value?.end || null });
+      const [hours, minutes] = startTime.split(":").map(Number);
+      const newStart = new Date(day);
+      newStart.setHours(isNaN(hours) ? 0 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+      onChange({ start: newStart, end: value?.end || null });
+      // Keep it open to allow time adjustment if needed, or close if you prefer.
+      // Usually, selecting a date closes the popover in many pickers, 
+      // but here we might want to stay open if they need to adjust time.
+      // However, the user's issue was that it took 00:00 by default.
       setIsOpen(false);
     } else if (mode === "end") {
-      onChange({ start: value?.start || null, end: endOfDay(day) });
+      const [hours, minutes] = endTime.split(":").map(Number);
+      const newEnd = new Date(day);
+      newEnd.setHours(isNaN(hours) ? 23 : hours, isNaN(minutes) ? 59 : minutes, 59, 999);
+      onChange({ start: value?.start || null, end: newEnd });
       setIsOpen(false);
     } else {
       if (!value?.start || (value.start && value.end)) {
@@ -804,7 +814,7 @@ export const Calendar = ({
     );
     setStartTime(
       formatInTimeZone(
-        value?.start || startOfDay(new Date()),
+        value?.start || (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
         selectedTimezone,
         "HH:mm",
       ),
@@ -818,7 +828,7 @@ export const Calendar = ({
     );
     setEndTime(
       formatInTimeZone(
-        value?.end || endOfDay(new Date()),
+        value?.end || (() => { const d = new Date(); d.setHours(18, 0, 0, 0); return d; })(),
         selectedTimezone,
         "HH:mm",
       ),
@@ -1037,7 +1047,15 @@ export const Calendar = ({
                         <Input
                           size="small"
                           value={startTime}
-                          onChange={(value) => setStartTime(value)}
+                          onChange={(val) => {
+                            setStartTime(val);
+                            const [hours, minutes] = val.split(":").map(Number);
+                            if (!isNaN(hours) && !isNaN(minutes)) {
+                              const newStart = new Date(value?.start || new Date());
+                              newStart.setHours(hours, minutes, 0, 0);
+                              onChange({ ...value, start: newStart } as RangeValue);
+                            }
+                          }}
                           error={startTimeError}
                         />
                       )}
@@ -1064,7 +1082,15 @@ export const Calendar = ({
                         <Input
                           size="small"
                           value={endTime}
-                          onChange={(value) => setEndTime(value)}
+                          onChange={(val) => {
+                            setEndTime(val);
+                            const [hours, minutes] = val.split(":").map(Number);
+                            if (!isNaN(hours) && !isNaN(minutes)) {
+                              const newEnd = new Date(value?.end || new Date());
+                              newEnd.setHours(hours, minutes, 59, 999);
+                              onChange({ ...value, end: newEnd } as RangeValue);
+                            }
+                          }}
                           error={endTimeError}
                         />
                       )}
