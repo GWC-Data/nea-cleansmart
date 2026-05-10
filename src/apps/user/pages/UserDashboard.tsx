@@ -13,6 +13,7 @@ import type {
   DashboardEvent,
 } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
+import type { SessionState } from "../../../hooks/useCleanUpSession"; // Session state type for timer badge display
 
 export const UserDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
@@ -31,6 +32,10 @@ export const UserDashboard: React.FC = () => {
   );
   const [userLeaderboard, setUserLeaderboard] = useState<any[]>([]);
   const [orgLeaderboard, setOrgLeaderboard] = useState<any[]>([]);
+
+  // Active session state — used to show timer badge on event cards
+  const [activeSessionEventId, setActiveSessionEventId] = useState<string | null>(null);
+  const [activeSessionState, setActiveSessionState] = useState<SessionState>("idle");
 
   // Load dashboard data: stats + joined events
   const loadDashboard = useCallback(async () => {
@@ -63,6 +68,36 @@ export const UserDashboard: React.FC = () => {
       setEvents(data);
     }
     loadEvents();
+  }, []);
+
+  // On dashboard load, check if there's an active cleanup session running on the server
+  useEffect(() => {
+    async function checkActiveTimer() {
+      const timerData = await apiService.getTimer();
+      if (timerData && timerData.logId && timerData.checkInTime && timerData.eventId) {
+        const checkInMs = new Date(timerData.checkInTime).getTime();
+        const nowMs = Date.now();
+        const elapsed = Math.floor((nowMs - checkInMs) / 1000);
+
+        let durationSeconds = 0;
+        const hoursStr = (timerData.hoursEnrolled ?? "").toLowerCase();
+        if (hoursStr.endsWith("min")) {
+          durationSeconds = parseFloat(hoursStr) * 60;
+        } else {
+          durationSeconds = parseFloat(hoursStr) * 3600;
+        }
+
+        const remaining = durationSeconds - elapsed;
+        // If time has expired, user needs to submit the report
+        setActiveSessionEventId(timerData.eventId);
+        setActiveSessionState(remaining <= 0 ? "logging_activity" : "checked_in");
+      } else {
+        // No active timer — clear any previous state
+        setActiveSessionEventId(null);
+        setActiveSessionState("idle");
+      }
+    }
+    checkActiveTimer();
   }, []);
 
   const getInitials = (name?: string) => {
@@ -194,6 +229,8 @@ export const UserDashboard: React.FC = () => {
           <CommunityEvents
             activeEvents={activeEventsAsEventData}
             upcomingEvents={upcomingEvents}
+            activeSessionEventId={activeSessionEventId}
+            activeSessionState={activeSessionState}
             // currentUserId={currentUser?.id ?? null}
             // onJoinClick={setSelectedEventToJoin}
           />
@@ -207,6 +244,8 @@ export const UserDashboard: React.FC = () => {
           name={userName || currentUser?.name?.split(" ")[0] || "Alex"}
           activeEvents={activeEventsAsEventData}
           upcomingEvents={upcomingEvents}
+          activeSessionEventId={activeSessionEventId}
+          activeSessionState={activeSessionState}
           // currentUserId={currentUser?.id ?? null}
           // onJoinClick={setSelectedEventToJoin}
           stats={userStats}

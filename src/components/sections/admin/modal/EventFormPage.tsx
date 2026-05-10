@@ -181,9 +181,13 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         await onSubmitOverride(values, imageFile);
         onSuccess();
       } else {
+        const startTimeStr = values.startDate 
+          ? format(parseLocalISO(values.startDate)!, "HH:mm") 
+          : "00:00";
+          
         const payload = {
           ...values,
-          time: "00:00",
+          time: startTimeStr,
           ...(imageFile ? { eventImage: imageFile } : {}),
         };
 

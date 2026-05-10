@@ -1,18 +1,23 @@
 import React from "react";
-import { MapPin, CalendarX, Clock4 } from "lucide-react";
+import { MapPin, CalendarX, Clock4, Clock, AlertCircle } from "lucide-react";
 import type { EventData } from "../../../services/apiService";
 import { useNavigate } from "react-router-dom";
 import { getEventImageUrl } from "../../../utils/imageUtils";
+import type { SessionState } from "../../../hooks/useCleanUpSession"; // For session badge display
 
 interface CommunityEventsProps {
   activeEvents: EventData[];
   upcomingEvents: EventData[];
+  activeSessionEventId?: string | null; // The event ID that has an active timer session
+  activeSessionState?: SessionState; // Whether timer is running or needs report submission
   onJoinClick?: (event: EventData) => void;
 }
 
 export const CommunityEvents: React.FC<CommunityEventsProps> = ({
   activeEvents,
   upcomingEvents,
+  activeSessionEventId,
+  activeSessionState,
   onJoinClick,
 }) => {
   const navigate = useNavigate();
@@ -87,6 +92,21 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-linear-to-b from-black/0 via-black/20 to-black/80" />
+
+                    {/* Timer session badge — shown only on the event with an active session */}
+                    {activeSessionEventId === event.eventId && activeSessionState === "checked_in" && (
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
+                        <span className="w-2 h-2 rounded-full bg-[#9bf8b7] animate-pulse" />
+                        <Clock className="w-3 h-3" />
+                        Timer Running
+                      </div>
+                    )}
+                    {activeSessionEventId === event.eventId && activeSessionState === "logging_activity" && (
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
+                        <AlertCircle className="w-3 h-3" />
+                        Submit Report!
+                      </div>
+                    )}
 
                     <div className="absolute inset-0 p-6 flex flex-col justify-end">
                       <div className="mb-2">

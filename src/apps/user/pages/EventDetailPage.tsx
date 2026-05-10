@@ -1157,6 +1157,22 @@ export const EventDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* ── Global Footer ───────────────────────────────────────────────────── */}
+      <footer className="max-w-[1600px] mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 border-t border-gray-100 animate-slide-up bg-white lg:bg-transparent">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-gray-400 font-semibold tracking-wide">
+          <div className="flex items-center">
+            <img
+              src={logo}
+              alt="Public Hygiene Council"
+              className="h-8 lg:h-10 w-auto object-contain"
+            />
+          </div>
+          <p className="text-xs font-semibold text-gray-400 text-center sm:text-left">
+            © 2026 Public Hygiene Council. All rights reserved.
+          </p>
+        </div>
+      </footer>
 
       {/* ── Modals ───────────────────────────────────────────────────────── */}
       {modalView === "confirm" && (
@@ -1180,9 +1196,10 @@ export const EventDetailPage: React.FC = () => {
         />
       )}
 
-      {/* Log Activity Form */}
-      {sessionState === "logging_activity" && (
+      {/* Log Activity Form — only shown for the event the session belongs to */}
+      {sessionState === "logging_activity" && activeEventId === eventId && (
         <LogActivityForm
+          eventName={event?.name}
           elapsedSeconds={elapsedSeconds}
           location={dashboardLocation}
           onCancel={restoredFromStorage ? undefined : cancelCheckout}

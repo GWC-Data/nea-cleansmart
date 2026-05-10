@@ -507,13 +507,11 @@ export const adminApiService = {
    */
   async updateEventRequestStatus(requestId: string, status: "approved" | "rejected"): Promise<any> {
     try {
-      console.log("adminApiService.updateEventRequestStatus", requestId, status);
       const response = await fetch(`${BASE}/event-requests/${requestId}/status`, {
         method: "PUT",
         headers: adminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id: requestId, status }),
       });
-      console.log("adminApiService.updateEventRequestStatus", response);
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.message || "Failed to update event request status");

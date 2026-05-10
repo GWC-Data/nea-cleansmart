@@ -53,7 +53,7 @@
     --radius-4xl: calc(var(--radius) * 2.6);
     --color-context-card-border: var(--context-card-border);
     --color-blue-900: var(--ds-blue-900);
-    --color-gray-200: var(--ds-gray-200);
+    /* --color-gray-200: var(--ds-gray-200); */
     --color-gray-alpha-100: var(--ds-gray-alpha-100);
     --color-gray-alpha-300: var(--ds-gray-alpha-300);
     --color-accents-2: var(--accents-2);
@@ -61,15 +61,15 @@
     --color-red-900: var(--ds-red-900);
     --color-amber-800: var(--ds-amber-800);
     --color-amber-850: var(--ds-amber-850);
-    --color-gray-100: var(--ds-gray-100);
-    --color-gray-400: var(--ds-gray-400);
-    --color-gray-700: var(--ds-gray-700);
+    /* --color-gray-100: var(--ds-gray-100); */
+    /* --color-gray-400: var(--ds-gray-400); */
+    /* --color-gray-700: var(--ds-gray-700); */
     --color-gray-1000: var(--ds-gray-1000);
     --color-gray-1000-h: var(--ds-gray-1000-h);
     --color-gray-alpha-200: var(--ds-gray-alpha-200);
     --color-gray-alpha-400: var(--ds-gray-alpha-400);
     --color-background-100: var(--ds-background-100);
-    --color-gray-900: var(--ds-gray-900);
+    /* --color-gray-900: var(--ds-gray-900); */
     --color-gray-alpha-500: var(--ds-gray-alpha-500);
     --color-background-200: var(--ds-background-200);
     --color-geist-foreground: var(--geist-foreground);

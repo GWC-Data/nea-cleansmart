@@ -8,10 +8,12 @@ import {
   Trophy,
   Building2,
   Medal,
+  AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { EventData, UserStats } from "../../../services/apiService";
 import { getEventImageUrl } from "../../../utils/imageUtils";
+import type { SessionState } from "../../../hooks/useCleanUpSession"; // For event session badge display
 
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";
@@ -28,6 +30,8 @@ interface DesktopDashboardViewProps {
   stats: UserStats | null;
   userLeaderboard?: any[];
   orgLeaderboard?: any[];
+  activeSessionEventId?: string | null; // Event ID with an active cleanup session
+  activeSessionState?: SessionState; // Whether the session timer is running or expired
 }
 
 export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
@@ -37,6 +41,8 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   stats,
   userLeaderboard = [],
   orgLeaderboard = [],
+  activeSessionEventId,
+  activeSessionState,
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"users" | "orgs">("users");
@@ -244,6 +250,22 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                               </div>
                             )}
                           </div>
+                        </div>
+                        <div className="relative">
+                          {/* Timer session badges — shown only on the event with an active session */}
+                          {activeSessionEventId === event.eventId && activeSessionState === "checked_in" && (
+                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
+                              <span className="w-2 h-2 rounded-full bg-[#9bf8b7] animate-pulse" />
+                              <Clock className="w-3 h-3" />
+                              Timer Running
+                            </div>
+                          )}
+                          {activeSessionEventId === event.eventId && activeSessionState === "logging_activity" && (
+                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
+                              <AlertCircle className="w-3 h-3" />
+                              Submit Report!
+                            </div>
+                          )}
                         </div>
                         <div className="p-4 flex flex-col gap-1.5">
                           <h3 className="font-extrabold text-gray-900 text-sm leading-snug">
