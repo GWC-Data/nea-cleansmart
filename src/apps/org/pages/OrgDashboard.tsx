@@ -8,19 +8,18 @@ import {
   MapPin,
   Award,
   Clock,
-  Bell,
+  // Bell, // Commented out unused import
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
-import { EventFormModal } from "../../../components/sections/admin/modal/EventFormModal";
 // import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
-import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal";
-import type { EventData /* , UserProfile, */, EventRequest } from "../../../types/api.types";
+// import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal"; // Commented out unused import
+import type { EventData /* , UserProfile, EventRequest */ } from "../../../types/api.types"; // Commented out unused EventRequest import
 import { apiService } from "../../../services/apiService";
 import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
-import { toast } from "sonner";
+// import { toast } from "sonner"; // Commented out unused import
 import { getEventImageUrl } from "../../../utils/imageUtils";
 // import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
@@ -37,14 +36,13 @@ function formatCleanupTime(hours: number): { value: string; unit: string } {
 export const OrgDashboard: React.FC = () => {
   const { currentUser, logout: handleLogout } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams /*, setSearchParams*/] = useSearchParams(); // Commented out unused setSearchParams setter
   const menuRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
+  // const notifRef = useRef<HTMLDivElement>(null); // Commented out unused ref
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [eventFormOpen, setEventFormOpen] = useState(false);
-  const [eventRequestOpen, setEventRequestOpen] = useState(false);
+  // const [notificationsOpen, setNotificationsOpen] = useState(false); // Commented out unused state
+  // const [eventRequestOpen, setEventRequestOpen] = useState(false); // Commented out unused state
   // const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"org" | "public">("org");
 
@@ -52,7 +50,7 @@ export const OrgDashboard: React.FC = () => {
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [myRequests, setMyRequests] = useState<EventRequest[]>([]);
+  // const [myRequests, setMyRequests] = useState<EventRequest[]>([]); // Commented out unused state
 
   // const [loading, setLoading] = useState(false);
 
@@ -67,8 +65,8 @@ export const OrgDashboard: React.FC = () => {
       const dashData = await orgApiService.getDashboard();
       if (dashData) setUserStats(dashData.stats as any);
 
-      const requests = await orgApiService.getMyEventRequests();
-      setMyRequests(requests);
+      // const requests = await orgApiService.getMyEventRequests(); // Commented out unused data fetch
+      // setMyRequests(requests);
     } catch (error) {
       console.error("Failed to load data", error);
     }
@@ -81,23 +79,24 @@ export const OrgDashboard: React.FC = () => {
   useEffect(() => {
     const finalizeId = searchParams.get("finalizeEvent");
     if (finalizeId) {
-      setEventFormOpen(true);
+      navigate(`/org/create-event?finalizeEvent=${finalizeId}`);
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
       }
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setNotificationsOpen(false);
-      }
+      // if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+      //   setNotificationsOpen(false);
+      // }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /* Commented out unused event submission handler
   const handleEventSubmit = async (
     values: any,
     imageFile: File | null
@@ -122,6 +121,7 @@ export const OrgDashboard: React.FC = () => {
       throw error;
     }
   };
+  */
 
   // const handleUserAdded = (user: UserProfile) => {
   //   if (!orgUsers.find((u) => u.id === user.id)) {
@@ -155,7 +155,7 @@ export const OrgDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Bell / Notifications - EVENT REQUEST FLOW (commented out) */}
+          {/* Commented out per user request: Event request notifications
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -206,6 +206,7 @@ export const OrgDashboard: React.FC = () => {
               </div>
             )}
           </div>
+          */}
 
           <div className="relative" ref={menuRef}>
             <button
@@ -250,7 +251,9 @@ export const OrgDashboard: React.FC = () => {
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <button
-              onClick={() => setEventRequestOpen(true)}
+              onClick={() => {
+                navigate("/org/create-event");
+              }}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-[#86B537] text-white rounded-lg text-sm font-bold hover:bg-[#7aa632] hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <Plus className="w-4 h-4" /> Create Event
@@ -488,22 +491,14 @@ export const OrgDashboard: React.FC = () => {
       </footer>
 
       {/* Modals */}
-      <EventFormModal
-        isOpen={eventFormOpen}
-        onClose={() => {
-          setEventFormOpen(false);
-          setSearchParams({});
-        }}
-        onSuccess={() => loadData()}
-        showEventTypeToggle={true}
-        onSubmitOverride={handleEventSubmit}
-      />
 
+      {/* Commented out per user request: Event request flow
       <EventRequestModal
         isOpen={eventRequestOpen}
         onClose={() => setEventRequestOpen(false)}
         onSuccess={() => loadData()}
       />
+      */}
 
       {/* <AddUserModal
         isOpen={addUserModalOpen}

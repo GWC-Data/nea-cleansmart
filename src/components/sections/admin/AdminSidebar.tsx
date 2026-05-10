@@ -14,9 +14,13 @@ import {
   ClipboardList,
   LogOut,
   X,
+  Building2,
 } from "lucide-react";
 import { useAdminAuthContext } from "../../../context/AdminAuthContext";
 import logo from "../../../assets/publicHygineCouncil.png";
+import { useState, useEffect } from "react";
+import { orgApiService } from "../../../services/orgApiService";
+import { adminApiService } from "../../../services/adminApiService";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -40,7 +44,7 @@ const NAV_ITEMS: NavItem[] = [
     bgColor: "#E8F2FA",
   },
   {
-    label: "Users",
+    label: "Users & Organizations",
     path: "/admin/users",
     icon: Users,
     iconColor: "#86B537",
@@ -60,6 +64,13 @@ const NAV_ITEMS: NavItem[] = [
     iconColor: "#86B537",
     bgColor: "#F0F7E4",
   },
+  {
+    label: "Organization Requests",
+    path: "/admin/requests",
+    icon: Building2,
+    iconColor: "#108ACB",
+    bgColor: "#E8F2FA",
+  },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -69,10 +80,43 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const { logout, currentUser } = useAdminAuthContext();
   const navigate = useNavigate();
 
+  const [pendingCounts, setPendingCounts] = useState({ events: 0, requests: 0 });
+
   const handleLogout = () => {
     logout();
     navigate("/admin/login");
   };
+
+  useEffect(() => {
+    async function loadCounts() {
+      try {
+        const [events, orgs] = await Promise.all([
+          adminApiService.getAllEvents(),
+          orgApiService.getAllOrganizations()
+        ]);
+        
+        const pendingMainEvents = events.filter((e: any) => e.status === "pending").length;
+        const pendingOrgs = orgs.filter((o: any) => o.status === "pending").length;
+        
+        setPendingCounts({
+          events: pendingMainEvents,
+          requests: pendingOrgs
+        });
+      } catch (error) {}
+    }
+    loadCounts();
+    
+    // Setup real-time custom event listener
+    const handleRefreshEvent = () => {
+      loadCounts();
+    };
+    
+    window.addEventListener("refresh-admin-counts", handleRefreshEvent);
+    
+    return () => {
+      window.removeEventListener("refresh-admin-counts", handleRefreshEvent);
+    };
+  }, []);
 
   return (
     <>
@@ -166,6 +210,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     >
                       {item.label}
                     </span>
+                    {/* Smart context badges for pending items */}
+                    {item.path === "/admin/events" && pendingCounts.events > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-xs">
+                        {pendingCounts.events}
+                      </span>
+                    )}
+                    {item.path === "/admin/requests" && pendingCounts.requests > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-xs">
+                        {pendingCounts.requests}
+                      </span>
+                    )}
                   </>
                 )}
               </NavLink>

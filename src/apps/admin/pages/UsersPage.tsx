@@ -11,7 +11,12 @@ import type { Column } from "../../../components/sections/admin/DataTable";
 import { UserDetailModal } from "../../../components/sections/admin/modal/UserDetailModal";
 import { UserFormModal } from "../../../components/sections/admin/modal/UserFormModal";
 import { adminApiService } from "../../../services/adminApiService";
-import type { UserProfile, LeaderboardEntry, FullUserProfile } from "../../../types/api.types";
+import { orgApiService } from "../../../services/orgApiService";
+import type {
+  UserProfile,
+  // LeaderboardEntry, // Commented out unused import as per user request
+  FullUserProfile,
+} from "../../../types/api.types";
 import { format } from "date-fns";
 
 function getInitials(name: string) {
@@ -30,8 +35,13 @@ const ROLE_STYLES: Record<string, { bg: string; text: string }> = {
 };
 
 export const UsersPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<"users" | "organizations">(
+    "users",
+  );
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  // Commented out per user request: Leaderboard is not useful here
+  // const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "volunteer" | "admin">(
@@ -41,7 +51,8 @@ export const UsersPage: React.FC = () => {
     "all",
   );
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [selectedFullUser, setSelectedFullUser] = useState<FullUserProfile | null>(null);
+  const [selectedFullUser, setSelectedFullUser] =
+    useState<FullUserProfile | null>(null);
   const [loadingFull, setLoadingFull] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -49,13 +60,13 @@ export const UsersPage: React.FC = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [usersData, lbData] = await Promise.all([
+      const [usersData, orgsData] = await Promise.all([
         adminApiService.getAllUsers(),
-        adminApiService.getTopLeaderboard(999),
+        orgApiService.getAllOrganizations().catch(() => []),
+        // adminApiService.getTopLeaderboard(999),
       ]);
-      console.log("userData", usersData);
       setUsers(usersData);
-      setLeaderboard(lbData);
+      setOrganizations(orgsData);
     } finally {
       setLoading(false);
     }
@@ -65,10 +76,12 @@ export const UsersPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  /* Commented out per user request: Leaderboard is not useful here
   const lbMap = useMemo(
     () => new Map(leaderboard.map((e) => [e.userId, e])),
     [leaderboard],
   );
+  */
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -85,6 +98,18 @@ export const UsersPage: React.FC = () => {
       return matchSearch && matchRole && matchGender;
     });
   }, [users, search, roleFilter, genderFilter]);
+
+  const filteredOrgs = useMemo(() => {
+    return organizations.filter((org) => {
+      const q = search.toLowerCase();
+      return (
+        !q ||
+        org.orgName?.toLowerCase().includes(q) ||
+        org.name?.toLowerCase().includes(q) ||
+        org.email?.toLowerCase().includes(q)
+      );
+    });
+  }, [organizations, search]);
 
   const columns: Column<UserProfile & Record<string, unknown>>[] = [
     {
@@ -176,7 +201,7 @@ export const UsersPage: React.FC = () => {
             setSelectedUser(row as UserProfile);
             setModalOpen(true);
           }}
-          className="px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+          className="cursor-pointer px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
           style={{ background: "#E8F2FA", color: "#108ACB" }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "#D4EAF8";
@@ -191,32 +216,130 @@ export const UsersPage: React.FC = () => {
     },
   ];
 
+  const orgColumns: Column<any>[] = [
+    {
+      key: "_idx",
+      label: "#",
+      width: "48px",
+      render: (_row, index) => (
+        <span className="text-[#A0AAB5] font-medium text-xs">{index + 1}</span>
+      ),
+    },
+    {
+      key: "orgName",
+      label: "Organization Name",
+      sortable: true,
+      render: (row) => (
+        <span className="font-semibold text-[#1A2A3A] text-sm">
+          {row.orgName}
+        </span>
+      ),
+    },
+    {
+      key: "name",
+      label: "Contact Person",
+      sortable: true,
+      render: (row) => (
+        <span className="text-[#6B7A88] text-sm font-medium">{row.name}</span>
+      ),
+    },
+    {
+      key: "email",
+      label: "Email",
+      render: (row) => (
+        <span className="text-[#6B7A88] text-sm">{row.email}</span>
+      ),
+    },
+    {
+      key: "address",
+      label: "Address",
+      render: (row) => (
+        <span className="text-[#6B7A88] text-xs max-w-xs truncate block">
+          {row.address || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "phone",
+      label: "Phone",
+      render: (row) => (
+        <span className="text-[#6B7A88] text-sm">{row.phone || "—"}</span>
+      ),
+    },
+    {
+      key: "userIds",
+      label: "Users Count",
+      render: (row) => (
+        <span className="text-[#6B7A88] text-sm font-semibold">
+          {Array.isArray(row.userIds) ? row.userIds.length : 0}
+        </span>
+      ),
+    },
+    {
+      key: "eventIds",
+      label: "Events Count",
+      render: (row) => (
+        <span className="text-[#6B7A88] text-sm font-semibold">
+          {Array.isArray(row.eventIds) ? row.eventIds.length : 0}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A2A3A] tracking-tight">
-            Users
-          </h1>
-          <p className="text-sm text-[#8A9AA8] font-medium mt-0.5">
-            {loading ? "Loading..." : `${users.length} registered users`}
-          </p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A2A3A] tracking-tight">
+              Users & Organizations
+            </h1>
+            <p className="text-sm text-[#8A9AA8] font-medium mt-0.5">
+              {loading
+                ? "Loading..."
+                : `${activeTab === "users" ? filtered.length : filteredOrgs.length} registered entries`}
+            </p>
+          </div>
+          <div className="flex bg-[#F5F7FA] p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`cursor-pointer px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "users"
+                  ? "bg-white text-[#1A2A3A] shadow-sm"
+                  : "text-[#8A9AA8] hover:text-[#1A2A3A]"
+              }`}
+            >
+              Users
+            </button>
+            <button
+              onClick={() => setActiveTab("organizations")}
+              className={`cursor-pointer px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "organizations"
+                  ? "bg-white text-[#1A2A3A] shadow-sm"
+                  : "text-[#8A9AA8] hover:text-[#1A2A3A]"
+              }`}
+            >
+              Organizations
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{ background: "#86B537", color: "#FFFFFF" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#75A030";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#86B537";
-          }}
-        >
-          <UserPlus size={16} />
-          Add User
-        </button>
+        {activeTab === "users" && (
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ background: "#86B537", color: "#FFFFFF" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#75A030";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#86B537";
+            }}
+          >
+            <UserPlus size={16} />
+            Add User
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -231,77 +354,99 @@ export const UsersPage: React.FC = () => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder={
+                activeTab === "users"
+                  ? "Search by name or email..."
+                  : "Search by organization, contact person or email..."
+              }
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#E8EDF2] text-sm font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
             />
           </div>
 
-          {/* Role filter */}
-          <div className="flex items-center gap-1">
-            <Filter size={13} className="text-[#8A9AA8]" />
-            {(["all", "volunteer", "admin"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRoleFilter(r)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
-                  roleFilter === r
-                    ? "text-white"
-                    : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
-                }`}
-                style={roleFilter === r ? { background: "#108ACB" } : {}}
-              >
-                {r === "all" ? "All Roles" : r}
-              </button>
-            ))}
-          </div>
+          {activeTab === "users" && (
+            <>
+              {/* Role filter */}
+              <div className="flex items-center gap-2">
+                <Filter size={13} className="text-[#8A9AA8]" />
+                {(["all", "volunteer", "admin"] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRoleFilter(r)}
+                    className={`cursor-pointer px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                      roleFilter === r
+                        ? "text-white"
+                        : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
+                    }`}
+                    style={roleFilter === r ? { background: "#108ACB" } : {}}
+                  >
+                    {r === "all" ? "All Roles" : r}
+                  </button>
+                ))}
+              </div>
 
-          {/* Gender filter */}
-          <div className="flex items-center gap-1">
-            {(["all", "male", "female"] as const).map((g) => (
-              <button
-                key={g}
-                onClick={() => setGenderFilter(g)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
-                  genderFilter === g
-                    ? "text-white"
-                    : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
-                }`}
-                style={genderFilter === g ? { background: "#86B537" } : {}}
-              >
-                {g === "all" ? "All Genders" : g}
-              </button>
-            ))}
-          </div>
+              {/* Gender filter */}
+              <div className="flex items-center gap-1">
+                {(["all", "male", "female"] as const).map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGenderFilter(g)}
+                    className={`cursor-pointer px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                      genderFilter === g
+                        ? "text-white"
+                        : "bg-[#F5F7FA] text-[#6B7A88] hover:bg-[#E8EDF2]"
+                    }`}
+                    style={genderFilter === g ? { background: "#86B537" } : {}}
+                  >
+                    {g === "all" ? "All Genders" : g}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Results summary */}
       {!loading && search && (
         <p className="text-xs text-[#8A9AA8] font-medium px-1">
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "
-          {search}"
+          {activeTab === "users" ? filtered.length : filteredOrgs.length}{" "}
+          result
+          {(activeTab === "users"
+            ? filtered.length
+            : filteredOrgs.length) !== 1
+            ? "s"
+            : ""}{" "}
+          for "{search}"
         </p>
       )}
 
       {/* Table */}
-      <DataTable<UserProfile & Record<string, unknown>>
-        columns={columns}
-        data={filtered as (UserProfile & Record<string, unknown>)[]}
-        rowKey={(r) => r.id}
+      <DataTable<any>
+        columns={activeTab === "users" ? columns : orgColumns}
+        data={activeTab === "users" ? filtered : filteredOrgs}
+        rowKey={(r) => (activeTab === "users" ? r.id : r.orgId)}
         loading={loading}
-        emptyText="No users found"
+        emptyText={
+          activeTab === "users"
+            ? "No users found"
+            : "No organizations found"
+        }
         emptySubtext="Adjust your search or filters."
-        onRowClick={async (r) => {
-          setSelectedUser(r);
-          setModalOpen(true);
-          setLoadingFull(true);
-          try {
-            const full = await adminApiService.getFullUserProfile(r.id);
-            if (full) setSelectedFullUser(full);
-          } finally {
-            setLoadingFull(false);
-          }
-        }}
+        onRowClick={
+          activeTab === "users"
+            ? async (r) => {
+                setSelectedUser(r);
+                setModalOpen(true);
+                setLoadingFull(true);
+                try {
+                  const full = await adminApiService.getFullUserProfile(r.id);
+                  if (full) setSelectedFullUser(full);
+                } finally {
+                  setLoadingFull(false);
+                }
+              }
+            : undefined
+        }
       />
 
       {/* User Detail Modal */}
@@ -313,9 +458,11 @@ export const UsersPage: React.FC = () => {
         }}
         user={selectedFullUser || selectedUser}
         loading={loadingFull}
+        /* Commented out per user request: Leaderboard is not useful here
         leaderboardEntry={
           selectedUser ? (lbMap.get(selectedUser.id) ?? null) : null
         }
+        */
       />
 
       {/* User Form Modal (Add User) */}

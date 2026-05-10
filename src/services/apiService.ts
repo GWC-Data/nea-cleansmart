@@ -20,9 +20,12 @@ export interface EventData {
   rewards: string;
   joinsCount: number;
   participants: string[];
+  registeredParticipant?: string[];
+  attendentParticipant?: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
   status?: "pending" | "approved" | "rejected";
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -319,6 +322,80 @@ export const apiService = {
     } catch (error) {
       console.error("joinEvent error:", error);
       return false;
+    }
+  },
+
+  /**
+   * Record Attendance for a user via scanned QR code
+   */
+  async recordAttendance(eventId: string, userId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE}/events/${eventId}/attendance`, {
+        method: "POST",
+        headers: getAuthHeaders({
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ userId }),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("recordAttendance error:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Start clean-up event (automatically check in all attendee participants)
+   */
+  async startEvent(eventId: string): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/events/${eventId}/start`, {
+        method: "POST",
+        headers: getAuthHeaders({
+          "Content-Type": "application/json",
+        }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("startEvent error:", error);
+      return { success: false, message: "Error starting event" };
+    }
+  },
+
+  /**
+   * Stop clean-up event and split weight
+   */
+  async stopEvent(eventId: string, totalWeight: number): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/events/${eventId}/stop`, {
+        method: "POST",
+        headers: getAuthHeaders({
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ totalWeight }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("stopEvent error:", error);
+      return { success: false, message: "Error stopping event" };
+    }
+  },
+
+  /**
+   * Get event started status and checkInTime
+   */
+  async getEventStatus(eventId: string): Promise<any> {
+    try {
+      const response = await fetch(`${BASE}/events/${eventId}/status`, {
+        method: "GET",
+        headers: getAuthHeaders({
+          "Content-Type": "application/json",
+        }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("getEventStatus error:", error);
+      return { isStarted: false, checkInTime: null };
     }
   },
 
