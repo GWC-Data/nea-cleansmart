@@ -8,10 +8,12 @@ import {
   MapPin,
   Award,
   Clock,
+  AlertCircle,
   // Bell, // Commented out unused import
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import type { SessionState } from "../../../hooks/useCleanUpSession";
 import logo from "../../../assets/publicHygineCouncil.png";
 // import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
 // import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal"; // Commented out unused import
@@ -50,6 +52,10 @@ export const OrgDashboard: React.FC = () => {
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  
+  // Active session state — used to show timer badge on event cards
+  const [activeSessionEventId, setActiveSessionEventId] = useState<string | null>(null);
+  const [activeSessionState, setActiveSessionState] = useState<SessionState>("idle");
   // const [myRequests, setMyRequests] = useState<EventRequest[]>([]); // Commented out unused state
 
   // const [loading, setLoading] = useState(false);
@@ -94,6 +100,34 @@ export const OrgDashboard: React.FC = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Check for active cleanup session running on the server
+  useEffect(() => {
+    async function checkActiveTimer() {
+      const timerData = await apiService.getTimer();
+      if (timerData && timerData.logId && timerData.checkInTime && timerData.eventId) {
+        const checkInMs = new Date(timerData.checkInTime).getTime();
+        const nowMs = Date.now();
+        const elapsed = Math.floor((nowMs - checkInMs) / 1000);
+
+        let durationSeconds = 0;
+        const hoursStr = (timerData.hoursEnrolled ?? "").toLowerCase();
+        if (hoursStr.endsWith("min")) {
+          durationSeconds = parseFloat(hoursStr) * 60;
+        } else {
+          durationSeconds = parseFloat(hoursStr) * 3600;
+        }
+
+        const remaining = durationSeconds - elapsed;
+        setActiveSessionEventId(timerData.eventId);
+        setActiveSessionState(remaining <= 0 ? "logging_activity" : "checked_in");
+      } else {
+        setActiveSessionEventId(null);
+        setActiveSessionState("idle");
+      }
+    }
+    checkActiveTimer();
   }, []);
 
   /* Commented out unused event submission handler
@@ -407,6 +441,21 @@ export const OrgDashboard: React.FC = () => {
                           {new Date(event.startDate).getDate()}
                         </p>
                       </div>
+
+                      {/* Timer session badge */}
+                      {activeSessionEventId === event.eventId && activeSessionState === "checked_in" && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#9bf8b7] animate-pulse" />
+                          <Clock className="w-2.5 h-2.5" />
+                          Running
+                        </div>
+                      )}
+                      {activeSessionEventId === event.eventId && activeSessionState === "logging_activity" && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
+                          <AlertCircle className="w-2.5 h-2.5" />
+                          Report!
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 text-sm truncate mb-1">

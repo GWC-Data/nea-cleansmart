@@ -193,7 +193,7 @@ export const UserDashboard: React.FC = () => {
                   }}
                   className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-[#0083cf] hover:bg-blue-50 font-medium flex items-center gap-2"
                 >
-                  <QrCode className="w-4 h-4" /> My Attendance QR
+                  <QrCode className="w-4 h-4" /> User QR
                 </button>
                 <div className="h-px bg-gray-50 my-1 w-full" />
                 <button
@@ -274,28 +274,28 @@ export const UserDashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-6 border border-gray-100 animate-in zoom-in-95 relative overflow-hidden">
             {/* Holographic Header */}
-            <div className="text-center mb-5">
+            <div className="text-center mb-2">
               <div className="mx-auto w-12 h-12 bg-blue-50 text-[#0083cf] rounded-full flex items-center justify-center mb-3">
                 <QrCode className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-black text-gray-900 text-center">My Attendance QR</h3>
-              <p className="text-xs text-gray-500 mt-1 text-center">Show this QR code to the event organization to scan your attendance.</p>
+              <h3 className="text-lg font-black text-gray-900 text-center">User QR</h3>
+              {/* <p className="text-xs text-gray-500 mt-1 text-center">Show this QR code to the event organization to scan your attendance.</p> */}
             </div>
 
             {/* Generated QR Code Container */}
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col items-center justify-center mb-6">
+            <div className="bg-gray-50 px-6 py-2 rounded-2xl border border-gray-100 flex flex-col items-center justify-center mb-3">
               <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentUser?.id}`}
-                  alt="My Attendance QR Code"
+                  alt="QR Code"
                   className="w-44 h-44 object-contain"
                 />
               </div>
-              <div className="mt-4 text-center">
+              <div className="text-center mt-2">
                 <p className="text-sm font-bold text-gray-800">{currentUser?.name || "Jane Doe"}</p>
-                <p className="text-[10px] text-gray-400 font-mono mt-0.5 select-all" title="Click to select/copy User ID">
+                {/* <p className="text-[10px] text-gray-400 font-mono mt-0.5 select-all" title="Click to select/copy User ID">
                   ID: {currentUser?.id}
-                </p>
+                </p> */}
               </div>
             </div>
 
