@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,6 +27,8 @@ import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
 import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
 import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
 import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
+import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
+import { orgApiService } from "../../../services/orgApiService";
 
 const MedalIcon: React.FC<{ label: string; className?: string }> = ({
   label,
@@ -208,9 +210,7 @@ const RewardsBadgesCard: React.FC<{
             </h3>
           </div>
         </div>
-        <p className="text-xs font-medium leading-relaxed">
-          {rewards}
-        </p>
+        <p className="text-xs font-medium leading-relaxed">{rewards}</p>
       </div>
     </div>
   );
@@ -320,6 +320,11 @@ export const EventDetailPage: React.FC = () => {
   const [stopModalOpen, setStopModalOpen] = useState(false);
   const [totalWeightCollected, setTotalWeightCollected] = useState("");
   const [elapsedOrgSeconds, setElapsedOrgSeconds] = useState(0);
+  const [isProcessingScan, setIsProcessingScan] = useState(false);
+  
+  const lastScannedRef = useRef<{ id: string; time: number } | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const scannerControlsRef = React.useRef<IScannerControls | null>(null);
 
   const {
     state: sessionState,
@@ -337,22 +342,40 @@ export const EventDetailPage: React.FC = () => {
     completeSession,
   } = useCleanUpSession();
 
-  const loadData = useCallback(async () => {
-    setDataLoading(true);
+  const loadData = useCallback(async (silent = false) => {
+    if (!silent) setDataLoading(true);
     try {
       if (!eventId) return;
-      const [found, dashboard, statusData] = await Promise.all([
+
+      // Determine if the current user is an organization and call the correct dashboard endpoint
+      const isOrgUser = currentUser?.role === "organization";
+
+      const [found, statusData] = await Promise.all([
         apiService.getEventById(eventId),
-        apiService.getDashboard(),
-        apiService.getEventStatus(eventId)
+        apiService.getEventStatus(eventId),
       ]);
 
       setEvent(found);
-      setUserStats(dashboard?.stats ?? null);
       setIsEventStarted(statusData?.isStarted ?? false);
       setEventCheckInTime(statusData?.checkInTime ?? null);
 
+      // Always fetch the regular dashboard to get joined events and personal stats
+      const dashboard = await apiService.getDashboard();
+      setUserStats(dashboard?.stats ?? null);
       const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
+      
+      if (isOrgUser) {
+        // Also fetch organization specific dashboard data
+        await orgApiService.getDashboard();
+        // For organizations, we also consider them "joined" if they created the event
+        const createdBy = found?.createdBy;
+        const orgId = currentUser?.id;
+        const isCreator = createdBy && orgId && createdBy === orgId;
+        if (isCreator && !joinedIds.includes(eventId)) {
+          joinedIds.push(eventId);
+        }
+      }
+
       setEventsJoined(joinedIds);
 
       if (joinedIds.includes(eventId)) {
@@ -360,16 +383,16 @@ export const EventDetailPage: React.FC = () => {
         setLeaderboardData(lb);
       }
     } finally {
-      setDataLoading(false);
+      if (!silent) setDataLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, currentUser?.role, currentUser?.id]);
 
   useEffect(() => {
     if (isLoading) return;
     loadData();
   }, [eventId, isLoading, loadData]);
 
-  // Load active timer on mount
+  // Load active cleanup timer on mount
   useEffect(() => {
     async function loadActiveTimer() {
       const timerData = await apiService.getTimer();
@@ -394,6 +417,72 @@ export const EventDetailPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [isEventStarted, eventCheckInTime]);
+
+  // QR Scanner Lifecycle
+  useEffect(() => {
+    if (!isScanningQR) {
+      if (scannerControlsRef.current) {
+        scannerControlsRef.current.stop();
+        scannerControlsRef.current = null;
+      }
+      return;
+    }
+
+    const codeReader = new BrowserQRCodeReader();
+    let isMounted = true;
+
+    async function startScanner() {
+      if (!videoRef.current) return;
+      try {
+        const controls = await codeReader.decodeFromVideoDevice(
+          undefined, // Use default camera
+          videoRef.current,
+          (result, error) => {
+            if (result && isMounted) {
+              const scannedUserId = result.getText();
+              
+              // Cooldown to prevent duplicate scans (3 seconds)
+              const now = Date.now();
+              if (
+                lastScannedRef.current && 
+                lastScannedRef.current.id === scannedUserId && 
+                now - lastScannedRef.current.time < 3000
+              ) {
+                return;
+              }
+
+              lastScannedRef.current = { id: scannedUserId, time: now };
+              handleScanAttendance(scannedUserId);
+              // We no longer call setIsScanningQR(false) here for continuous scanning
+            }
+            if (error && !(error.name === "NotFoundException")) {
+              // Ignore NotFoundException as it's common during scanning
+              console.debug("QR Scan Error:", error);
+            }
+          },
+        );
+        if (isMounted) {
+          scannerControlsRef.current = controls;
+        } else {
+          controls.stop();
+        }
+      } catch (err) {
+        console.error("Failed to start QR scanner:", err);
+        toast.error("Could not access camera for QR scanning.");
+        setIsScanningQR(false);
+      }
+    }
+
+    startScanner();
+
+    return () => {
+      isMounted = false;
+      if (scannerControlsRef.current) {
+        scannerControlsRef.current.stop();
+        scannerControlsRef.current = null;
+      }
+    };
+  }, [isScanningQR]);
 
   // Geolocation for checkout
   useEffect(() => {
@@ -513,6 +602,8 @@ export const EventDetailPage: React.FC = () => {
 
   // Check if the current user is an organization
   const isOrganization = currentUser?.role === "organization";
+  // Check if the current user is the creator of this event
+  const isCreator = event && currentUser && event.createdBy === currentUser.id;
 
   // Total hours for the current user from the leaderboard entry
   const userTotalHours = currentUser
@@ -604,7 +695,9 @@ export const EventDetailPage: React.FC = () => {
       if (response && response.success) {
         setIsEventStarted(true);
         setEventCheckInTime(response.checkInTime);
-        toast.success("Cleanup event started successfully! Let's clean up Singapore! 🌿");
+        toast.success(
+          "Cleanup event started successfully! Let's clean up Singapore! 🌿",
+        );
         await loadData();
       } else {
         toast.error(response?.message || "Failed to start cleanup event.");
@@ -628,7 +721,9 @@ export const EventDetailPage: React.FC = () => {
         setEventCheckInTime(null);
         setStopModalOpen(false);
         setTotalWeightCollected("");
-        toast.success(`Event stopped successfully! Distributed rewards among ${response.attendeesCount} participants! 🏆`);
+        toast.success(
+          `Event stopped successfully! Distributed rewards among ${response.attendeesCount} participants! 🏆`,
+        );
         await loadData();
       } else {
         toast.error(response?.message || "Failed to stop cleanup event.");
@@ -639,16 +734,22 @@ export const EventDetailPage: React.FC = () => {
   };
 
   const handleScanAttendance = async (userId: string) => {
+    setIsProcessingScan(true);
     try {
       const success = await apiService.recordAttendance(eventId, userId);
       if (success) {
         toast.success("Attendance scanned and registered successfully! 🌿");
-        await loadData();
+        // Silent update to refresh stats without closing camera
+        await loadData(true);
       } else {
-        toast.error("Failed to scan attendance. Please ensure the user is registered for this event.");
+        toast.error(
+          "Failed to scan attendance. Please ensure the user is registered for this event.",
+        );
       }
     } catch (err) {
       toast.error("An error occurred while scanning attendance.");
+    } finally {
+      setIsProcessingScan(false);
     }
   };
 
@@ -768,7 +869,8 @@ export const EventDetailPage: React.FC = () => {
 
         <div className="flex items-center justify-end gap-4">
           <div className="hidden lg:flex flex-1">
-            {isOrganization ? (
+            {/* Management UI for the event creator */}
+            {isCreator ? (
               <div className="flex items-center gap-4">
                 {!isEventStarted ? (
                   <>
@@ -807,31 +909,33 @@ export const EventDetailPage: React.FC = () => {
             ) : (
               <>
                 {/* Start Clean-up — only for active (joined) events, exclude private org events */}
-                {isActiveEvent && sessionState === "idle" && event.eventType !== "private" && (
-                  <button
-                    onClick={() => {
-                      if (userStats && (userStats.todayHours || 0) >= 2) {
-                        toast.error(
-                          "Daily limit of 2 hours reached! See you tomorrow",
-                        );
-                        return;
-                      }
-                      openDurationPicker(eventId);
-                    }}
-                    className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                      userStats && (userStats.todayHours || 0) >= 2
-                        ? "bg-gray-400 grayscale cursor-not-allowed"
-                        : "bg-[#96c93d] hover:bg-[#86b537]"
-                    }`}
-                  >
-                    {userStats && (userStats.todayHours || 0) >= 2
-                      ? "Daily Limit Reached"
-                      : "Start Clean-up"}
-                  </button>
-                )}
+                {isActiveEvent &&
+                  sessionState === "idle" &&
+                  event.eventType !== "private" && (
+                    <button
+                      onClick={() => {
+                        if (userStats && (userStats.todayHours || 0) >= 2) {
+                          toast.error(
+                            "Daily limit of 2 hours reached! See you tomorrow",
+                          );
+                          return;
+                        }
+                        openDurationPicker(eventId);
+                      }}
+                      className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                        userStats && (userStats.todayHours || 0) >= 2
+                          ? "bg-gray-400 grayscale cursor-not-allowed"
+                          : "bg-[#96c93d] hover:bg-[#86b537]"
+                      }`}
+                    >
+                      {userStats && (userStats.todayHours || 0) >= 2
+                        ? "Daily Limit Reached"
+                        : "Start Clean-up"}
+                    </button>
+                  )}
 
-                {/* Active session countdown + Stop */}
-                {isActiveEvent && sessionState === "checked_in" && (
+                {/* Always show active participant session if exists, regardless of role */}
+                {sessionState === "checked_in" && activeEventId === eventId && (
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
                       <Clock className="w-4 h-4" />
@@ -840,7 +944,9 @@ export const EventDetailPage: React.FC = () => {
                       </span>
                     </div>
                     <button
-                      onClick={stopButtonDisabled ? undefined : initiateCheckout}
+                      onClick={
+                        stopButtonDisabled ? undefined : initiateCheckout
+                      }
                       disabled={stopButtonDisabled}
                       className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
                         stopButtonDisabled
@@ -875,7 +981,7 @@ export const EventDetailPage: React.FC = () => {
       <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
         {/* Mobile Action Area */}
         <div className="flex justify-end items-center -mb-2 w-full">
-          {isOrganization ? (
+          {isCreator ? (
             <div className="flex items-center gap-4 w-full justify-between">
               {!isEventStarted ? (
                 <>
@@ -913,30 +1019,32 @@ export const EventDetailPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {isActiveEvent && sessionState === "idle" && event.eventType !== "private" && (
-                <button
-                  onClick={() => {
-                    if (userStats && (userStats.todayHours || 0) >= 2) {
-                      toast.error(
-                        "Daily limit of 2 hours reached! See you tomorrow",
-                      );
-                      return;
-                    }
-                    openDurationPicker(eventId);
-                  }}
-                  className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                    userStats && (userStats.todayHours || 0) >= 2
-                      ? "bg-gray-400 grayscale cursor-not-allowed"
-                      : "bg-[#96c93d] hover:bg-[#86b537]"
-                  }`}
-                >
-                  {userStats && (userStats.todayHours || 0) >= 2
-                    ? "Daily Limit Reached"
-                    : "Start Clean-up"}
-                </button>
-              )}
+              {isActiveEvent &&
+                sessionState === "idle" &&
+                event.eventType !== "private" && (
+                  <button
+                    onClick={() => {
+                      if (userStats && (userStats.todayHours || 0) >= 2) {
+                        toast.error(
+                          "Daily limit of 2 hours reached! See you tomorrow",
+                        );
+                        return;
+                      }
+                      openDurationPicker(eventId);
+                    }}
+                    className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
+                      userStats && (userStats.todayHours || 0) >= 2
+                        ? "bg-gray-400 grayscale cursor-not-allowed"
+                        : "bg-[#96c93d] hover:bg-[#86b537]"
+                    }`}
+                  >
+                    {userStats && (userStats.todayHours || 0) >= 2
+                      ? "Daily Limit Reached"
+                      : "Start Clean-up"}
+                  </button>
+                )}
 
-              {isActiveEvent && sessionState === "checked_in" && (
+              {sessionState === "checked_in" && activeEventId === eventId && (
                 <div className="flex justify-evenly w-full gap-3">
                   <div className="flex items-center gap-1.5">
                     {/* Hours */}
@@ -1157,7 +1265,7 @@ export const EventDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* ── Global Footer ───────────────────────────────────────────────────── */}
       <footer className="max-w-[1600px] mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 border-t border-gray-100 animate-slide-up bg-white lg:bg-transparent">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-gray-400 font-semibold tracking-wide">
@@ -1216,32 +1324,48 @@ export const EventDetailPage: React.FC = () => {
               <div className="mx-auto w-16 h-16 bg-[#E8F2FA]/10 text-[#0083cf] rounded-full flex items-center justify-center mb-3 animate-pulse border border-[#0083cf]/30">
                 <QrCode className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-white">QR Code Attendance Scanner</h3>
-              <p className="text-xs text-gray-400 mt-1">Simulating live camera feed for Singapore PHC cleanup</p>
-            </div>
-
-            {/* Simulated Live Camera Box */}
-            <div className="relative w-full aspect-video rounded-2xl bg-black border border-gray-800 flex flex-col items-center justify-center overflow-hidden mb-6 group">
-              {/* Camera Scanning Frame */}
-              <div className="absolute w-48 h-28 border-2 border-[#0083cf] rounded-xl flex items-center justify-center">
-                {/* Pulsing Target corners */}
-                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-4 border-l-4 border-green-400"></div>
-                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-4 border-r-4 border-green-400"></div>
-                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-4 border-l-4 border-green-400"></div>
-                <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-4 border-r-4 border-green-400"></div>
-                
-                {/* Laser scan line */}
-                <div className="w-full h-[2px] bg-green-400/80 shadow-[0_0_8px_rgba(74,222,128,0.8)] absolute top-0 animate-bounce"></div>
-              </div>
-
-              {/* Ticking scan indicators */}
-              <p className="absolute bottom-2 text-[10px] text-green-400 font-mono tracking-widest uppercase animate-pulse">
-                [ CAMERA LIVE - READY TO SCAN ]
+              <h3 className="text-xl font-bold tracking-tight text-white">
+                QR Code Attendance Scanner
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Live camera scanner for Singapore PHC cleanup
               </p>
             </div>
 
-            {/* Registered Participants to Scan */}
-            <div className="mb-6 text-left">
+            {/* Real Live Camera Box */}
+            <div className="relative w-full aspect-square max-w-[300px] mx-auto rounded-2xl bg-black border border-gray-800 flex flex-col items-center justify-center overflow-hidden mb-6 group">
+              <video ref={videoRef} className="w-full h-full object-cover" />
+              {/* Camera Scanning Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 border-2 border-[#0083cf] rounded-xl relative">
+                  {/* Pulsing Target corners */}
+                  <div className="absolute -top-1.5 -left-1.5 w-6 h-6 border-t-4 border-l-4 border-green-400"></div>
+                  <div className="absolute -top-1.5 -right-1.5 w-6 h-6 border-t-4 border-r-4 border-green-400"></div>
+                  <div className="absolute -bottom-1.5 -left-1.5 w-6 h-6 border-b-4 border-l-4 border-green-400"></div>
+                  <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 border-b-4 border-r-4 border-green-400"></div>
+
+                  {/* Laser scan line */}
+                  <div className="w-full h-[2px] bg-green-400/80 shadow-[0_0_8px_rgba(74,222,128,0.8)] absolute top-0 animate-bounce"></div>
+                </div>
+              </div>
+
+              <p className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-green-400 font-mono tracking-widest uppercase animate-pulse">
+                [ CAMERA LIVE - SCANNING... ]
+              </p>
+
+              {/* Processing Overlay */}
+              {isProcessingScan && (
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-10">
+                  <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mb-3" />
+                  <p className="text-white text-xs font-bold tracking-widest uppercase">
+                    Processing Scan...
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Registered Participants to Scan - Commented out as requested */}
+            {/* <div className="mb-6 text-left">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                 Select Registered Attendee to Scan
               </label>
@@ -1287,7 +1411,7 @@ export const EventDetailPage: React.FC = () => {
                   </div>
                 );
               })()}
-            </div>
+            </div> */}
 
             <button
               onClick={() => setIsScanningQR(false)}
@@ -1307,8 +1431,13 @@ export const EventDetailPage: React.FC = () => {
               <div className="mx-auto w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-3">
                 <StopCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-black text-gray-900 text-center">Stop Clean-up Event</h3>
-              <p className="text-xs text-gray-500 mt-1 text-center">Enter the total garbage weight collected to split and distribute points.</p>
+              <h3 className="text-lg font-black text-gray-900 text-center">
+                Stop Clean-up Event
+              </h3>
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                Enter the total garbage weight collected to split and distribute
+                points.
+              </p>
             </div>
 
             <div className="mb-6">
