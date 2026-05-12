@@ -9,42 +9,67 @@ jobs:
   deploy:
     runs-on: [self-hosted, frontend]
 
-    env:
-      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
-
     steps:
-      - name: Clone or Update Frontend
+      - name: Get Current User
+        run: echo "USER_NAME=$(whoami)" >> $GITHUB_ENV
+
+      - name: Setup Environment
         run: |
-          if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
-            rm -rf /home/shanmugavel/frontend
-            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
+          echo "PATH=/usr/local/bin:/usr/bin:/bin:/home/$USER_NAME/.npm-global/bin" >> $GITHUB_ENV
+
+      - name: Fix Folder Permissions
+        run: |
+          sudo mkdir -p /home/$USER_NAME/frontend
+          sudo chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/frontend
+
+      - name: Setup SSH for GitHub
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          if [ -f ~/.ssh/id_ed25519 ]; then
+            chmod 600 ~/.ssh/id_ed25519
           fi
 
-          cd /home/shanmugavel/frontend
+          if [ -f ~/.ssh/id_ed25519.pub ]; then
+            chmod 644 ~/.ssh/id_ed25519.pub
+          fi
+
+          touch ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Clone or Update Frontend
+        run: |
+          if [ ! -d "/home/$USER_NAME/frontend/.git" ]; then
+            rm -rf /home/$USER_NAME/frontend
+            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/$USER_NAME/frontend
+          fi
+
+          cd /home/$USER_NAME/frontend
           git fetch origin
           git reset --hard origin/main
 
       - name: Install Dependencies
         run: |
-          cd /home/shanmugavel/frontend
+          cd /home/$USER_NAME/frontend
           npm install
 
       - name: Build React App
         run: |
-          cd /home/shanmugavel/frontend
+          cd /home/$USER_NAME/frontend
           npm run build
 
       - name: Ensure Nginx Folder Exists
         run: |
-          if [ ! -d "/var/www/frontend" ]; then
-            sudo mkdir -p /var/www/frontend
-          fi
+          sudo mkdir -p /var/www/frontend
 
       - name: Deploy to Nginx
         run: |
-          if [ -d "/home/shanmugavel/frontend/dist" ]; then
+          if [ -d "/home/$USER_NAME/frontend/dist" ]; then
             sudo rm -rf /var/www/frontend/*
-            sudo cp -r /home/shanmugavel/frontend/dist/* /var/www/frontend/
+            sudo cp -r /home/$USER_NAME/frontend/dist/* /var/www/frontend/
           else
             echo "Build folder not found!"
             exit 1
