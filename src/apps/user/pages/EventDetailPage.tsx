@@ -322,7 +322,7 @@ export const EventDetailPage: React.FC = () => {
   const [eventCheckInTime, setEventCheckInTime] = useState<string | null>(null);
   const [isScanningQR, setIsScanningQR] = useState(false);
   const [stopModalOpen, setStopModalOpen] = useState(false);
-  const [totalWeightCollected, setTotalWeightCollected] = useState("");
+  // const [totalWeightCollected, setTotalWeightCollected] = useState("");
   const [elapsedOrgSeconds, setElapsedOrgSeconds] = useState(0);
   const [isProcessingScan, setIsProcessingScan] = useState(false);
 

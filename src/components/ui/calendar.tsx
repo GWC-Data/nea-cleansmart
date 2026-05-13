@@ -625,29 +625,29 @@ export const Calendar = ({
   const [selectedTimezone /*, setSelectedTimezone*/] = useState(
     timezones[1].value,
   ); // Commented out unused setter
-  const [startDate, setStartDate] = useState<string>(
+  const [/*startDate*/, setStartDate] = useState<string>(
     value?.start
       ? formatInTimeZone(value.start, selectedTimezone, "MMM dd, yyyy")
       : "",
-  );
+  ); // Commented out unused variable
   const [startTime, setStartTime] = useState<string>(
     value?.start
       ? formatInTimeZone(value.start, selectedTimezone, "HH:mm")
       : "",
   );
   const [manualStartTime, setManualStartTime] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>(
+  const [/*endDate*/, setEndDate] = useState<string>(
     value?.end
       ? formatInTimeZone(value.end, selectedTimezone, "MMM dd, yyyy")
       : "",
-  );
+  ); // Commented out unused variable
   const [endTime, setEndTime] = useState<string>(
     value?.end ? formatInTimeZone(value.end, selectedTimezone, "HH:mm") : "",
   );
   const [manualEndTime, setManualEndTime] = useState<string>("");
-  const [startDateError /*, setStartDateError*/] = useState<boolean>(false); // Commented out unused setter
+  const [/*startDateError*/ /*, setStartDateError*/] = useState<boolean>(false); // Commented out unused variable and setter
   const [startTimeError /*, setStartTimeError*/] = useState<boolean>(false); // Commented out unused setter
-  const [endDateError /*, setEndDateError*/] = useState<boolean>(false); // Commented out unused setter
+  const [/*endDateError*/ /*, setEndDateError*/] = useState<boolean>(false); // Commented out unused variable and setter
   const [endTimeError /*, setEndTimeError*/] = useState<boolean>(false); // Commented out unused setter
   const calendarRef = useRef<HTMLDivElement | null>(null);
 
