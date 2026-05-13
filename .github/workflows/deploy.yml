@@ -10,28 +10,30 @@ jobs:
     runs-on: [self-hosted, frontend]
 
     env:
-      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel/.npm-global/bin
+      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
     steps:
+      - name: Fix SSH Key Permissions
+        run: chmod 600 /home/shanmugavel_muthuraj/.ssh/id_ed25519
+
       - name: Clone or Update Frontend
         run: |
-          if [ ! -d "/home/shanmugavel/frontend/.git" ]; then
-            rm -rf /home/shanmugavel/frontend
-            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel/frontend
+          if [ ! -d "/home/shanmugavel_muthuraj/frontend/.git" ]; then
+            rm -rf /home/shanmugavel_muthuraj/frontend
+            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel_muthuraj/frontend
           fi
-
-          cd /home/shanmugavel/frontend
+          cd /home/shanmugavel_muthuraj/frontend
           git fetch origin
           git reset --hard origin/main
 
       - name: Install Dependencies
         run: |
-          cd /home/shanmugavel/frontend
+          cd /home/shanmugavel_muthuraj/frontend
           npm install
 
       - name: Build React App
         run: |
-          cd /home/shanmugavel/frontend
+          cd /home/shanmugavel_muthuraj/frontend
           npm run build
 
       - name: Ensure Nginx Folder Exists
@@ -42,9 +44,9 @@ jobs:
 
       - name: Deploy to Nginx
         run: |
-          if [ -d "/home/shanmugavel/frontend/dist" ]; then
+          if [ -d "/home/shanmugavel_muthuraj/frontend/dist" ]; then
             sudo rm -rf /var/www/frontend/*
-            sudo cp -r /home/shanmugavel/frontend/dist/* /var/www/frontend/
+            sudo cp -r /home/shanmugavel_muthuraj/frontend/dist/* /var/www/frontend/
           else
             echo "Build folder not found!"
             exit 1
