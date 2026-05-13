@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, QrCode } from "lucide-react";
+import { LogOut, QrCode, History } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { StatsOverview } from "../../../components/sections/user/StatsOverview";
 import { WelcomeSection } from "../../../components/sections/user/WelcomeSection";
@@ -16,6 +17,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import type { SessionState } from "../../../hooks/useCleanUpSession"; // Session state type for timer badge display
 
 export const UserDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser, logout: handleLogout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -78,6 +80,13 @@ export const UserDashboard: React.FC = () => {
         const checkInMs = new Date(timerData.checkInTime).getTime();
         const nowMs = Date.now();
         const elapsed = Math.floor((nowMs - checkInMs) / 1000);
+
+        // If hoursEnrolled is "0", it's a private event session managed by the organization.
+        if (timerData.hoursEnrolled === "0") {
+          setActiveSessionEventId(null);
+          setActiveSessionState("idle");
+          return;
+        }
 
         let durationSeconds = 0;
         const hoursStr = (timerData.hoursEnrolled ?? "").toLowerCase();
@@ -185,6 +194,15 @@ export const UserDashboard: React.FC = () => {
                 >
                   <Settings className="w-4 h-4 text-gray-400" /> Settings
                 </button> */}
+                <button
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    navigate("/history");
+                  }}
+                  className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium flex items-center gap-2"
+                >
+                  <History className="w-4 h-4 text-gray-400" /> Event History
+                </button>
                 <div className="h-px bg-gray-50 my-1 w-full" />
                 <button
                   onClick={() => {

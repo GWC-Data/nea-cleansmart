@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   LogOut,
   Plus,
-  Users,
-  CalendarDays,
   Trash2,
-  MapPin,
   Award,
   Clock,
-  AlertCircle,
   // Bell, // Commented out unused import
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
@@ -17,12 +13,14 @@ import type { SessionState } from "../../../hooks/useCleanUpSession";
 import logo from "../../../assets/publicHygineCouncil.png";
 // import { AddUserModal } from "../../../components/sections/org/modal/AddUserModal";
 // import { EventRequestModal } from "../../../components/sections/org/modal/EventRequestModal"; // Commented out unused import
-import type { EventData /* , UserProfile, EventRequest */ } from "../../../types/api.types"; // Commented out unused EventRequest import
+import type {
+  EventData /* , UserProfile, EventRequest */,
+} from "../../../types/api.types"; // Commented out unused EventRequest import
 import { apiService } from "../../../services/apiService";
 import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
 // import { toast } from "sonner"; // Commented out unused import
-import { getEventImageUrl } from "../../../utils/imageUtils";
+import { EventCarousel } from "../../../components/shared/EventCarousel";
 // import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
@@ -52,10 +50,13 @@ export const OrgDashboard: React.FC = () => {
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  
+
   // Active session state — used to show timer badge on event cards
-  const [activeSessionEventId, setActiveSessionEventId] = useState<string | null>(null);
-  const [activeSessionState, setActiveSessionState] = useState<SessionState>("idle");
+  const [activeSessionEventId, setActiveSessionEventId] = useState<
+    string | null
+  >(null);
+  const [activeSessionState, setActiveSessionState] =
+    useState<SessionState>("idle");
   // const [myRequests, setMyRequests] = useState<EventRequest[]>([]); // Commented out unused state
 
   // const [loading, setLoading] = useState(false);
@@ -66,7 +67,12 @@ export const OrgDashboard: React.FC = () => {
       const allEvents = await apiService.getEvents();
       setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
       setOrgEvents(
-        allEvents.filter((e) => e.eventType === "private" || e.status === "pending")
+        allEvents.filter(
+          (e) =>
+            e.eventType === "private" ||
+            e.status === "pending" ||
+            e.status === "rejected",
+        ),
       );
       const dashData = await orgApiService.getDashboard();
       if (dashData) setUserStats(dashData.stats as any);
@@ -106,10 +112,22 @@ export const OrgDashboard: React.FC = () => {
   useEffect(() => {
     async function checkActiveTimer() {
       const timerData = await apiService.getTimer();
-      if (timerData && timerData.logId && timerData.checkInTime && timerData.eventId) {
+      if (
+        timerData &&
+        timerData.logId &&
+        timerData.checkInTime &&
+        timerData.eventId
+      ) {
         const checkInMs = new Date(timerData.checkInTime).getTime();
         const nowMs = Date.now();
         const elapsed = Math.floor((nowMs - checkInMs) / 1000);
+
+        // If hoursEnrolled is "0", it's a private event session managed by the organization.
+        if (timerData.hoursEnrolled === "0") {
+          setActiveSessionEventId(null);
+          setActiveSessionState("idle");
+          return;
+        }
 
         let durationSeconds = 0;
         const hoursStr = (timerData.hoursEnrolled ?? "").toLowerCase();
@@ -121,7 +139,9 @@ export const OrgDashboard: React.FC = () => {
 
         const remaining = durationSeconds - elapsed;
         setActiveSessionEventId(timerData.eventId);
-        setActiveSessionState(remaining <= 0 ? "logging_activity" : "checked_in");
+        setActiveSessionState(
+          remaining <= 0 ? "logging_activity" : "checked_in",
+        );
       } else {
         setActiveSessionEventId(null);
         setActiveSessionState("idle");
@@ -296,24 +316,7 @@ export const OrgDashboard: React.FC = () => {
         </div>
 
         {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-[#86B537]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(134,181,55,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(134,181,55,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#86B537]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
-                <Award size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
-                Total Points
-              </span>
-            </div>
-            <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">
-                {userStats?.totalPoints ?? 0}
-              </p>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-[#509CD1]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(80,156,209,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(80,156,209,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#509CD1]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
             <div className="flex items-center gap-3 relative z-10">
@@ -326,7 +329,7 @@ export const OrgDashboard: React.FC = () => {
             </div>
             <div className="relative z-10">
               {(() => {
-                const time = formatCleanupTime(userStats?.todayHours ?? 0);
+                const time = formatCleanupTime(userStats?.totalHours ?? 0);
                 return (
                   <p className="text-4xl font-black text-gray-900 tracking-tight">
                     {time.value}
@@ -357,7 +360,23 @@ export const OrgDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-[#509CD1]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(80,156,209,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(80,156,209,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+          <div className="bg-white p-5 rounded-2xl border border-[#86B537]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(134,181,55,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(134,181,55,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#86B537]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
+                <Award size={20} />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
+                Total Points
+              </span>
+            </div>
+            <div className="relative z-10">
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {userStats?.totalPoints ?? 0}
+              </p>
+            </div>
+          </div>
+          {/* <div className="bg-white p-5 rounded-2xl border border-[#509CD1]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(80,156,209,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(80,156,209,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#509CD1]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
             <div className="flex items-center gap-3 relative z-10">
               <div className="w-10 h-10 rounded-xl bg-[#509CD1]/10 flex items-center justify-center text-[#509CD1] group-hover:bg-[#509CD1] group-hover:text-white transition-colors duration-300">
@@ -366,13 +385,13 @@ export const OrgDashboard: React.FC = () => {
               <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">
                 Team Size
               </span>
-            </div>
-            {/* <div className="relative z-10">
+            </div> */}
+          {/* <div className="relative z-10">
               <p className="text-4xl font-black text-gray-900 tracking-tight">
                 {orgUsers.length}
               </p>
             </div> */}
-          </div>
+          {/* </div> */}
         </div>
 
         {/* Main Content Split */}
@@ -402,87 +421,25 @@ export const OrgDashboard: React.FC = () => {
             </div>
 
             {/* Events Grid */}
-            {displayedEvents.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 border-dashed p-12 text-center flex flex-col items-center justify-center">
-                <CalendarDays className="text-gray-300 mb-3" size={32} />
-                <p className="text-sm font-medium text-gray-900 mb-1">
-                  No events found
-                </p>
-                <p className="text-xs text-gray-500 max-w-[250px]">
-                  {activeTab === "org"
-                    ? "You haven't created any events yet. Click 'Create Event' to get started."
-                    : "There are currently no public events available on the platform."}
-                </p>
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
-                {displayedEvents.map((event) => (
-                  <div
-                    key={event.eventId}
-                    onClick={() => navigate(`/events/${event.eventId}`)}
-                    className="group bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#86B537]/30 hover:shadow-sm transition-all flex flex-col gap-3"
-                  >
-                    <div className="h-32 rounded-xl bg-gray-50 overflow-hidden relative">
-                      <img
-                        src={getEventImageUrl(event.eventImage)}
-                        alt={event.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-center shadow-sm">
-                        <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">
-                          {new Date(event.startDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                            },
-                          )}
-                        </p>
-                        <p className="text-sm font-black text-[#86B537] leading-tight">
-                          {new Date(event.startDate).getDate()}
-                        </p>
-                      </div>
+            <EventCarousel
+              events={displayedEvents}
+              activeSessionEventId={activeSessionEventId}
+              activeSessionState={activeSessionState}
+            />
 
-                      {/* Timer session badge */}
-                      {activeSessionEventId === event.eventId && activeSessionState === "checked_in" && (
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#9bf8b7] animate-pulse" />
-                          <Clock className="w-2.5 h-2.5" />
-                          Running
-                        </div>
-                      )}
-                      {activeSessionEventId === event.eventId && activeSessionState === "logging_activity" && (
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
-                          <AlertCircle className="w-2.5 h-2.5" />
-                          Report!
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-sm truncate mb-1">
-                        {event.name}
-                      </h3>
-                      <div className="flex items-center text-xs text-gray-500 gap-1 font-medium">
-                        <MapPin size={12} className="shrink-0" />
-                        <span className="truncate">{event.location}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Right: Sidebar */}
           <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className="flex justify-between items-center mb-4">
+            {/* <div className="bg-white rounded-2xl border border-gray-100 p-5"> */}
+              {/* <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-gray-900 text-sm">
                   Team Members
-                </h3>
+                </h3> */}
                 {/* <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                   {orgUsers.length}
                 </span> */}
-              </div>
+              {/* </div> */}
 
               {/* {orgUsers.length === 0 ? (
                 <div className="text-center py-6">
@@ -518,7 +475,7 @@ export const OrgDashboard: React.FC = () => {
                   )}
                 </div>
               )} */}
-            </div>
+            {/* </div> */}
           </div>
         </div>
       </main>

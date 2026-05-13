@@ -17,9 +17,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { EventFormPage } from "../../../components/sections/admin/modal/EventFormPage";
+import { EventDetailModal } from "../../../components/sections/admin/modal/EventDetailModal";
 import { adminApiService } from "../../../services/adminApiService";
 import type { EventData, UserProfile } from "../../../types/api.types";
 import { format } from "date-fns";
@@ -44,6 +46,8 @@ export const EventsPage: React.FC = () => {
     eventId: null,
     loading: false,
   });
+  /* State for viewing event details in a popup modal */
+  const [viewingEvent, setViewingEvent] = useState<EventData | null>(null);
 
   const loadEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -291,8 +295,11 @@ export const EventsPage: React.FC = () => {
                 key={event.eventId}
                 className="bg-white rounded-xl border border-[#E8EDF2] hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group"
               >
-                {/* Image */}
-                <div className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0">
+                {/* Image — clickable to open detail modal */}
+                <div
+                  className="relative h-40 bg-linear-to-br from-[#F5F7FA] to-[#E8EDF2] overflow-hidden shrink-0 cursor-pointer"
+                  onClick={() => setViewingEvent(event)}
+                >
                   <LazyEventImage
                     imagePath={event.eventImage}
                     alt={event.name}
@@ -312,7 +319,10 @@ export const EventsPage: React.FC = () => {
 
                 {/* Card Body */}
                 <div className="px-4 pt-3 pb-2 flex-1 flex flex-col">
-                  <h3 className="text-sm font-semibold text-[#1A2A3A] tracking-tight leading-tight line-clamp-2 mb-1.5">
+                  <h3
+                    className="text-sm font-semibold text-[#1A2A3A] tracking-tight leading-tight line-clamp-2 mb-1.5 cursor-pointer hover:text-[#108ACB] transition-colors"
+                    onClick={() => setViewingEvent(event)}
+                  >
                     {event.name}
                   </h3>
 
@@ -337,6 +347,12 @@ export const EventsPage: React.FC = () => {
                       <div className="flex items-center gap-1 px-3 py-1 rounded-full border border-[#86B537] text-[#86B537] text-[11px] font-bold shadow-xs shrink-0 bg-transparent">
                         <CheckCircle2 size={12} />
                         <span>Approved</span>
+                      </div>
+                    )}
+                    {event.status === "pending" && activeTab === "organization" && (
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-full border border-[#F5A623] text-[#F5A623] text-[11px] font-bold shadow-xs shrink-0 bg-transparent">
+                        <Clock size={12} />
+                        <span>Pending</span>
                       </div>
                     )}
                     {event.status === "rejected" && activeTab === "organization" && (
@@ -369,7 +385,7 @@ export const EventsPage: React.FC = () => {
                     return (
                       <div className="border-t border-[#E8EDF2] pt-2 mb-3">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9AA8] leading-none mb-1">
-                          Created By Organization:
+                          Created By:
                         </p>
                         <p className="text-xs font-semibold text-[#1A2A3A]">
                           {creator.name}
@@ -418,9 +434,6 @@ export const EventsPage: React.FC = () => {
                     </div>
                   ) : event.status === "pending" ? (
                     <div className="mt-auto flex flex-col gap-2 pt-1">
-                      <div className="text-xs font-semibold text-[#F5A623] bg-[#FFF8E7] px-2.5 py-1 rounded w-fit self-start mb-1 border border-[#FFE8B3]">
-                        ⏳ Pending Approval
-                      </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleStatusUpdate(event.eventId, "approved")}
@@ -473,6 +486,16 @@ export const EventsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Event Detail Popup Modal */}
+      {viewingEvent && (
+        <EventDetailModal
+          event={viewingEvent}
+          users={users}
+          organizations={organizations}
+          onClose={() => setViewingEvent(null)}
+          onEdit={openEdit}
+        />
+      )}
     </div>
   );
 };
