@@ -13,13 +13,15 @@ jobs:
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
     steps:
+      - name: Fix SSH Key Permissions
+        run: chmod 600 /home/shanmugavel_muthuraj/.ssh/id_ed25519
+
       - name: Clone or Update Frontend
         run: |
           if [ ! -d "/home/shanmugavel_muthuraj/frontend/.git" ]; then
             rm -rf /home/shanmugavel_muthuraj/frontend
             git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel_muthuraj/frontend
           fi
-
           cd /home/shanmugavel_muthuraj/frontend
           git fetch origin
           git reset --hard origin/main
