@@ -13,13 +13,6 @@ jobs:
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
     steps:
-      - name: Setup SSH Key
-        run: |
-          mkdir -p /home/shanmugavel_muthuraj/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/shanmugavel_muthuraj/.ssh/id_ed25519
-          chmod 600 /home/shanmugavel_muthuraj/.ssh/id_ed25519
-          ssh-keyscan github.com >> /home/shanmugavel_muthuraj/.ssh/known_hosts
-
       - name: Clone or Update Frontend
         run: |
           if [ ! -d "/home/shanmugavel_muthuraj/frontend/.git" ]; then
