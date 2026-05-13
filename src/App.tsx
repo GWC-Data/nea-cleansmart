@@ -9,6 +9,7 @@ import { AdminApp } from "./apps/admin/AdminApp";
 import { UserDashboard } from "./apps/user/pages/UserDashboard";
 import { Toaster } from "sonner";
 import { EventDetailPage } from "./apps/user/pages/EventDetailPage";
+import { EventHistoryPage } from "./apps/user/pages/EventHistoryPage";
 import { ResetPasswordPage } from "./apps/user/pages/ResetPasswordPage";
 import { OrgApp } from "./apps/org/OrgApp";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -78,6 +79,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <EventHistoryPage />
               </ProtectedRoute>
             }
           />

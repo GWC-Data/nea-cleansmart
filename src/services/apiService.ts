@@ -64,6 +64,7 @@ export interface UserStats {
   totalMinutesLogged: number;
   totalWeight: number;
   todayHours?: number;
+  totalHours: number;
 }
 
 /**
@@ -114,7 +115,7 @@ export interface EventLog {
     eventId: string;
     name: string;
     location: string;
-    date: string;
+    startDate: string;
   };
   group: {
     groupId: string;
@@ -365,14 +366,17 @@ export const apiService = {
   /**
    * Stop clean-up event and split weight
    */
-  async stopEvent(eventId: string, totalWeight: number): Promise<any> {
+  async stopEvent(
+    eventId: string,
+    payload: { totalWeight: number; location?: string; garbageType?: string },
+  ): Promise<any> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/stop`, {
         method: "POST",
         headers: getAuthHeaders({
           "Content-Type": "application/json",
         }),
-        body: JSON.stringify({ totalWeight }),
+        body: JSON.stringify(payload),
       });
       return await response.json();
     } catch (error) {
@@ -615,23 +619,23 @@ export const apiService = {
    * User ID is extracted from JWT token on backend
    * @returns Event logs with calculated statistics
    */
-  // async getUserEventLogs(): Promise<UserEventLogsResponse | null> {
-  //   try {
-  //     const response = await fetch(`${BASE}/event-logs/user`, {
-  //       method: "GET",
-  //       headers: getAuthHeaders(),
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(
-  //         `Failed to fetch user event logs: ${response.statusText}`,
-  //       );
-  //     }
-  //     return await response.json();
-  //   } catch (error) {
-  //     console.error("getUserEventLogs error:", error);
-  //     return null;
-  //   }
-  // },
+  async getUserEventLogs(): Promise<UserEventLogsResponse | null> {
+    try {
+      const response = await fetch(`${BASE}/event-logs/user`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch user event logs: ${response.statusText}`,
+        );
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("getUserEventLogs error:", error);
+      return null;
+    }
+  },
 
   /**
    * Get user's event logs by date

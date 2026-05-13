@@ -27,7 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./button-1";
 import { Material } from "./material-1";
 import { Input } from "./input";
-// import { Select } from "./select-1"; // Commented out unused import
+import { Select } from "./select-1";
 import { formatInTimeZone /*, fromZonedTime*/ } from "date-fns-tz"; // Commented out unused fromZonedTime import
 import { useClickOutside } from "./use-click-outside";
 import clsx from "clsx";
@@ -210,7 +210,8 @@ const filterPresets = (obj: Record<string, any>, search: string) => {
   const searchWords = search.toLowerCase().split("-").filter(Boolean);
 
   const filtered = Object.fromEntries(
-    Object.entries(obj).filter(([/* _ */, value]) => { // Commented out unused variable from destructuring
+    Object.entries(obj).filter(([, /* _ */ value]) => {
+      // Commented out unused variable from destructuring
       const keyLower = value.text.toLowerCase();
       return searchWords.every((word) => keyLower.includes(word));
     }),
@@ -621,35 +622,29 @@ export const Calendar = ({
     ],
     [],
   );
-  const [selectedTimezone /*, setSelectedTimezone*/] = useState(timezones[1].value); // Commented out unused setter
+  const [selectedTimezone /*, setSelectedTimezone*/] = useState(
+    timezones[1].value,
+  ); // Commented out unused setter
   const [startDate, setStartDate] = useState<string>(
-    formatInTimeZone(
-      value?.start || new Date(),
-      selectedTimezone,
-      "MMM dd, yyyy",
-    ),
+    value?.start
+      ? formatInTimeZone(value.start, selectedTimezone, "MMM dd, yyyy")
+      : "",
   );
   const [startTime, setStartTime] = useState<string>(
-    formatInTimeZone(
-      value?.start || (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
-      selectedTimezone,
-      "HH:mm",
-    ),
+    value?.start
+      ? formatInTimeZone(value.start, selectedTimezone, "HH:mm")
+      : "",
   );
+  const [manualStartTime, setManualStartTime] = useState<string>("");
   const [endDate, setEndDate] = useState<string>(
-    formatInTimeZone(
-      value?.end || new Date(),
-      selectedTimezone,
-      "MMM dd, yyyy",
-    ),
+    value?.end
+      ? formatInTimeZone(value.end, selectedTimezone, "MMM dd, yyyy")
+      : "",
   );
   const [endTime, setEndTime] = useState<string>(
-    formatInTimeZone(
-      value?.end || (() => { const d = new Date(); d.setHours(18, 0, 0, 0); return d; })(),
-      selectedTimezone,
-      "HH:mm",
-    ),
+    value?.end ? formatInTimeZone(value.end, selectedTimezone, "HH:mm") : "",
   );
+  const [manualEndTime, setManualEndTime] = useState<string>("");
   const [startDateError /*, setStartDateError*/] = useState<boolean>(false); // Commented out unused setter
   const [startTimeError /*, setStartTimeError*/] = useState<boolean>(false); // Commented out unused setter
   const [endDateError /*, setEndDateError*/] = useState<boolean>(false); // Commented out unused setter
@@ -682,19 +677,31 @@ export const Calendar = ({
     if (mode === "start") {
       const [hours, minutes] = startTime.split(":").map(Number);
       const newStart = new Date(day);
-      newStart.setHours(isNaN(hours) ? 0 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+      newStart.setHours(
+        isNaN(hours) ? 0 : hours,
+        isNaN(minutes) ? 0 : minutes,
+        0,
+        0,
+      );
       onChange({ start: newStart, end: value?.end || null });
       // Keep it open to allow time adjustment if needed, or close if you prefer.
-      // Usually, selecting a date closes the popover in many pickers, 
+      // Usually, selecting a date closes the popover in many pickers,
       // but here we might want to stay open if they need to adjust time.
       // However, the user's issue was that it took 00:00 by default.
-      setIsOpen(false);
+      // Removing setIsOpen(false) to allow time selection after date selection
+      // setIsOpen(false);
     } else if (mode === "end") {
       const [hours, minutes] = endTime.split(":").map(Number);
       const newEnd = new Date(day);
-      newEnd.setHours(isNaN(hours) ? 23 : hours, isNaN(minutes) ? 59 : minutes, 59, 999);
+      if (endTime === "" || (hours === 0 && minutes === 0)) {
+        // Default to end of day if no time is selected or if 12:00 AM is picked
+        newEnd.setHours(23, 59, 59, 999);
+      } else {
+        newEnd.setHours(hours, minutes, 0, 0);
+      }
       onChange({ start: value?.start || null, end: newEnd });
-      setIsOpen(false);
+      // Removing setIsOpen(false) to allow time selection after date selection
+      // setIsOpen(false);
     } else {
       if (!value?.start || (value.start && value.end)) {
         onChange({ start: startOfDay(day), end: null });
@@ -708,7 +715,8 @@ export const Calendar = ({
         }
         setIsSelecting(false);
         setHoverDate(null);
-        setIsOpen(false);
+        // Removing setIsOpen(false) to allow time selection after date selection
+        // setIsOpen(false);
       }
     }
   };
@@ -806,37 +814,60 @@ export const Calendar = ({
 
   useEffect(() => {
     setStartDate(
-      formatInTimeZone(
-        value?.start || new Date(),
-        selectedTimezone,
-        "MMM dd, yyyy",
-      ),
+      value?.start
+        ? formatInTimeZone(value.start, selectedTimezone, "MMM dd, yyyy")
+        : "",
     );
     setStartTime(
-      formatInTimeZone(
-        value?.start || (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
-        selectedTimezone,
-        "HH:mm",
-      ),
+      value?.start
+        ? formatInTimeZone(value.start, selectedTimezone, "HH:mm")
+        : "",
     );
     setEndDate(
-      formatInTimeZone(
-        value?.end || new Date(),
-        selectedTimezone,
-        "MMM dd, yyyy",
-      ),
+      value?.end
+        ? formatInTimeZone(value.end, selectedTimezone, "MMM dd, yyyy")
+        : "",
     );
     setEndTime(
-      formatInTimeZone(
-        value?.end || (() => { const d = new Date(); d.setHours(18, 0, 0, 0); return d; })(),
-        selectedTimezone,
-        "HH:mm",
-      ),
+      value?.end ? formatInTimeZone(value.end, selectedTimezone, "HH:mm") : "",
     );
   }, [isOpen, value]);
 
+  const parse12To24 = (h: string, m: string, ampm: string) => {
+    if (!h || !m || !ampm) return null;
+    let hh = parseInt(h);
+    const mm = parseInt(m);
+    if (ampm === "PM" && hh < 12) hh += 12;
+    if (ampm === "AM" && hh === 12) hh = 0;
+    return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
+  };
+
+  const get12Parts = (time24: string) => {
+    if (!time24) return { h: "", m: "", ampm: "" };
+    const [h24, m] = time24.split(":");
+    let h = parseInt(h24);
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return { h: h.toString().padStart(2, "0"), m, ampm };
+  };
+
+  const hourOptions = Array.from({ length: 12 }, (_, i) => ({
+    value: (i + 1).toString().padStart(2, "0"),
+    label: (i + 1).toString().padStart(2, "0"),
+  }));
+
+  const minuteOptions = [
+    { value: "00", label: "00" },
+    { value: "30", label: "30" },
+  ];
+
+  const ampmOptions = [
+    { value: "AM", label: "AM" },
+    { value: "PM", label: "PM" },
+  ];
+
   return (
-    <div className="relative">
+    <div className={clsx("relative", isOpen && "z-50")}>
       <div
         className={clsx(
           presets && "flex",
@@ -856,7 +887,7 @@ export const Calendar = ({
             />
           </div>
         )}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center">
           <div className="relative">
             <Button
               className={clsx(
@@ -873,11 +904,11 @@ export const Calendar = ({
               <div className="truncate pr-4 text-[12px] text-[#A0AAB5]">
                 {mode === "start"
                   ? value?.start
-                    ? format(value.start, "MMM dd, yyyy, HH:mm")
+                    ? format(value.start, "MMM dd, yyyy, hh:mm aa")
                     : "Select Start Date"
                   : mode === "end"
                     ? value?.end
-                      ? format(value.end, "MMM dd, yyyy, HH:mm")
+                      ? format(value.end, "MMM dd, yyyy, hh:mm aa")
                       : "Select End Date"
                     : value?.start && value?.end
                       ? formatDateRange(
@@ -1032,10 +1063,9 @@ export const Calendar = ({
                     {/* <div className="text-[13px] text-gray-900 capitalize">
                       Start
                     </div> */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div
-                        className={showTimeInput ? "col-span-2" : "col-span-3"}
-                      >
+                    <div className="flex items-center gap-2">
+                      {/* 
+                      <div className={showTimeInput ? "col-span-1" : "col-span-2"}>
                         <Input
                           size="small"
                           value={startDate}
@@ -1043,21 +1073,124 @@ export const Calendar = ({
                           error={startDateError}
                         />
                       </div>
+                      */}
                       {showTimeInput && (
-                        <Input
-                          size="small"
-                          value={startTime}
-                          onChange={(val) => {
-                            setStartTime(val);
-                            const [hours, minutes] = val.split(":").map(Number);
-                            if (!isNaN(hours) && !isNaN(minutes)) {
-                              const newStart = new Date(value?.start || new Date());
-                              newStart.setHours(hours, minutes, 0, 0);
-                              onChange({ ...value, start: newStart } as RangeValue);
-                            }
-                          }}
-                          error={startTimeError}
-                        />
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <div className="flex gap-1 shrink-0">
+                            <Select
+                              size="xsmall"
+                              placeholder="HH"
+                              options={hourOptions}
+                              value={get12Parts(startTime).h}
+                              onChange={(e) => {
+                                const { m, ampm } = get12Parts(startTime);
+                                const newTime = parse12To24(
+                                  e.target.value,
+                                  m || "00",
+                                  ampm || "AM",
+                                );
+                                if (newTime) {
+                                  setStartTime(newTime);
+                                  setManualStartTime(""); // Clear manual input when dropdown is used
+                                  const [h, min] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newStart = new Date(
+                                    value?.start || new Date(),
+                                  );
+                                  newStart.setHours(h, min, 0, 0);
+                                  onChange({
+                                    ...value,
+                                    start: newStart,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                            <Select
+                              size="xsmall"
+                              placeholder="MM"
+                              options={minuteOptions}
+                              value={get12Parts(startTime).m}
+                              onChange={(e) => {
+                                const { h, ampm } = get12Parts(startTime);
+                                const newTime = parse12To24(
+                                  h || "12",
+                                  e.target.value,
+                                  ampm || "AM",
+                                );
+                                if (newTime) {
+                                  setStartTime(newTime);
+                                  setManualStartTime(""); // Clear manual input when dropdown is used
+                                  const [hours, min] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newStart = new Date(
+                                    value?.start || new Date(),
+                                  );
+                                  newStart.setHours(hours, min, 0, 0);
+                                  onChange({
+                                    ...value,
+                                    start: newStart,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                            <Select
+                              size="xsmall"
+                              placeholder="AM"
+                              options={ampmOptions}
+                              value={get12Parts(startTime).ampm}
+                              onChange={(e) => {
+                                const { h, m } = get12Parts(startTime);
+                                const newTime = parse12To24(
+                                  h || "12",
+                                  m || "00",
+                                  e.target.value,
+                                );
+                                if (newTime) {
+                                  setStartTime(newTime);
+                                  setManualStartTime(""); // Clear manual input when dropdown is used
+                                  const [hours, min] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newStart = new Date(
+                                    value?.start || new Date(),
+                                  );
+                                  newStart.setHours(hours, min, 0, 0);
+                                  onChange({
+                                    ...value,
+                                    start: newStart,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="w-24 shrink-0">
+                            <Input
+                              size="small"
+                              placeholder="Custom"
+                              value={manualStartTime}
+                              onChange={(val) => {
+                                setManualStartTime(val);
+                                setStartTime(val);
+                                const [hours, minutes] = val
+                                  .split(":")
+                                  .map(Number);
+                                if (!isNaN(hours) && !isNaN(minutes)) {
+                                  const newStart = new Date(
+                                    value?.start || new Date(),
+                                  );
+                                  newStart.setHours(hours, minutes, 0, 0);
+                                  onChange({
+                                    ...value,
+                                    start: newStart,
+                                  } as RangeValue);
+                                }
+                              }}
+                              error={startTimeError}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1067,10 +1200,9 @@ export const Calendar = ({
                     {/* <div className="text-[13px] text-gray-900 capitalize">
                       End
                     </div> */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div
-                        className={showTimeInput ? "col-span-2" : "col-span-3"}
-                      >
+                    <div className="flex items-center gap-2">
+                      {/* 
+                      <div className={showTimeInput ? "col-span-1" : "col-span-2"}>
                         <Input
                           size="small"
                           value={endDate}
@@ -1078,21 +1210,140 @@ export const Calendar = ({
                           error={endDateError}
                         />
                       </div>
+                      */}
                       {showTimeInput && (
-                        <Input
-                          size="small"
-                          value={endTime}
-                          onChange={(val) => {
-                            setEndTime(val);
-                            const [hours, minutes] = val.split(":").map(Number);
-                            if (!isNaN(hours) && !isNaN(minutes)) {
-                              const newEnd = new Date(value?.end || new Date());
-                              newEnd.setHours(hours, minutes, 59, 999);
-                              onChange({ ...value, end: newEnd } as RangeValue);
-                            }
-                          }}
-                          error={endTimeError}
-                        />
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <div className="flex gap-1 shrink-0">
+                            <Select
+                              size="xsmall"
+                              placeholder="HH"
+                              options={hourOptions}
+                              value={get12Parts(endTime).h}
+                              onChange={(e) => {
+                                const { m, ampm } = get12Parts(endTime);
+                                const newTime = parse12To24(
+                                  e.target.value,
+                                  m || "00",
+                                  ampm || "AM",
+                                );
+                                if (newTime) {
+                                  setEndTime(newTime);
+                                  setManualEndTime("");
+                                  const [h, min] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newEnd = new Date(
+                                    value?.end || new Date(),
+                                  );
+                                  if (h === 0 && min === 0) {
+                                    newEnd.setHours(23, 59, 59, 999);
+                                  } else {
+                                    newEnd.setHours(h, min, 0, 0);
+                                  }
+                                  onChange({
+                                    ...value,
+                                    end: newEnd,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                            <Select
+                              size="xsmall"
+                              placeholder="MM"
+                              options={minuteOptions}
+                              value={get12Parts(endTime).m}
+                              onChange={(e) => {
+                                const { h, ampm } = get12Parts(endTime);
+                                const newTime = parse12To24(
+                                  h || "12",
+                                  e.target.value,
+                                  ampm || "AM",
+                                );
+                                if (newTime) {
+                                  setEndTime(newTime);
+                                  setManualEndTime("");
+                                  const [hrs, mins] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newEnd = new Date(
+                                    value?.end || new Date(),
+                                  );
+                                  if (hrs === 0 && mins === 0) {
+                                    newEnd.setHours(23, 59, 59, 999);
+                                  } else {
+                                    newEnd.setHours(hrs, mins, 0, 0);
+                                  }
+                                  onChange({
+                                    ...value,
+                                    end: newEnd,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                            <Select
+                              size="xsmall"
+                              placeholder="AM"
+                              options={ampmOptions}
+                              value={get12Parts(endTime).ampm}
+                              onChange={(e) => {
+                                const { h, m } = get12Parts(endTime);
+                                const newTime = parse12To24(
+                                  h || "12",
+                                  m || "00",
+                                  e.target.value,
+                                );
+                                if (newTime) {
+                                  setEndTime(newTime);
+                                  setManualEndTime("");
+                                  const [hrs, mins] = newTime
+                                    .split(":")
+                                    .map(Number);
+                                  const newEnd = new Date(
+                                    value?.end || new Date(),
+                                  );
+                                  if (hrs === 0 && mins === 0) {
+                                    newEnd.setHours(23, 59, 59, 999);
+                                  } else {
+                                    newEnd.setHours(hrs, mins, 0, 0);
+                                  }
+                                  onChange({
+                                    ...value,
+                                    end: newEnd,
+                                  } as RangeValue);
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="w-20 shrink-0">
+                            <Input
+                              size="small"
+                              placeholder="Custom"
+                              value={manualEndTime}
+                              onChange={(val) => {
+                                setManualEndTime(val);
+                                setEndTime(val);
+                                const [hours, minutes] = val
+                                  .split(":")
+                                  .map(Number);
+                                if (!isNaN(hours) && !isNaN(minutes)) {
+                                  const newEnd = new Date(
+                                    value?.end || new Date(),
+                                  );
+                                  if (hours === 0 && minutes === 0) {
+                                    newEnd.setHours(23, 59, 59, 999);
+                                  } else {
+                                    newEnd.setHours(hours, minutes, 0, 0);
+                                  }
+                                  onChange({
+                                    ...value,
+                                    end: newEnd,
+                                  } as RangeValue);
+                                }
+                              }}
+                              error={endTimeError}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -38,6 +38,13 @@ export const useCleanUpSession = () => {
       logId: number;
     }) => {
       try {
+        // If hoursEnrolled is "0", it's a private event session managed by the organization.
+        // We should not show the personal timer UI to the regular user in this case.
+        if (serverData.hoursEnrolled === "0") {
+          setSession((prev) => ({ ...prev, state: "idle" }));
+          return;
+        }
+
         const checkInTimeMs = new Date(serverData.checkInTime).getTime();
         const nowMs = Date.now();
         const elapsed = Math.floor((nowMs - checkInTimeMs) / 1000);

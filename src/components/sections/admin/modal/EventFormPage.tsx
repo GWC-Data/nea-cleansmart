@@ -21,6 +21,7 @@ import type { EventData } from "../../../../types/api.types";
 import { getEventImageUrl } from "../../../../utils/imageUtils";
 import { Calendar } from "../../../ui/calendar";
 import { format } from "date-fns";
+import clsx from "clsx";
 
 const parseLocalISO = (isoString: string) => {
   if (!isoString) return null;
@@ -181,10 +182,10 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         await onSubmitOverride(values, imageFile);
         onSuccess();
       } else {
-        const startTimeStr = values.startDate 
-          ? format(parseLocalISO(values.startDate)!, "HH:mm") 
+        const startTimeStr = values.startDate
+          ? format(parseLocalISO(values.startDate)!, "HH:mm")
           : "00:00";
-          
+
         const payload = {
           ...values,
           time: startTimeStr,
@@ -256,37 +257,39 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
             className="px-6 py-6 space-y-4 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full shrink-0 lg:shrink"
           >
             {/* Name */}
-            <div>
-              <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                Event Name <span className="text-[#EC5594]">*</span>
-              </label>
-              <input
-                {...register("name")}
-                placeholder="e.g. East Coast Park Clean-Up"
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
-              />
-              {errors.name && (
-                <p className="text-[#EC5594] text-xs mt-1 font-medium">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
+            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-5">
+              <div className="flex-1">
+                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                  Event Name <span className="text-[#EC5594]">*</span>
+                </label>
+                <input
+                  {...register("name")}
+                  placeholder="e.g. East Coast Park Clean-Up"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                />
+                {errors.name && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                Location <span className="text-[#EC5594]">*</span>
-              </label>
-              <input
-                {...register("location")}
-                placeholder="e.g. East Coast Park, Singapore"
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
-              />
-              {errors.location && (
-                <p className="text-[#EC5594] text-xs mt-1 font-medium">
-                  {errors.location.message}
-                </p>
-              )}
+              {/* Location */}
+              <div className="flex-1">
+                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                  Location <span className="text-[#EC5594]">*</span>
+                </label>
+                <input
+                  {...register("location")}
+                  placeholder="e.g. East Coast Park, Singapore"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                />
+                {errors.location && (
+                  <p className="text-[#EC5594] text-xs mt-1 font-medium">
+                    {errors.location.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Dates */}
@@ -295,7 +298,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
                 <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
                   Start Date <span className="text-[#EC5594]">*</span>
                 </label>
-                <div className="relative w-full z-10">
+                <div className="relative w-full">
                   <Calendar
                     value={calendarValue}
                     onChange={handleCalendarChange}
@@ -313,13 +316,13 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
                 <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
                   End Date <span className="text-[#EC5594]">*</span>
                 </label>
-                <div className="relative w-full z-10">
+                <div className="relative w-full">
                   <Calendar
                     value={calendarValue}
                     onChange={handleCalendarChange}
                     showTimeInput={true}
-                    mode="end"
-                    popoverAlignment="end"
+                    mode="start"
+                    popoverAlignment="start"
                   />
                 </div>
                 {errors.endDate && (
@@ -348,61 +351,62 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
               )}
             </div>
 
-            {/* Event Type Toggle */}
             {showEventTypeToggle && (
-              <div>
-                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                  Event Type
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="private"
-                      {...register("eventType")}
-                      className="accent-[#509CD1]"
-                    />
-                    <span className="text-[12px] font-medium text-[#1A2A3A]">
-                      Private Event
-                    </span>
+              <div className={clsx("flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-5", watchedValues.eventType === "public" && "items-start")}>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                    Event Type
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="public"
-                      {...register("eventType")}
-                      className="accent-[#509CD1]"
-                    />
-                    <span className="text-[12px] font-medium text-[#1A2A3A]">
-                      Public Event
-                    </span>
-                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="private"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-[12px] font-medium text-[#1A2A3A]">
+                        Private Event
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="public"
+                        {...register("eventType")}
+                        className="accent-[#509CD1]"
+                      />
+                      <span className="text-[12px] font-medium text-[#1A2A3A]">
+                        Public Event
+                      </span>
+                    </label>
+                  </div>
+                  <p className="text-[12px] text-[#8A9AA8] mt-1.5">
+                    {watchedValues.eventType === "private"
+                      ? "Only visible to your organization."
+                      : "Visible publicly to everyone."}
+                  </p>
                 </div>
-                <p className="text-[12px] text-[#8A9AA8] mt-1.5">
-                  {watchedValues.eventType === "private"
-                    ? "Only visible to your organization."
-                    : "Visible publicly to everyone."}
-                </p>
-              </div>
-            )}
 
-            {showEventTypeToggle && watchedValues.eventType === "public" && (
-              <div>
-                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                  Participant Limit
-                </label>
-                <div className="relative">
-                  <Users
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
-                  />
-                  <input
-                    type="number"
-                    {...register("userCount")}
-                    placeholder="e.g. 50 (leave empty for unlimited)"
-                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
-                  />
-                </div>
+                {watchedValues.eventType === "public" && (
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                      Participant Limit
+                    </label>
+                    <div className="relative">
+                      <Users
+                        size={14}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AAB5]"
+                      />
+                      <input
+                        type="number"
+                        {...register("userCount")}
+                        placeholder="e.g. 50 (leave empty for unlimited)"
+                        className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -463,7 +467,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
               />
             </div>
 
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-[#8A9AA8] mb-4">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[#8A9AA8]">
               Live Preview
             </p>
 

@@ -19,7 +19,7 @@ export const OrgEventCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-10">
+    <div className="min-h-screen flex flex-col sm:p-2 md:p-10">
       {/* Navigation / Header */}
       <div className="px-6 py-4 border-b border-[#E8EDF2] bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">

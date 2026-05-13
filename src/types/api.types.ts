@@ -20,6 +20,7 @@ export interface EventData {
   eventType?: "public" | "private";
   userCount?: number;
   status?: "pending" | "approved" | "rejected";
+  isStarted?: boolean;
   createdBy?: string;
   createdAt: string;
   updatedAt: string;

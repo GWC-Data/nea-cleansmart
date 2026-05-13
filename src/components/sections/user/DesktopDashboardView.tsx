@@ -1,19 +1,8 @@
 import React, { useState } from "react";
-import {
-  Trash2,
-  MapPin,
-  Clock,
-  Wind,
-  Users,
-  Trophy,
-  Building2,
-  Medal,
-  AlertCircle,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Trash2, Clock, Wind, Trophy, Building2, Medal } from "lucide-react";
 import type { EventData, UserStats } from "../../../services/apiService";
-import { getEventImageUrl } from "../../../utils/imageUtils";
 import type { SessionState } from "../../../hooks/useCleanUpSession"; // For event session badge display
+import { EventCarousel } from "../../shared/EventCarousel";
 
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";
@@ -44,7 +33,6 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
   activeSessionEventId,
   activeSessionState,
 }) => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"users" | "orgs">("users");
 
   const totalMinutes = stats?.totalMinutesLogged ?? 0;
@@ -101,9 +89,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                     Clean-up Hours
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">
-                      {hoursDisplay}
-                    </span>
+                    <span className="text-3xl font-black">{hoursDisplay}</span>
                     <span className="text-sm font-bold">h</span>
                   </div>
                 </div>
@@ -119,9 +105,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                     Waste Collected
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">
-                      {totalWeight}
-                    </span>
+                    <span className="text-3xl font-black">{totalWeight}</span>
                     <span className="text-sm font-bold">kg</span>
                   </div>
                 </div>
@@ -137,12 +121,8 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                     Carbon Reduced
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">
-                      {carbonReduced}
-                    </span>
-                    <span className="text-sm font-bold">
-                      kg CO₂
-                    </span>
+                    <span className="text-3xl font-black">{carbonReduced}</span>
+                    <span className="text-sm font-bold">kg CO₂</span>
                   </div>
                 </div>
                 <div className="bg-[#dbeafe] p-2 rounded-xl shrink-0">
@@ -159,133 +139,17 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
               {activeEvents.length === 0 ? (
                 <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center">
                   <div className="text-3xl mb-3">🌱</div>
-                  <p className="text-sm font-semibold">
-                    No events joined yet.
-                  </p>
+                  <p className="text-sm font-semibold">No events joined yet.</p>
                   <p className="text-xs mt-1">
                     Join an upcoming event to get started!
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-5">
-                  {activeEvents.map((event) => {
-                    const startDate = new Date(event.startDate);
-                    const endDate = event.endDate
-                      ? new Date(event.endDate)
-                      : null;
-                    const isValidStart = !isNaN(startDate.getTime());
-                    const isValidEnd = endDate && !isNaN(endDate.getTime());
-
-                    const startMonth = isValidStart
-                      ? startDate
-                          .toLocaleDateString("en-US", { month: "short" })
-                          .toUpperCase()
-                      : "TBD";
-                    const endMonth = isValidEnd
-                      ? endDate
-                          .toLocaleDateString("en-US", { month: "short" })
-                          .toUpperCase()
-                      : "TBD";
-
-                    return (
-                      <div
-                        key={event.eventId}
-                        onClick={() => navigate(`/events/${event.eventId}`)}
-                        className="cursor-pointer bg-white rounded-[1.5rem] overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 group"
-                      >
-                        <div className="h-44 relative overflow-hidden">
-                          <img
-                            src={getEventImageUrl(event.eventImage)}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            alt={event.name}
-                          />
-                          {/* Date badge */}
-                          <div className="absolute top-3 left-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
-                            {isValidStart &&
-                            isValidEnd &&
-                            startDate.getDate() !== endDate.getDate() ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                  <p className="text-xs font-black text-gray-900 leading-none">
-                                    {startMonth}
-                                  </p>
-                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
-                                    {startDate.getDate()}
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col">
-                                <p className="text-sm font-black text-gray-900 leading-none">
-                                  {isValidStart ? startDate.getDate() : "—"}
-                                </p>
-                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
-                                  {startMonth}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          <div className="absolute top-3 right-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
-                            {isValidStart &&
-                            isValidEnd &&
-                            startDate.getDate() !== endDate.getDate() ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                  <p className="text-xs font-black text-gray-900 leading-none">
-                                    {endMonth}
-                                  </p>
-                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
-                                    {endDate.getDate()}
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col">
-                                <p className="text-sm font-black text-gray-900 leading-none">
-                                  {isValidEnd ? endDate.getDate() : "—"}
-                                </p>
-                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
-                                  {endMonth}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="relative">
-                          {/* Timer session badges — shown only on the event with an active session */}
-                          {activeSessionEventId === event.eventId && activeSessionState === "checked_in" && (
-                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
-                              <span className="w-2 h-2 rounded-full bg-[#9bf8b7] animate-pulse" />
-                              <Clock className="w-3 h-3" />
-                              Timer Running
-                            </div>
-                          )}
-                          {activeSessionEventId === event.eventId && activeSessionState === "logging_activity" && (
-                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1.5 rounded-full shadow-md">
-                              <AlertCircle className="w-3 h-3" />
-                              Submit Report!
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-4 flex flex-col gap-1.5">
-                          <h3 className="font-extrabold text-gray-900 text-sm leading-snug">
-                            {event.name}
-                          </h3>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {event.joinsCount}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <EventCarousel
+                  events={activeEvents}
+                  activeSessionEventId={activeSessionEventId || null}
+                  activeSessionState={activeSessionState || "idle"}
+                />
               )}
             </section>
 
@@ -305,109 +169,11 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-5">
-                  {upcomingEvents.map((event) => {
-                    const startDate = new Date(event.startDate);
-                    const endDate = event.endDate
-                      ? new Date(event.endDate)
-                      : null;
-                    const isValidStart = !isNaN(startDate.getTime());
-                    const isValidEnd = endDate && !isNaN(endDate.getTime());
-
-                    const startMonth = isValidStart
-                      ? startDate
-                          .toLocaleDateString("en-US", { month: "short" })
-                          .toUpperCase()
-                      : "TBD";
-                    const endMonth = isValidEnd
-                      ? endDate
-                          .toLocaleDateString("en-US", { month: "short" })
-                          .toUpperCase()
-                      : "TBD";
-
-                    return (
-                      <div
-                        key={event.eventId}
-                        onClick={() => navigate(`/events/${event.eventId}`)}
-                        className="cursor-pointer bg-white rounded-[1.5rem] overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 group"
-                      >
-                        <div className="h-44 relative overflow-hidden">
-                          <img
-                            src={getEventImageUrl(event.eventImage)}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            alt={event.name}
-                          />
-                          {/* Date badge */}
-                          <div className="absolute top-3 left-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
-                            {isValidStart &&
-                            isValidEnd &&
-                            startDate.getDate() !== endDate.getDate() ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                  <p className="text-xs font-black text-gray-900 leading-none">
-                                    {startMonth}
-                                  </p>
-                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
-                                    {startDate.getDate()}
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col">
-                                <p className="text-sm font-black text-gray-900 leading-none">
-                                  {isValidStart ? startDate.getDate() : "—"}
-                                </p>
-                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
-                                  {startMonth}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          <div className="absolute top-3 right-3 bg-white rounded-xl px-1 py-1.5 shadow-sm text-center min-w-[47px] flex items-center justify-center">
-                            {isValidStart &&
-                            isValidEnd &&
-                            startDate.getDate() !== endDate.getDate() ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                  <p className="text-xs font-black text-gray-900 leading-none">
-                                    {endMonth}
-                                  </p>
-                                  <p className="text-[12px] font-bold text-[#08351e] uppercase tracking-tighter mt-0.5">
-                                    {endDate.getDate()}
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col">
-                                <p className="text-sm font-black text-gray-900 leading-none">
-                                  {isValidEnd ? endDate.getDate() : "—"}
-                                </p>
-                                <p className="text-[9px] font-black text-[#08351e] uppercase tracking-widest mt-1 leading-none">
-                                  {endMonth}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="p-4 flex flex-col gap-1.5">
-                          <h3 className="font-extrabold text-gray-900 text-sm leading-snug">
-                            {event.name}
-                          </h3>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {event.joinsCount}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <EventCarousel
+                  events={upcomingEvents}
+                  activeSessionEventId={activeSessionEventId || null}
+                  activeSessionState={activeSessionState || "idle"}
+                />
               )}
             </section>
           </div>
@@ -512,11 +278,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                             className="flex items-center gap-4 pb-2 rounded-2xl hover:bg-gray-50 transition-colors group"
                           >
                             <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                idx === 0
-                                  ? "bg-[#96c93d] text-[#08351e]"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getRankColor(idx + 1)}`}
                             >
                               {getRankIcon(idx + 1)}
                             </div>
@@ -526,11 +288,11 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                               </h4>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] font-black text-[#08351e] uppercase tracking-widest">
-                                  {org.totalHours.toFixed(1)} hrs
+                                  {org.totalPoints} pts
                                 </span>
                                 <span className="w-1 h-1 bg-gray-300 rounded-full" />
                                 <span className="text-[10px] font-medium text-gray-400">
-                                  {org.memberCount} members
+                                  {org.totalHours} hrs
                                 </span>
                               </div>
                             </div>
