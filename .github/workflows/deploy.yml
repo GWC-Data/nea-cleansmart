@@ -12,7 +12,7 @@ jobs:
     env:
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
-     steps:
+    steps:
       - name: Setup SSH Key
         run: |
           mkdir -p /home/shanmugavel_muthuraj/.ssh
