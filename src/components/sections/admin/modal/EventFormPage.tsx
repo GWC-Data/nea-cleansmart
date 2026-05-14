@@ -20,7 +20,7 @@ import { adminApiService } from "../../../../services/adminApiService";
 import type { EventData } from "../../../../types/api.types";
 import { getEventImageUrl } from "../../../../utils/imageUtils";
 import { Calendar } from "../../../ui/calendar";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import clsx from "clsx";
 
 const parseLocalISO = (isoString: string) => {
@@ -304,6 +304,8 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
                     onChange={handleCalendarChange}
                     showTimeInput={true}
                     mode="start"
+                    minValue={startOfDay(new Date())}
+                    className="w-full"
                   />
                 </div>
                 {errors.startDate && (
@@ -321,8 +323,10 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
                     value={calendarValue}
                     onChange={handleCalendarChange}
                     showTimeInput={true}
-                    mode="start"
-                    popoverAlignment="start"
+                    mode="end"
+                    popoverAlignment="end"
+                    minValue={calendarValue.start ? startOfDay(calendarValue.start) : startOfDay(new Date())}
+                    className="w-full"
                   />
                 </div>
                 {errors.endDate && (
@@ -352,7 +356,12 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
             </div>
 
             {showEventTypeToggle && (
-              <div className={clsx("flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-5", watchedValues.eventType === "public" && "items-start")}>
+              <div
+                className={clsx(
+                  "flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-5",
+                  watchedValues.eventType === "public" && "items-start",
+                )}
+              >
                 <div className="flex-1 min-w-0">
                   <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
                     Event Type

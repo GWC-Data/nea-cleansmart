@@ -589,6 +589,7 @@ interface CalendarProps {
   minValue?: Date;
   maxValue?: Date;
   mode?: "start" | "end" | "range";
+  className?: string;
 }
 
 export const Calendar = ({
@@ -604,6 +605,7 @@ export const Calendar = ({
   minValue,
   maxValue,
   mode = "range",
+  className,
 }: CalendarProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -891,11 +893,12 @@ export const Calendar = ({
           <div className="relative">
             <Button
               className={clsx(
-                "justify-start! focus:border-transparent! focus:shadow-focus-input!",
+                "justify-start! focus:border-transparent! focus:shadow-focus-input! gap-1.5",
+                className || "w-full",
                 presets && !stacked && !compact && "rounded-l-none -ml-1px!",
                 presets && stacked && !compact && "rounded-t-none -mt-1px!",
                 presets && compact && "rounded-r-none -mr-1px!",
-                compact ? "w-[180px] gap-1.5" : "w-[250px]",
+                // compact ? "w-[180px] gap-1.5" : "w-[230px]",
               )}
               prefix={<CalendarIcon />}
               type="secondary"
