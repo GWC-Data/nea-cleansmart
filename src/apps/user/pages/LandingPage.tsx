@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ExternalLinkIcon, Menu, X } from "lucide-react";
 import { FaYoutube, FaFacebook, FaInstagram } from "react-icons/fa6";
 import logo from "../../../assets/publicHygineCouncil.png";
+import keepSingapreClean from "../../../assets/keepSingaporeClean.png";
 
 export const LandingPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -125,7 +126,7 @@ export const LandingPage: React.FC = () => {
       {/* Hero Banner */}
       <div className="w-full">
         <img
-          src="https://keepsgclean.com/wp-content/uploads/2026/03/PHC_KV_Microsite-Banner_1640x720px.png"
+          src={keepSingapreClean}
           alt="Keep Singapore Clean Campaign Banner"
           className="w-full h-auto object-cover max-h-[70vh] object-top"
         />
