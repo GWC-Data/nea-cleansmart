@@ -10,18 +10,28 @@ jobs:
     runs-on: [self-hosted, frontend]
 
     env:
+      APP_DIR: /home/shanmugavel_muthuraj/frontend
+      DEPLOY_DIR: /var/www/frontend
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
     steps:
+      - name: Debug Environment
+        run: |
+          whoami
+          echo $HOME
+          pwd
+
       - name: Clone or Update Frontend
         run: |
-          mkdir -p /home/shanmugavel_muthuraj/frontend
+          set -e
 
-          if [ ! -d "/home/shanmugavel_muthuraj/frontend/.git" ]; then
-            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/shanmugavel_muthuraj/frontend
+          mkdir -p "$APP_DIR"
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            git clone git@github.com:GWC-Data/nea-cleansmart.git "$APP_DIR"
           fi
 
-          cd /home/shanmugavel_muthuraj/frontend
+          cd "$APP_DIR"
 
           git fetch origin
           git reset --hard origin/main
@@ -29,23 +39,31 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd /home/shanmugavel_muthuraj/frontend
-          npm install
+          set -e
+
+          cd "$APP_DIR"
+
+          npm ci
 
       - name: Build React App
         run: |
-          cd /home/shanmugavel_muthuraj/frontend
+          set -e
+
+          cd "$APP_DIR"
+
           npm run build
 
       - name: Ensure Nginx Folder Exists
         run: |
-          sudo mkdir -p /var/www/frontend
+          sudo mkdir -p "$DEPLOY_DIR"
 
       - name: Deploy to Nginx
         run: |
-          if [ -d "/home/shanmugavel_muthuraj/frontend/dist" ]; then
-            sudo rm -rf /var/www/frontend/*
-            sudo cp -r /home/shanmugavel_muthuraj/frontend/dist/* /var/www/frontend/
+          set -e
+
+          if [ -d "$APP_DIR/dist" ]; then
+            sudo rm -rf "$DEPLOY_DIR"/*
+            sudo cp -r "$APP_DIR/dist/"* "$DEPLOY_DIR"/
           else
             echo "Build folder not found!"
             exit 1
@@ -53,10 +71,14 @@ jobs:
 
       - name: Set Permissions
         run: |
-          sudo chown -R www-data:www-data /var/www/frontend
-          sudo chmod -R 755 /var/www/frontend
+          sudo chown -R www-data:www-data "$DEPLOY_DIR"
+          sudo chmod -R 755 "$DEPLOY_DIR"
 
-      - name: Restart Nginx
+      - name: Validate and Restart Nginx
         run: |
           sudo nginx -t
           sudo systemctl restart nginx
+
+      - name: Deployment Success
+        run: |
+          echo "Frontend deployed successfully!"
