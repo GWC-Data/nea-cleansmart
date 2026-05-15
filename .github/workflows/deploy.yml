@@ -25,8 +25,6 @@ jobs:
         run: |
           set -e
 
-          mkdir -p "$APP_DIR"
-
           if [ ! -d "$APP_DIR/.git" ]; then
             git clone git@github.com:GWC-Data/nea-cleansmart.git "$APP_DIR"
           fi
