@@ -8,9 +8,9 @@ on:
 jobs:
   deploy:
     runs-on: [self-hosted, frontend]
-
+    
     env:
-      APP_DIR: /home/shanmugavel_muthuraj/frontend
+      APP_DIR: ${{ github.workspace }}/frontend   # cleanest option
       DEPLOY_DIR: /var/www/frontend
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
