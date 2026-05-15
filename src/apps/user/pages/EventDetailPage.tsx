@@ -627,24 +627,43 @@ export const EventDetailPage: React.FC = () => {
 
   const handleShare = async () => {
     const url = window.location.href;
+    const shareText = `Join me at "${event.name}" and let's keep Singapore clean together! 🌿`;
+
+    // 1. Try Native Web Share API (Supported on Mobile & Modern Desktop HTTPS/Localhost)
     if (navigator.share) {
       try {
-        await navigator.share({ title: event.name, url });
+        await navigator.share({ 
+          title: event.name, 
+          text: shareText,
+          url 
+        });
+        return; // Successfully opened native share sheet
       } catch (err) {
-        console.error("Share failed", err);
+        // If user simply closed the share sheet, stop here
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        console.error("Native share failed, falling back", err);
       }
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    }
+
+    // 2. Fallback: Directly open WhatsApp with pre-filled message
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + "\n\n" + url)}`;
+    const fullTextToCopy = `${shareText}\n\n${url}`;
+    
+    // Copy to clipboard as a backup
+    if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied to clipboard!");
+        await navigator.clipboard.writeText(fullTextToCopy);
+        toast.success("Message copied! Opening WhatsApp...");
       } catch (err) {
-        toast.error("Failed to copy link.");
+        toast.success("Opening WhatsApp...");
       }
     } else {
-      // Old-school fallback for insecure contexts (HTTP)
+      // Legacy fallback for insecure contexts (HTTP) where navigator.clipboard is disabled
       try {
         const textArea = document.createElement("textarea");
-        textArea.value = url;
+        textArea.value = fullTextToCopy;
         textArea.style.position = "fixed";
         textArea.style.top = "0";
         textArea.style.left = "0";
@@ -653,15 +672,21 @@ export const EventDetailPage: React.FC = () => {
         textArea.select();
         const success = document.execCommand("copy");
         document.body.removeChild(textArea);
+        
         if (success) {
-          toast.success("Link copied to clipboard!");
+          toast.success("Message copied! Opening WhatsApp...");
         } else {
-          toast.error("Cannot copy link in this environment.");
+          toast.success("Opening WhatsApp...");
         }
       } catch (err) {
-        toast.error("Cannot copy link in this environment.");
+        toast.success("Opening WhatsApp...");
       }
     }
+
+    // Open WhatsApp in a new tab
+    setTimeout(() => {
+      window.open(whatsappUrl, '_blank');
+    }, 600);
   };
 
   const handleConfirmJoin = async () => {

@@ -869,9 +869,10 @@ export const Calendar = ({
   ];
 
   return (
-    <div className={clsx("relative", isOpen && "z-50")}>
+    <div className={clsx("relative w-full", isOpen && "z-50")}>
       <div
         className={clsx(
+          "w-full",
           presets && "flex",
           presets && stacked && "flex-col",
           compact && "w-[220px]",
@@ -889,8 +890,8 @@ export const Calendar = ({
             />
           </div>
         )}
-        <div className="flex items-center">
-          <div className="relative">
+        <div className="flex items-center w-full">
+          <div className="relative w-full">
             <Button
               className={clsx(
                 "justify-start! focus:border-transparent! focus:shadow-focus-input! gap-1.5",
