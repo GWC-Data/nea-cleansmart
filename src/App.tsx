@@ -25,14 +25,14 @@ const LoginRoute = () => {
           // Restore any deep-link the admin tried to reach before being redirected
           const adminRedirect = sessionStorage.getItem("admin_redirect_after_login");
           sessionStorage.removeItem("admin_redirect_after_login");
-          navigate(adminRedirect || "/admin/dashboard");
+          navigate(adminRedirect || "/admin/dashboard", { replace: true });
         } else if (role === "organization") {
-          navigate("/org/dashboard");
+          navigate("/org/dashboard", { replace: true });
         } else {
           // Regular user — honour any stored deep-link
           const redirectTo = sessionStorage.getItem("redirect_after_login");
           sessionStorage.removeItem("redirect_after_login");
-          navigate(redirectTo || "/dashboard");
+          navigate(redirectTo || "/dashboard", { replace: true });
         }
       }}
       onNavigateToRegister={() => {
