@@ -3,6 +3,7 @@ import { ExternalLinkIcon, Menu, X } from "lucide-react";
 import { FaYoutube, FaFacebook, FaInstagram } from "react-icons/fa6";
 import logo from "../../../assets/publicHygineCouncil.png";
 import keepSingapreClean from "../../../assets/keepSingaporeClean.png";
+import underline from "../../../assets/underline.png";
 
 export const LandingPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -141,7 +142,7 @@ export const LandingPage: React.FC = () => {
           </h2>
           {/* Decorative graphic imitating the screenshot underline */}
           <img
-            src="https://keepsgclean.com/wp-content/uploads/2025/03/decoblue.svg"
+            src={underline}
             alt="Decorative underline"
             className="w-28 md:w-36 h-auto"
           />

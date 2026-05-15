@@ -627,7 +627,7 @@ export const EventDetailPage: React.FC = () => {
 
   const handleShare = async () => {
     const url = window.location.href;
-    const shareText = `Join me at "${event.name}" and let's keep Singapore clean together! 🌿`;
+    const shareText = `Join me at "${event.name}" and let's keep Singapore clean together!`;
 
     // 1. Try Native Web Share API (Supported on Mobile & Modern Desktop HTTPS/Localhost)
     if (navigator.share) {
