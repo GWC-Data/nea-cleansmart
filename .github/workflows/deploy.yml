@@ -9,79 +9,34 @@ jobs:
   deploy:
     runs-on: [self-hosted, frontend]
 
+    defaults:
+      run:
+        working-directory: ./frontend
+
     steps:
-      - name: Get Current User and Paths
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Debug Paths
         run: |
           echo "RUNNER_USER=$(whoami)" >> $GITHUB_ENV
-          echo "RUNNER_HOME=$HOME" >> $GITHUB_ENV
-          echo "FRONTEND_DIR=$HOME/frontend" >> $GITHUB_ENV
+          echo "FRONTEND_DIR=$GITHUB_WORKSPACE/frontend" >> $GITHUB_ENV
           echo "------- DEBUG INFO -------"
-          echo "Running as user : $(whoami)"
-          echo "Home directory  : $HOME"
-          echo "Frontend path   : $HOME/frontend"
-          echo "Dist path       : $HOME/frontend/dist"
+          echo "Running as user  : $(whoami)"
+          echo "GitHub workspace : $GITHUB_WORKSPACE"
+          echo "Frontend path    : $GITHUB_WORKSPACE/frontend"
           echo "--------------------------"
-
-      - name: Fix Folder Permissions
-        run: |
-          sudo mkdir -p $FRONTEND_DIR
-          sudo chown -R $RUNNER_USER:$RUNNER_USER $FRONTEND_DIR
-
-      - name: Setup SSH for GitHub
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          if [ -f ~/.ssh/id_ed25519 ]; then
-            chmod 600 ~/.ssh/id_ed25519
-          fi
-
-          if [ -f ~/.ssh/id_ed25519.pub ]; then
-            chmod 644 ~/.ssh/id_ed25519.pub
-          fi
-
-          touch ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-      - name: Clone or Update Frontend
-        run: |
-          set -e
-
-          if [ ! -d "$FRONTEND_DIR/.git" ]; then
-            echo "No existing repo found. Cloning fresh..."
-            rm -rf $FRONTEND_DIR
-            git clone git@github.com:GWC-Data/nea-cleansmart.git $FRONTEND_DIR
-          else
-            echo "Existing repo found. Updating..."
-          fi
-
-          cd $FRONTEND_DIR
-
-          git fetch origin
-          git reset --hard origin/main
-          git clean -fd --exclude=node_modules
-
-          echo "Current commit: $(git log -1 --oneline)"
 
       - name: Install Dependencies
         run: |
           set -e
-
-          cd $FRONTEND_DIR
-
           echo "Node version : $(node -v)"
           echo "NPM version  : $(npm -v)"
-
           npm install
 
       - name: Build Frontend
         run: |
           set -e
-
-          cd $FRONTEND_DIR
-
           echo "Building..."
           npm run build
           echo "Build completed."
@@ -89,37 +44,34 @@ jobs:
       - name: Verify Build
         run: |
           set -e
-
-          cd $FRONTEND_DIR
-
-          echo "Checking dist folder at: $FRONTEND_DIR/dist"
-
-          if [ ! -d "$FRONTEND_DIR/dist" ]; then
-            echo "ERROR: dist folder not found! Build may have failed."
+          if [ ! -d "dist" ]; then
+            echo "ERROR: dist folder not found!"
             exit 1
           fi
-
-          echo "dist folder contents:"
-          ls -la $FRONTEND_DIR/dist
-
-          echo "dist file count: $(find $FRONTEND_DIR/dist -type f | wc -l)"
+          echo "dist contents:"
+          ls -la dist
+          echo "dist file count: $(find dist -type f | wc -l)"
 
       - name: Set Permissions on dist
         run: |
-          sudo chown -R www-data:www-data $FRONTEND_DIR/dist
-          sudo chmod -R 755 $FRONTEND_DIR/dist
+          sudo chown -R www-data:www-data dist
+          sudo chmod -R 755 dist
 
           # Nginx needs execute on all parent dirs to traverse the path
           sudo chmod o+x $HOME
-          sudo chmod o+x $FRONTEND_DIR
+          sudo chmod o+x $GITHUB_WORKSPACE
+          sudo chmod o+x $GITHUB_WORKSPACE/frontend
 
-      - name: Validate and Restart Nginx
+      - name: Update Nginx root and Restart
         run: |
+          DIST_PATH="$GITHUB_WORKSPACE/frontend/dist"
+          echo "Setting Nginx root to: $DIST_PATH"
+
+          # Update root path in nginx config dynamically
+          sudo sed -i "s|root .*;|root $DIST_PATH;|g" /etc/nginx/sites-enabled/default
+
           echo "Testing Nginx config..."
           sudo nginx -t
-
-          echo "Reloading systemd daemon..."
-          sudo systemctl daemon-reload
 
           echo "Restarting Nginx..."
           sudo systemctl restart nginx
@@ -131,7 +83,7 @@ jobs:
         run: |
           echo "============================================"
           echo " Frontend deployed successfully!"
-          echo " Runner user : $RUNNER_USER"
-          echo " Nginx root  : $FRONTEND_DIR/dist"
-          echo " Commit      : $(cd $FRONTEND_DIR && git log -1 --oneline)"
+          echo " Runner user : $(whoami)"
+          echo " Nginx root  : $GITHUB_WORKSPACE/frontend/dist"
+          echo " Commit      : $(git log -1 --oneline)"
           echo "============================================"
