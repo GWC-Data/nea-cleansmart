@@ -8,29 +8,45 @@ on:
 jobs:
   deploy:
     runs-on: [self-hosted, frontend]
-    
-    env:
-      USER_NAME: shanmugavel_muthuraj
-      APP_DIR: /home/shanmugavel_muthuraj/frontend
-      DEPLOY_DIR: /var/www/frontend
-      PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
     steps:
-      - name: Debug Environment
+      - name: Get Current User
+        run: echo "USER_NAME=$(whoami)" >> $GITHUB_ENV
+
+      - name: Fix Folder Permissions
         run: |
-          whoami
-          echo $HOME
-          pwd
+          sudo mkdir -p /home/$USER_NAME/frontend
+          sudo chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/frontend
+
+          sudo mkdir -p /var/www/frontend
+          sudo chown -R $USER_NAME:$USER_NAME /var/www/frontend
+
+      - name: Setup SSH for GitHub
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          if [ -f ~/.ssh/id_ed25519 ]; then
+            chmod 600 ~/.ssh/id_ed25519
+          fi
+
+          if [ -f ~/.ssh/id_ed25519.pub ]; then
+            chmod 644 ~/.ssh/id_ed25519.pub
+          fi
+
+          touch ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Clone or Update Frontend
         run: |
-          set -e
-
-          if [ ! -d "$APP_DIR/.git" ]; then
-            git clone git@github.com:GWC-Data/nea-cleansmart.git "$APP_DIR"
+          if [ ! -d "/home/$USER_NAME/frontend/.git" ]; then
+            rm -rf /home/$USER_NAME/frontend
+            git clone git@github.com:GWC-Data/nea-cleansmart.git /home/$USER_NAME/frontend
           fi
 
-          cd "$APP_DIR"
+          cd /home/$USER_NAME/frontend
 
           git fetch origin
           git reset --hard origin/main
@@ -38,40 +54,30 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          set -e
-
-          cd "$APP_DIR"
-
+          cd /home/$USER_NAME/frontend
           npm install
 
-      - name: Build React App
+      - name: Build Frontend
         run: |
-          set -e
-
-          cd "$APP_DIR"
-
+          cd /home/$USER_NAME/frontend
           npm run build
 
-      - name: Ensure Nginx Folder Exists
+      - name: Verify Build
         run: |
-          sudo mkdir -p "$DEPLOY_DIR"
+          cd /home/$USER_NAME/frontend
 
-      - name: Deploy to Nginx
+          echo "Checking dist folder..."
+          ls -la dist
+
+      - name: Deploy Frontend to Nginx
         run: |
-          set -e
-
-          if [ -d "$APP_DIR/dist" ]; then
-            sudo rm -rf "$DEPLOY_DIR"/*
-            sudo cp -r "$APP_DIR/dist/"* "$DEPLOY_DIR"/
-          else
-            echo "Build folder not found!"
-            exit 1
-          fi
+          sudo rm -rf /var/www/frontend/*
+          sudo cp -r /home/$USER_NAME/frontend/dist/* /var/www/frontend/
 
       - name: Set Permissions
         run: |
-          sudo chown -R www-data:www-data "$DEPLOY_DIR"
-          sudo chmod -R 755 "$DEPLOY_DIR"
+          sudo chown -R www-data:www-data /var/www/frontend
+          sudo chmod -R 755 /var/www/frontend
 
       - name: Validate and Restart Nginx
         run: |

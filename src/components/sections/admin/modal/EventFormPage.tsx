@@ -135,7 +135,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         rewards: editingEvent.rewards || "",
         points: editingEvent.points || "",
         eventType: editingEvent.eventType || "public",
-        userCount: editingEvent.userCount || "",
+        userCount: editingEvent.participantLimit || "",
       });
       setImagePreview(editingEvent.eventImage || null);
       setImageFile(null);

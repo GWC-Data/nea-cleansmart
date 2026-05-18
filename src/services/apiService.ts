@@ -25,6 +25,7 @@ export interface EventData {
   attendentParticipant?: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
+  participantLimit?: number | null;
   status?: "pending" | "approved" | "rejected";
   createdBy?: string;
   createdAt: string;
