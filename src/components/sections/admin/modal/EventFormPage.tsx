@@ -37,6 +37,7 @@ const eventSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   rewards: z.string().optional(),
+  points: z.union([z.string(), z.number()]).optional(),
   eventType: z.enum(["public", "private"]),
   userCount: z.union([z.string(), z.number()]).optional(),
 });
@@ -87,6 +88,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
       startDate: "",
       endDate: "",
       rewards: "",
+      points: "",
       eventType: "public",
       userCount: "",
     },
@@ -131,6 +133,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         startDate: editingEvent.startDate || "",
         endDate: editingEvent.endDate || "",
         rewards: editingEvent.rewards || "",
+        points: editingEvent.points || "",
         eventType: editingEvent.eventType || "public",
         userCount: editingEvent.userCount || "",
       });
@@ -151,6 +154,7 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         startDate: "",
         endDate: "",
         rewards: "",
+        points: "",
         eventType: "public",
         userCount: "",
       });
@@ -432,16 +436,29 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
               />
             </div>
 
-            {/* Rewards */}
-            <div>
-              <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                Rewards
-              </label>
-              <input
-                {...register("rewards")}
-                placeholder="e.g. 50 points + Bronze badge"
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
-              />
+            {/* Rewards & Points */}
+            <div className="flex flex-col sm:flex-row gap-5">
+              <div className="flex-1">
+                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                  Rewards
+                </label>
+                <input
+                  {...register("rewards")}
+                  placeholder="e.g. Bronze badge"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
+                  Points
+                </label>
+                <input
+                  type="number"
+                  {...register("points")}
+                  placeholder="e.g. 50"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] placeholder:text-[#A0AAB5] focus:outline-none focus:border-[#509CD1] transition-colors"
+                />
+              </div>
             </div>
           </form>
 

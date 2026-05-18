@@ -10,7 +10,8 @@ jobs:
     runs-on: [self-hosted, frontend]
     
     env:
-      APP_DIR: ${{ github.workspace }}/frontend   # cleanest option
+      USER_NAME: shanmugavel_muthuraj
+      APP_DIR: /home/shanmugavel_muthuraj/frontend
       DEPLOY_DIR: /var/www/frontend
       PATH: /usr/local/bin:/usr/bin:/bin:/home/shanmugavel_muthuraj/.npm-global/bin
 
@@ -41,7 +42,7 @@ jobs:
 
           cd "$APP_DIR"
 
-          npm ci
+          npm install
 
       - name: Build React App
         run: |
@@ -75,6 +76,7 @@ jobs:
       - name: Validate and Restart Nginx
         run: |
           sudo nginx -t
+          sudo systemctl daemon-reload
           sudo systemctl restart nginx
 
       - name: Deployment Success
