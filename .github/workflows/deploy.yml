@@ -61,7 +61,9 @@ jobs:
 
           git fetch origin
           git reset --hard origin/main
-          git clean -fd
+
+          # clean everything EXCEPT node_modules to avoid reinstalling every time
+          git clean -fd --exclude=node_modules
 
           echo "Current commit: $(git log -1 --oneline)"
 
@@ -74,7 +76,14 @@ jobs:
           echo "Node version : $(node -v)"
           echo "NPM version  : $(npm -v)"
 
-          npm ci
+          # Use yarn if yarn.lock exists, otherwise npm ci
+          if [ -f "yarn.lock" ]; then
+            echo "Detected yarn.lock — using yarn"
+            yarn install --frozen-lockfile
+          else
+            echo "No yarn.lock — using npm ci"
+            npm ci
+          fi
 
       - name: Build Frontend
         run: |
@@ -82,7 +91,16 @@ jobs:
 
           cd $FRONTEND_DIR
 
-          npm run build
+          echo "Building..."
+
+          # Use yarn if yarn.lock exists, otherwise npm
+          if [ -f "yarn.lock" ]; then
+            yarn build
+          else
+            npm run build
+          fi
+
+          echo "Build completed."
 
       - name: Verify Build
         run: |
