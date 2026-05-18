@@ -9,10 +9,6 @@ jobs:
   deploy:
     runs-on: [self-hosted, frontend]
 
-    defaults:
-      run:
-        working-directory: ./frontend
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,16 +16,18 @@ jobs:
       - name: Debug Paths
         run: |
           echo "RUNNER_USER=$(whoami)" >> $GITHUB_ENV
-          echo "FRONTEND_DIR=$GITHUB_WORKSPACE/frontend" >> $GITHUB_ENV
+          echo "FRONTEND_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
           echo "------- DEBUG INFO -------"
           echo "Running as user  : $(whoami)"
           echo "GitHub workspace : $GITHUB_WORKSPACE"
-          echo "Frontend path    : $GITHUB_WORKSPACE/frontend"
+          echo "Repo contents:"
+          ls -la $GITHUB_WORKSPACE
           echo "--------------------------"
 
       - name: Install Dependencies
         run: |
           set -e
+          cd $GITHUB_WORKSPACE
           echo "Node version : $(node -v)"
           echo "NPM version  : $(npm -v)"
           npm install
@@ -37,6 +35,7 @@ jobs:
       - name: Build Frontend
         run: |
           set -e
+          cd $GITHUB_WORKSPACE
           echo "Building..."
           npm run build
           echo "Build completed."
@@ -44,6 +43,7 @@ jobs:
       - name: Verify Build
         run: |
           set -e
+          cd $GITHUB_WORKSPACE
           if [ ! -d "dist" ]; then
             echo "ERROR: dist folder not found!"
             exit 1
@@ -54,21 +54,19 @@ jobs:
 
       - name: Set Permissions on dist
         run: |
-          sudo chown -R www-data:www-data dist
-          sudo chmod -R 755 dist
+          sudo chown -R www-data:www-data $GITHUB_WORKSPACE/dist
+          sudo chmod -R 755 $GITHUB_WORKSPACE/dist
 
           # Nginx needs execute on all parent dirs to traverse the path
           sudo chmod o+x $HOME
           sudo chmod o+x $GITHUB_WORKSPACE
-          sudo chmod o+x $GITHUB_WORKSPACE/frontend
 
       - name: Update Nginx root and Restart
         run: |
-          DIST_PATH="$GITHUB_WORKSPACE/frontend/dist"
+          DIST_PATH="$GITHUB_WORKSPACE/dist"
           echo "Setting Nginx root to: $DIST_PATH"
 
-          # Update root path in nginx config dynamically
-          sudo sed -i "s|root .*;|root $DIST_PATH;|g" /etc/nginx/sites-enabled/default
+          sudo sed -i "s|root .*;|root $DIST_PATH;|g" /etc/nginx/sites-available/frontend
 
           echo "Testing Nginx config..."
           sudo nginx -t
@@ -84,6 +82,6 @@ jobs:
           echo "============================================"
           echo " Frontend deployed successfully!"
           echo " Runner user : $(whoami)"
-          echo " Nginx root  : $GITHUB_WORKSPACE/frontend/dist"
+          echo " Nginx root  : $GITHUB_WORKSPACE/dist"
           echo " Commit      : $(git log -1 --oneline)"
           echo "============================================"
