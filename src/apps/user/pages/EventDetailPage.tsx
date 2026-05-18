@@ -10,7 +10,6 @@ import {
   Clock,
   Gift,
   StopCircle,
-  Sparkles,
   QrCode,
   CircleX,
   Clock3,
@@ -846,7 +845,7 @@ export const EventDetailPage: React.FC = () => {
                 strokeDasharray={213.6}
                 strokeDashoffset={
                   213.6 -
-                  Math.min((userStats?.totalPoints ?? 0) / 150, 1) * 213.6
+                  Math.min((event.points ?? 0) / 150, 1) * 213.6
                 }
                 strokeLinecap="round"
                 fill="transparent"
@@ -855,7 +854,7 @@ export const EventDetailPage: React.FC = () => {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-lg font-black text-[#08351e] leading-none">
-                {userStats?.totalPoints ?? 0}
+                {event.points ?? 0}
               </span>
               <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">
                 points
@@ -1224,38 +1223,8 @@ export const EventDetailPage: React.FC = () => {
               <div className="sticky top-24 flex flex-col gap-6">
                 {/* XP Ring */}
                 {(() => {
-                  const totalPoints = userStats?.totalPoints ?? 0;
-                  const getNextBadge = (pts: number) =>
-                    pts < 50
-                      ? { label: "Silver", pointsNeeded: 50 - pts }
-                      : pts < 100
-                        ? { label: "Gold", pointsNeeded: 100 - pts }
-                        : pts < 150
-                          ? { label: "Diamond", pointsNeeded: 150 - pts }
-                          : null;
-                  const nextBadge = getNextBadge(totalPoints);
-                  // const hasBadge = totalPoints >= 50;
-                  // const badgeName = !hasBadge
-                  //   ? null
-                  //   : totalPoints < 100
-                  //     ? "Silver"
-                  //     : totalPoints < 150
-                  //       ? "Gold"
-                  //       : "Diamond";
-                  const start =
-                    totalPoints < 50
-                      ? 0
-                      : totalPoints < 100
-                        ? 50
-                        : totalPoints < 150
-                          ? 100
-                          : 150;
-                  const end =
-                    totalPoints < 50 ? 50 : totalPoints < 100 ? 100 : 150;
-                  const progress = Math.min(
-                    (totalPoints - start) / (end - start),
-                    1,
-                  );
+                  const eventPoints = event.points ?? 0;
+                  const progress = Math.min(eventPoints / 150, 1);
                   const circumference = 264;
                   const offset = circumference - progress * circumference;
                   return (
@@ -1287,7 +1256,7 @@ export const EventDetailPage: React.FC = () => {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <span className="text-4xl xl:text-5xl font-black text-gray-900 leading-none">
-                            {totalPoints}
+                            {eventPoints}
                           </span>
                           <span className="text-[10px] xl:text-xs font-black uppercase tracking-widest mt-1">
                             Points
@@ -1296,26 +1265,14 @@ export const EventDetailPage: React.FC = () => {
                       </div>
                       <div className="flex flex-col items-center gap-1 mt-2">
                         <p className="text-sm font-extrabold text-gray-800 text-center">
-                          Contribution Level
+                          Event Reward
                         </p>
                         <p className="text-xs text-gray-500 font-medium text-center">
-                          {nextBadge ? (
-                            <>
-                              <span className="font-black text-gray-800">
-                                {nextBadge.pointsNeeded} pts{" "}
-                              </span>
-                              until your{" "}
-                              <span className="font-black text-[#08351e]">
-                                {nextBadge.label}
-                              </span>{" "}
-                              badge!
-                            </>
-                          ) : (
-                            <span className="font-black text-[#08351e] flex items-center gap-1 justify-center">
-                              <Sparkles className="w-4 h-4" /> All badges
-                              earned!
-                            </span>
-                          )}
+                          Complete this event to earn{" "}
+                          <span className="font-black text-[#08351e]">
+                            {eventPoints} pts
+                          </span>
+                          !
                         </p>
                       </div>
                     </div>

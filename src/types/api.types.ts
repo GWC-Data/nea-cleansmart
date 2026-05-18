@@ -14,6 +14,7 @@ export interface EventData {
   details: string;
   description: string;
   rewards: string;
+  points?: number;
   joinsCount: number;
   participants: string[];
   eventImage?: string | null;
