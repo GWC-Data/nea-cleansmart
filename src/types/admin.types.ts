@@ -16,6 +16,7 @@ export interface CreateEventPayload {
   time?: string;
   rewards?: string;
   eventType?: "public" | "private";
+  userCount?: string | number;
   eventImage?: File;
 }
 

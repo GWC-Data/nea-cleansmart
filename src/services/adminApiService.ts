@@ -154,6 +154,7 @@ export const adminApiService = {
         if (payload.eventType) form.append("eventType", payload.eventType);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
+        if (payload.userCount) form.append("userCount", payload.userCount.toString());
         // File should be last
         form.append("eventImage", payload.eventImage);
         body = form;
@@ -210,6 +211,7 @@ export const adminApiService = {
         if (payload.eventType) form.append("eventType", payload.eventType);
         if (payload.details) form.append("details", payload.details);
         if (payload.rewards) form.append("rewards", payload.rewards);
+        if (payload.userCount) form.append("userCount", payload.userCount.toString());
         // File should be last
         form.append("eventImage", payload.eventImage);
         body = form;

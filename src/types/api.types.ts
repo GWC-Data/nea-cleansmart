@@ -19,7 +19,7 @@ export interface EventData {
   participants: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
-  userCount?: number;
+  participantLimit?: number | null;
   status?: "pending" | "approved" | "rejected";
   isStarted?: boolean;
   createdBy?: string;
