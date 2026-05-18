@@ -41,6 +41,8 @@ jobs:
 
       - name: Clone or Update Frontend
         run: |
+          set -e
+
           if [ ! -d "/home/$USER_NAME/frontend/.git" ]; then
             rm -rf /home/$USER_NAME/frontend
             git clone git@github.com:GWC-Data/nea-cleansmart.git /home/$USER_NAME/frontend
@@ -54,12 +56,18 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          set -e
+
           cd /home/$USER_NAME/frontend
-          npm install
+
+          npm ci
 
       - name: Build Frontend
         run: |
+          set -e
+
           cd /home/$USER_NAME/frontend
+
           npm run build
 
       - name: Verify Build
@@ -71,6 +79,8 @@ jobs:
 
       - name: Deploy Frontend to Nginx
         run: |
+          set -e
+
           sudo rm -rf /var/www/frontend/*
           sudo cp -r /home/$USER_NAME/frontend/dist/* /var/www/frontend/
 
