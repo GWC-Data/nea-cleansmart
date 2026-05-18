@@ -19,15 +19,13 @@ jobs:
           echo "Running as user : $(whoami)"
           echo "Home directory  : $HOME"
           echo "Frontend path   : $HOME/frontend"
+          echo "Dist path       : $HOME/frontend/dist"
           echo "--------------------------"
 
       - name: Fix Folder Permissions
         run: |
           sudo mkdir -p $FRONTEND_DIR
           sudo chown -R $RUNNER_USER:$RUNNER_USER $FRONTEND_DIR
-
-          sudo mkdir -p /var/www/frontend
-          sudo chown -R $RUNNER_USER:$RUNNER_USER /var/www/frontend
 
       - name: Setup SSH for GitHub
         run: |
@@ -100,26 +98,18 @@ jobs:
           fi
 
           echo "dist folder contents:"
-          ls -la dist
+          ls -la $FRONTEND_DIR/dist
 
-          echo "dist file count: $(find dist -type f | wc -l)"
+          echo "dist file count: $(find $FRONTEND_DIR/dist -type f | wc -l)"
 
-      - name: Deploy Frontend to Nginx
+      - name: Set Permissions on dist
         run: |
-          set -e
+          sudo chown -R www-data:www-data $FRONTEND_DIR/dist
+          sudo chmod -R 755 $FRONTEND_DIR/dist
 
-          echo "Deploying from $FRONTEND_DIR/dist to /var/www/frontend/"
-
-          sudo rm -rf /var/www/frontend/*
-          sudo cp -r $FRONTEND_DIR/dist/* /var/www/frontend/
-
-          echo "Deployed files:"
-          ls -la /var/www/frontend/
-
-      - name: Set Permissions
-        run: |
-          sudo chown -R www-data:www-data /var/www/frontend
-          sudo chmod -R 755 /var/www/frontend
+          # Nginx needs execute on all parent dirs to traverse the path
+          sudo chmod o+x $HOME
+          sudo chmod o+x $FRONTEND_DIR
 
       - name: Validate and Restart Nginx
         run: |
@@ -140,7 +130,6 @@ jobs:
           echo "============================================"
           echo " Frontend deployed successfully!"
           echo " Runner user : $RUNNER_USER"
-          echo " Source      : $FRONTEND_DIR/dist"
-          echo " Destination : /var/www/frontend"
+          echo " Nginx root  : $FRONTEND_DIR/dist"
           echo " Commit      : $(cd $FRONTEND_DIR && git log -1 --oneline)"
           echo "============================================"
