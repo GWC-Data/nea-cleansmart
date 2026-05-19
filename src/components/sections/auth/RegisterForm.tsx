@@ -35,7 +35,7 @@ const COUNTRIES_FALLBACK: Country[] = [
 ];
 
 interface RegisterFormProps {
-  onSuccess: () => void;
+  onSuccess: (role: "user" | "organization") => void;
   onNavigateToLogin: () => void;
 }
 
@@ -227,9 +227,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     if (!validate()) return;
     if (activeTab === "organization") {
       const combinedPhone = `${selectedCountry?.code} ${form.phoneNumber?.trim()}`;
-      handleOrganizationRegister({ ...form, phoneNumber: combinedPhone }, onSuccess);
+      handleOrganizationRegister({ ...form, phoneNumber: combinedPhone }, () => onSuccess("organization"));
     } else {
-      handleRegister(form, onSuccess);
+      handleRegister(form, () => onSuccess("user"));
     }
   };
 
