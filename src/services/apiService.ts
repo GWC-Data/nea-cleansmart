@@ -18,13 +18,14 @@ export interface EventData {
   details: string;
   description: string;
   rewards: string;
-  points?: number;
   joinsCount: number;
   participants: string[];
   registeredParticipant?: string[];
   attendentParticipant?: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
+  userPoints?: number;
+  hasCompleted?: boolean;
   participantLimit?: number | null;
   status?: "pending" | "approved" | "rejected";
   createdBy?: string;
@@ -296,6 +297,8 @@ export const apiService = {
       if (data.event) {
         data.event.eventImage =
           data.event.eventImage || data.event.event_image || null;
+        data.event.userPoints = data.userPoints ?? 0;
+        data.event.hasCompleted = data.hasCompleted ?? false;
       }
       return data.event || null;
     } catch (error) {

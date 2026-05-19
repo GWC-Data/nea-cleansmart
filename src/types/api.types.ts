@@ -14,11 +14,12 @@ export interface EventData {
   details: string;
   description: string;
   rewards: string;
-  points?: number;
   joinsCount: number;
   participants: string[];
   eventImage?: string | null;
   eventType?: "public" | "private";
+  userPoints?: number;
+  hasCompleted?: boolean;
   participantLimit?: number | null;
   status?: "pending" | "approved" | "rejected";
   isStarted?: boolean;

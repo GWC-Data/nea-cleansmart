@@ -10,9 +10,11 @@ interface RegisterPageProps {
 export const RegisterPage: React.FC<RegisterPageProps> = ({
   onNavigateToLogin,
 }) => {
+  const [registeredRole, setRegisteredRole] = useState<"user" | "organization" | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
 
-  const handleRegistrationSuccess = () => {
+  const handleRegistrationSuccess = (role: "user" | "organization") => {
+    setRegisteredRole(role);
     setIsRegistered(true);
   };
 
@@ -49,8 +51,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   You're registered!
                 </h2>
                 <p className="text-base text-gray-600 leading-relaxed max-w-sm mx-auto">
-                  Thank you! Your registration for the 15-hour Virtual Clean-up
-                  Challenge has been confirmed.
+                  {registeredRole === "organization"
+                    ? "Thank you! Your organization registration has been confirmed. You can now log in and create events to make a difference."
+                    : "Thank you! Your user registration has been confirmed. You can now log in and join clean-up events."}
                 </p>
                 <button
                   onClick={onNavigateToLogin}

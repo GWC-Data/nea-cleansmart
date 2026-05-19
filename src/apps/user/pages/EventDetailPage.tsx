@@ -631,15 +631,15 @@ export const EventDetailPage: React.FC = () => {
     // 1. Try Native Web Share API (Supported on Mobile & Modern Desktop HTTPS/Localhost)
     if (navigator.share) {
       try {
-        await navigator.share({ 
-          title: event.name, 
+        await navigator.share({
+          title: event.name,
           text: shareText,
-          url 
+          url,
         });
         return; // Successfully opened native share sheet
       } catch (err) {
         // If user simply closed the share sheet, stop here
-        if (err instanceof Error && err.name === 'AbortError') {
+        if (err instanceof Error && err.name === "AbortError") {
           return;
         }
         console.error("Native share failed, falling back", err);
@@ -649,7 +649,7 @@ export const EventDetailPage: React.FC = () => {
     // 2. Fallback: Directly open WhatsApp with pre-filled message
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + "\n\n" + url)}`;
     const fullTextToCopy = `${shareText}\n\n${url}`;
-    
+
     // Copy to clipboard as a backup
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
@@ -671,7 +671,7 @@ export const EventDetailPage: React.FC = () => {
         textArea.select();
         const success = document.execCommand("copy");
         document.body.removeChild(textArea);
-        
+
         if (success) {
           toast.success("Message copied! Opening WhatsApp...");
         } else {
@@ -684,7 +684,7 @@ export const EventDetailPage: React.FC = () => {
 
     // Open WhatsApp in a new tab
     setTimeout(() => {
-      window.open(whatsappUrl, '_blank');
+      window.open(whatsappUrl, "_blank");
     }, 600);
   };
 
@@ -825,50 +825,55 @@ export const EventDetailPage: React.FC = () => {
           </span>
         </div>
 
-        {compact && (
-          <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                stroke="#f3f4f6"
-                strokeWidth="6"
-                fill="transparent"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                stroke="#08351e"
-                strokeWidth="6"
-                strokeDasharray={213.6}
-                strokeDashoffset={
-                  213.6 -
-                  Math.min((event.points ?? 0) / 150, 1) * 213.6
-                }
-                strokeLinecap="round"
-                fill="transparent"
-                className="transition-all duration-1000 ease-out"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-black text-[#08351e] leading-none">
-                {event.points ?? 0}
-              </span>
-              <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">
-                points
-              </span>
-            </div>
-          </div>
-        )}
+        {compact &&
+          (() => {
+            const displayPoints = event.userPoints ?? 0;
+            return (
+              <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="#f3f4f6"
+                    strokeWidth="6"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="#08351e"
+                    strokeWidth="6"
+                    strokeDasharray={213.6}
+                    strokeDashoffset={
+                      213.6 - Math.min(displayPoints / 150, 1) * 213.6
+                    }
+                    strokeLinecap="round"
+                    fill="transparent"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-black text-[#08351e] leading-none">
+                    {displayPoints}
+                  </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">
+                    points
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
       </div>
 
       <hr className="border-gray-100" />
 
       {event.description && (
         <div>
-          <h3 className="font-extrabold text-gray-800 mb-2">About this Event</h3>
+          <h3 className="font-extrabold text-gray-800 mb-2">
+            About this Event
+          </h3>
           <p className="text-sm text-gray-500 leading-relaxed">
             {event.description}
           </p>
@@ -884,16 +889,14 @@ export const EventDetailPage: React.FC = () => {
       )}
 
       {/* Join button — only for upcoming (not joined) events and if approved */}
-      {!isActiveEvent &&
-        !isOrganization &&
-        event.status === "approved" && (
-          <button
-            onClick={() => setModalView("confirm")}
-            className="cursor-pointer mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
-          >
-            Yes, Join Event
-          </button>
-        )}
+      {!isActiveEvent && !isOrganization && event.status === "approved" && (
+        <button
+          onClick={() => setModalView("confirm")}
+          className="cursor-pointer mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
+        >
+          Yes, Join Event
+        </button>
+      )}
     </div>
   );
 
@@ -983,8 +986,8 @@ export const EventDetailPage: React.FC = () => {
                 {/* Always show active participant session if exists, regardless of role, restrict if not approved for private events */}
                 {sessionState === "checked_in" &&
                   activeEventId === eventId &&
-                  (event.eventType !== "private" &&
-                    event.status === "approved") && (
+                  event.eventType !== "private" &&
+                  event.status === "approved" && (
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
                         <Clock className="w-4 h-4" />
@@ -1084,8 +1087,8 @@ export const EventDetailPage: React.FC = () => {
             <>
               {isActiveEvent &&
                 sessionState === "idle" &&
-                (event.eventType !== "private" &&
-                  event.status === "approved") && (
+                event.eventType !== "private" &&
+                event.status === "approved" && (
                   <button
                     onClick={() => {
                       if (userStats && (userStats.todayHours || 0) >= 2) {
@@ -1110,8 +1113,8 @@ export const EventDetailPage: React.FC = () => {
 
               {sessionState === "checked_in" &&
                 activeEventId === eventId &&
-                (event.eventType !== "private" &&
-                  event.status === "approved") && (
+                event.eventType !== "private" &&
+                event.status === "approved" && (
                   <div className="flex justify-evenly w-full gap-3">
                     <div className="flex items-center gap-1.5">
                       {/* Hours */}
@@ -1223,8 +1226,8 @@ export const EventDetailPage: React.FC = () => {
               <div className="sticky top-24 flex flex-col gap-6">
                 {/* XP Ring */}
                 {(() => {
-                  const eventPoints = event.points ?? 0;
-                  const progress = Math.min(eventPoints / 150, 1);
+                  const displayPoints = event.userPoints ?? 0;
+                  const progress = Math.min(displayPoints / 150, 1);
                   const circumference = 264;
                   const offset = circumference - progress * circumference;
                   return (
@@ -1256,7 +1259,7 @@ export const EventDetailPage: React.FC = () => {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <span className="text-4xl xl:text-5xl font-black text-gray-900 leading-none">
-                            {eventPoints}
+                            {displayPoints}
                           </span>
                           <span className="text-[10px] xl:text-xs font-black uppercase tracking-widest mt-1">
                             Points
@@ -1268,11 +1271,13 @@ export const EventDetailPage: React.FC = () => {
                           Event Reward
                         </p>
                         <p className="text-xs text-gray-500 font-medium text-center">
-                          Complete this event to earn{" "}
-                          <span className="font-black text-[#08351e]">
-                            {eventPoints} pts
-                          </span>
-                          !
+                          <>
+                            Complete this event to earn up to{" "}
+                            <span className="font-black text-[#08351e]">
+                              {displayPoints} pts
+                            </span>
+                            !
+                          </>
                         </p>
                       </div>
                     </div>
