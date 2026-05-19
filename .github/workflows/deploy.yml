@@ -10,6 +10,10 @@ jobs:
     runs-on: [self-hosted, frontend]
 
     steps:
+      - name: Fix Workspace Permissions
+        run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE || true
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -52,18 +56,18 @@ jobs:
           ls -la dist
           echo "dist file count: $(find dist -type f | wc -l)"
 
-      - name: Set Permissions on dist
+      - name: Deploy dist to Nginx web root
         run: |
-          sudo chown -R www-data:www-data $GITHUB_WORKSPACE/dist
-          sudo chmod -R 755 $GITHUB_WORKSPACE/dist
-
-          # Nginx needs execute on all parent dirs to traverse the path
-          sudo chmod o+x $HOME
-          sudo chmod o+x $GITHUB_WORKSPACE
+          set -e
+          sudo rm -rf /var/www/frontend
+          sudo mkdir -p /var/www/frontend
+          sudo cp -r $GITHUB_WORKSPACE/dist/. /var/www/frontend
+          sudo chown -R www-data:www-data /var/www/frontend
+          sudo chmod -R 755 /var/www/frontend
 
       - name: Update Nginx root and Restart
         run: |
-          DIST_PATH="$GITHUB_WORKSPACE/dist"
+          DIST_PATH="/var/www/frontend"
           echo "Setting Nginx root to: $DIST_PATH"
 
           sudo sed -i "s|root .*;|root $DIST_PATH;|g" /etc/nginx/sites-available/frontend
@@ -82,6 +86,6 @@ jobs:
           echo "============================================"
           echo " Frontend deployed successfully!"
           echo " Runner user : $(whoami)"
-          echo " Nginx root  : $GITHUB_WORKSPACE/dist"
+          echo " Nginx root  : /var/www/frontend"
           echo " Commit      : $(git log -1 --oneline)"
           echo "============================================"
