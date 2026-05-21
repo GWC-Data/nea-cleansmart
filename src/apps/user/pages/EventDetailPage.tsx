@@ -31,6 +31,10 @@ import { EventGuidelines } from "../../../components/sections/user/EventGuidelin
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { orgApiService } from "../../../services/orgApiService";
 
+// Configuration constants for event duration constraints
+const ORG_MAX_DURATION_HOURS = 2; // Maximum allowed duration in hours
+const ORG_MIN_DURATION_MINUTES = 30; // Minimum duration required before stopping in minutes
+
 const MedalIcon: React.FC<{ label: string; className?: string }> = ({
   label,
   className,
@@ -325,6 +329,17 @@ export const EventDetailPage: React.FC = () => {
   const [elapsedOrgSeconds, setElapsedOrgSeconds] = useState(0);
   const [isProcessingScan, setIsProcessingScan] = useState(false);
 
+  // Check if the current user is the creator of this event
+  const isCreator = event && currentUser && event.createdBy === currentUser.id;
+
+  // Track if the organization stop modal has been automatically opened once during the current session
+  const hasAutoOpenedRef = useRef(false);
+
+  // Event timer and stop lock logic for organization started events derived from constants
+  const orgDurationSeconds = ORG_MAX_DURATION_HOURS * 3600;
+  const orgRemainingSeconds = Math.max(0, orgDurationSeconds - elapsedOrgSeconds);
+  const orgStopButtonDisabled = elapsedOrgSeconds < ORG_MIN_DURATION_MINUTES * 60;
+
   const lastScannedRef = useRef<{ id: string; time: number } | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const scannerControlsRef = React.useRef<IScannerControls | null>(null);
@@ -409,20 +424,36 @@ export const EventDetailPage: React.FC = () => {
     loadActiveTimer();
   }, [initializeTimer]);
 
-  // Running timer for organization private events
+  // Running timer for organization private events, paused when stopModalOpen is true
   useEffect(() => {
     if (!isEventStarted || !eventCheckInTime) {
       setElapsedOrgSeconds(0);
       return;
     }
 
-    const interval = setInterval(() => {
+    if (stopModalOpen) {
+      // Pause the timer visual tick when stop cleanup modal is open
+      return;
+    }
+
+    // Immediately update the timer value to sync with real world on mount/resume
+    const updateTimer = () => {
       const diffMs = Date.now() - new Date(eventCheckInTime).getTime();
-      setElapsedOrgSeconds(Math.max(0, Math.floor(diffMs / 1000)));
-    }, 1000);
+      const elapsed = Math.max(0, Math.floor(diffMs / 1000));
+      setElapsedOrgSeconds(elapsed);
+
+      // Replicate "Regular Participants" logic: Automatically open the stop modal when the event timer hits 00:00 (2 hours elapsed)
+      if (isCreator && elapsed >= orgDurationSeconds && !hasAutoOpenedRef.current) {
+        hasAutoOpenedRef.current = true;
+        setStopModalOpen(true);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [isEventStarted, eventCheckInTime]);
+  }, [isEventStarted, eventCheckInTime, stopModalOpen, isCreator, orgDurationSeconds]);
 
   // QR Scanner Lifecycle
   useEffect(() => {
@@ -608,8 +639,6 @@ export const EventDetailPage: React.FC = () => {
 
   // Check if the current user is an organization
   const isOrganization = currentUser?.role === "organization";
-  // Check if the current user is the creator of this event
-  const isCreator = event && currentUser && event.createdBy === currentUser.id;
 
   // Total hours for the current user from the leaderboard entry
   const userTotalHours = currentUser
@@ -727,6 +756,8 @@ export const EventDetailPage: React.FC = () => {
       if (response && response.success) {
         setIsEventStarted(true);
         setEventCheckInTime(response.checkInTime);
+        // Reset the auto-open flag on event start so it can trigger when this new session ends
+        hasAutoOpenedRef.current = false;
         toast.success(
           "Cleanup event started successfully! Let's clean up Singapore! 🌿",
         );
@@ -746,10 +777,32 @@ export const EventDetailPage: React.FC = () => {
     // photo?: File, // Organizations don't currently upload photos for bulk stop
   ) => {
     try {
+      // Calculate the capped checkout time (start time + maximum duration hours)
+      const now = new Date();
+      let checkOutTime = now.toISOString();
+      if (eventCheckInTime) {
+        const checkInDate = new Date(eventCheckInTime);
+        const maxCheckOut = new Date(
+          checkInDate.getTime() + ORG_MAX_DURATION_HOURS * 3600 * 1000,
+        );
+
+        // Prevent clock skew issues: checkOutDate cannot be before checkInDate
+        let checkOutDate = now;
+        if (checkOutDate < checkInDate) {
+          checkOutDate = checkInDate;
+        }
+
+        checkOutTime =
+          checkOutDate < maxCheckOut
+            ? checkOutDate.toISOString()
+            : maxCheckOut.toISOString();
+      }
+
       const response = await apiService.stopEvent(eventId, {
         totalWeight: weight,
         location: finalLocation,
         garbageType: type,
+        checkOutTime,
       });
 
       if (response && response.success) {
@@ -937,15 +990,27 @@ export const EventDetailPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                      {/* Running timer counting backward from 2 hours */}
+                      <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                         <Clock className="w-4 h-4" />
                         <span className="font-mono font-bold tabular-nums text-sm">
-                          {formatTime(elapsedOrgSeconds)}
+                          {formatTime(orgRemainingSeconds)}
                         </span>
                       </div>
+                      {/* Stop Cleanup button disabled during the first 30 minutes of the event */}
                       <button
                         onClick={() => setStopModalOpen(true)}
-                        className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                        disabled={orgStopButtonDisabled}
+                        className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                          orgStopButtonDisabled
+                            ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                            : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                        }`}
+                        title={
+                          orgStopButtonDisabled
+                            ? "Must run the event for at least 30 minutes before stopping"
+                            : undefined
+                        }
                       >
                         <StopCircle className="w-4 h-4" />
                         <span>Stop Cleanup</span>
@@ -1066,15 +1131,27 @@ export const EventDetailPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm">
+                    {/* Running timer counting backward from 2 hours */}
+                    <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                       <Clock className="w-4 h-4" />
                       <span className="font-mono font-bold tabular-nums text-sm">
-                        {formatTime(elapsedOrgSeconds)}
+                        {formatTime(orgRemainingSeconds)}
                       </span>
                     </div>
+                    {/* Stop Cleanup button disabled during the first 30 minutes of the event */}
                     <button
                       onClick={() => setStopModalOpen(true)}
-                      className="cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                      disabled={orgStopButtonDisabled}
+                      className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
+                        orgStopButtonDisabled
+                          ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                          : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
+                      }`}
+                      title={
+                        orgStopButtonDisabled
+                          ? "Must run the event for at least 30 minutes before stopping"
+                          : undefined
+                      }
                     >
                       <StopCircle className="w-4 h-4" />
                       <span>Stop Cleanup</span>
@@ -1352,7 +1429,7 @@ export const EventDetailPage: React.FC = () => {
       {stopModalOpen && isCreator && (
         <LogActivityForm
           eventName={event?.name}
-          elapsedSeconds={elapsedOrgSeconds}
+          elapsedSeconds={Math.min(elapsedOrgSeconds, orgDurationSeconds)}
           location={event?.location || ""}
           onCancel={() => setStopModalOpen(false)}
           onSubmit={handleStopEventSubmit}

@@ -69,7 +69,8 @@ export const OrgDashboard: React.FC = () => {
       setOrgEvents(
         allEvents.filter(
           (e) =>
-            e.eventType === "private" ||
+            // Only display private events created by the current organization
+            (e.eventType === "private" && e.createdBy === currentUser?.id) ||
             e.status === "pending" ||
             e.status === "rejected",
         ),
@@ -85,8 +86,11 @@ export const OrgDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Reload dashboard data once the current organization user info is available
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const finalizeId = searchParams.get("finalizeEvent");

@@ -373,7 +373,7 @@ export const apiService = {
    */
   async stopEvent(
     eventId: string,
-    payload: { totalWeight: number; location?: string; garbageType?: string },
+    payload: { totalWeight: number; location?: string; garbageType?: string; checkOutTime: string },
   ): Promise<any> {
     try {
       const response = await fetch(`${BASE}/events/${eventId}/stop`, {

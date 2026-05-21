@@ -52,14 +52,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 </h2>
                 <p className="text-base text-gray-600 leading-relaxed max-w-sm mx-auto">
                   {registeredRole === "organization"
-                    ? "Thank you! Your organization registration has been confirmed. You can now log in and create events to make a difference."
+                    ? "Thank you! Your organization registration has been submitted and is pending administrator approval. Once approved, you will be able to log in and start creating events."
                     : "Thank you! Your user registration has been confirmed. You can now log in and join clean-up events."}
                 </p>
                 <button
                   onClick={onNavigateToLogin}
                   className="cursor-pointer mt-8 w-full bg-secondary hover:bg-secondary-hover text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm text-lg"
                 >
-                  Log In Now
+                  {registeredRole === "organization" ? "Back to Login" : "Log In Now"}
                 </button>
               </div>
             ) : (
