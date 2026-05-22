@@ -20,7 +20,7 @@ import { adminApiService } from "../../../../services/adminApiService";
 import type { EventData } from "../../../../types/api.types";
 import { getEventImageUrl } from "../../../../utils/imageUtils";
 import { Calendar } from "../../../ui/calendar";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, addMinutes } from "date-fns";
 import clsx from "clsx";
 
 const parseLocalISO = (isoString: string) => {
@@ -54,6 +54,7 @@ interface EventFormPageProps {
     imageFile: File | null,
   ) => Promise<void>;
   isPage?: boolean;
+  isOrgFlow?: boolean; /* Flag indicating if the form is rendering inside the organization creation flow */
 }
 
 export const EventFormPage: React.FC<EventFormPageProps> = ({
@@ -64,11 +65,14 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
   showEventTypeToggle,
   onSubmitOverride,
   isPage = false,
+  isOrgFlow = false, /* Default organization flow setting to false */
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  /* State to track the selected event duration in minutes for organization flow (defaults to 1 hour / 60 minutes) */
+  const [duration, setDuration] = React.useState<string>("60");
 
   const {
     register,
@@ -103,6 +107,23 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
     };
   }, [watchedValues.startDate, watchedValues.endDate]);
 
+  /* Automatically calculate the end date when start date or duration changes in the organization flow */
+  useEffect(() => {
+    if (isOrgFlow && watchedValues.startDate) {
+      const start = parseLocalISO(watchedValues.startDate);
+      if (start && !isNaN(start.getTime())) {
+        const mins = parseInt(duration, 10);
+        if (!isNaN(mins)) {
+          const end = addMinutes(start, mins);
+          setValue("endDate", format(end, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), {
+            shouldValidate: true,
+          });
+        }
+      }
+    }
+  }, [isOrgFlow, watchedValues.startDate, duration, setValue]);
+
+  /* Handle date/time selection from the Calendar component. If organization flow is active, do not set the end date manually. */
   const handleCalendarChange = (
     range: { start: Date | null; end: Date | null } | null,
   ) => {
@@ -114,10 +135,12 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
         "startDate",
         range.start ? format(range.start, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") : "",
       );
-      setValue(
-        "endDate",
-        range.end ? format(range.end, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") : "",
-      );
+      if (!isOrgFlow) {
+        setValue(
+          "endDate",
+          range.end ? format(range.end, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") : "",
+        );
+      }
     }
   };
 
@@ -316,20 +339,38 @@ export const EventFormPage: React.FC<EventFormPageProps> = ({
               </div>
               <div className="flex-1">
                 <label className="block text-[12px] font-semibold uppercase text-[#4A5568] mb-1.5">
-                  End Date <span className="text-[#EC5594]">*</span>
+                  {isOrgFlow ? (
+                    <>Duration <span className="text-[#EC5594]">*</span></>
+                  ) : (
+                    <>End Date <span className="text-[#EC5594]">*</span></>
+                  )}
                 </label>
                 <div className="relative w-full">
-                  <Calendar
-                    value={calendarValue}
-                    onChange={handleCalendarChange}
-                    showTimeInput={true}
-                    mode="end"
-                    popoverAlignment="end"
-                    minValue={calendarValue.start ? startOfDay(calendarValue.start) : startOfDay(new Date())}
-                    className="w-full"
-                  />
+                  {isOrgFlow ? (
+                    /* Responsive select dropdown for event duration in organization flow */
+                    <select
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-[#E8EDF2] text-[12px] font-medium text-[#1A2A3A] focus:outline-none focus:border-[#509CD1] transition-colors bg-white cursor-pointer"
+                    >
+                      <option value="30">30 minutes</option>
+                      <option value="60">1 hour</option>
+                      <option value="90">1 hour 30 minutes</option>
+                      <option value="120">2 hours</option>
+                    </select>
+                  ) : (
+                    <Calendar
+                      value={calendarValue}
+                      onChange={handleCalendarChange}
+                      showTimeInput={true}
+                      mode="end"
+                      popoverAlignment="end"
+                      minValue={calendarValue.start ? startOfDay(calendarValue.start) : startOfDay(new Date())}
+                      className="w-full"
+                    />
+                  )}
                 </div>
-                {errors.endDate && (
+                {!isOrgFlow && errors.endDate && (
                   <p className="text-[#EC5594] text-xs mt-1 font-medium">
                     {errors.endDate.message}
                   </p>

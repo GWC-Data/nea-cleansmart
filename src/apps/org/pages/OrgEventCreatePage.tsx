@@ -44,6 +44,7 @@ export const OrgEventCreatePage: React.FC = () => {
           showEventTypeToggle={true}
           onSubmitOverride={handleEventSubmit}
           isPage={true}
+          isOrgFlow={true} /* Custom prop to restrict dates to start date and duration dropdown in organization flow */
         />
       </div>
     </div>
