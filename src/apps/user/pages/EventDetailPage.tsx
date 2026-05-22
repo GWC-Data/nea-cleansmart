@@ -13,6 +13,7 @@ import {
   QrCode,
   CircleX,
   Clock3,
+  CheckCircle2,
 } from "lucide-react";
 import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
@@ -637,6 +638,9 @@ export const EventDetailPage: React.FC = () => {
   // Derived from dashboard eventsJoined — true when this event is in the joined list
   const isActiveEvent = eventsJoined.includes(eventId);
 
+  // Check if the event's endDate is in the past
+  const isEventCompleted = event.endDate ? new Date(event.endDate) < new Date() : false;
+
   // Check if the current user is an organization
   const isOrganization = currentUser?.role === "organization";
 
@@ -970,7 +974,7 @@ export const EventDetailPage: React.FC = () => {
           <div className="hidden lg:flex flex-1">
             {/* Management UI for the event creator */}
             {isCreator ? (
-              event.status === "approved" ? (
+              event.status === "approved" && !isEventCompleted ? (
                 <div className="flex items-center gap-4">
                   {!isEventStarted ? (
                     <>
@@ -1025,7 +1029,8 @@ export const EventDetailPage: React.FC = () => {
                 {isActiveEvent &&
                   sessionState === "idle" &&
                   event.eventType !== "private" &&
-                  event.status === "approved" && (
+                  event.status === "approved" &&
+                  !isEventCompleted && (
                     <button
                       onClick={() => {
                         if (userStats && (userStats.todayHours || 0) >= 2) {
@@ -1085,6 +1090,12 @@ export const EventDetailPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-3">
+            {event.status === "approved" && isEventCompleted && (
+              <div className="flex justify-center items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4fff5] text-[#86B537] border border-[#a8e8bd] text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Completed</span>
+              </div>
+            )}
             {event.status === "pending" && (
               <div className="flex justify-center items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold uppercase tracking-wider shadow-sm">
                 <Clock3 className="w-4 h-4" />
@@ -1111,7 +1122,7 @@ export const EventDetailPage: React.FC = () => {
         {/* Mobile Action Area */}
         <div className="flex justify-end items-center -mb-2 w-full">
           {isCreator ? (
-            event.status === "approved" ? (
+            event.status === "approved" && !isEventCompleted ? (
               <div className="flex items-center gap-4 w-full justify-between">
                 {!isEventStarted ? (
                   <>
@@ -1165,7 +1176,8 @@ export const EventDetailPage: React.FC = () => {
               {isActiveEvent &&
                 sessionState === "idle" &&
                 event.eventType !== "private" &&
-                event.status === "approved" && (
+                event.status === "approved" &&
+                !isEventCompleted && (
                   <button
                     onClick={() => {
                       if (userStats && (userStats.todayHours || 0) >= 2) {

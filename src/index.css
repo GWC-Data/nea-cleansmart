@@ -332,8 +332,22 @@
   background: #C8D4DE;
 }
 
-.event-form-scroll::-webkit-scrollbar-button {
-  display: none;
+/* Custom scrollbar for Completed Clean-Ups sidebar section */
+.completed-cleanups-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.completed-cleanups-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.completed-cleanups-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+
+.completed-cleanups-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 @keyframes fadeSpin {

@@ -5,7 +5,10 @@ import {
   Trash2,
   Award,
   Clock,
-  // Bell, // Commented out unused import
+  CheckCircle2,
+  Calendar,
+  MapPin,
+  Users,
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -24,13 +27,13 @@ import { EventCarousel } from "../../../components/shared/EventCarousel";
 // import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
-  if (!hours) return { value: "0", unit: "h" };
+  if (!hours) return { value: "0", unit: "hrs" };
   if (hours < 1) {
     const mins = Math.round(hours * 60);
-    return { value: mins.toString(), unit: "m" };
+    return { value: mins.toString(), unit: "mins" };
   }
   const floored = Math.floor(hours * 10) / 10;
-  return { value: floored.toFixed(1), unit: "h" };
+  return { value: floored.toFixed(1), unit: "hrs" };
 }
 
 export const OrgDashboard: React.FC = () => {
@@ -49,6 +52,7 @@ export const OrgDashboard: React.FC = () => {
   // const [orgUsers, setOrgUsers] = useState<UserProfile[]>([]);
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
   const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
+  const [completedEvents, setCompletedEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
 
   // Active session state — used to show timer badge on event cards
@@ -65,16 +69,40 @@ export const OrgDashboard: React.FC = () => {
     // if (!silent) setLoading(true);
     try {
       const allEvents = await apiService.getEvents();
-      setPublicEvents(allEvents.filter((e) => e.eventType !== "private"));
+      const now = new Date();
+
+      // Filter public events that are active/upcoming (created by anyone)
+      setPublicEvents(
+        allEvents.filter(
+          (e) =>
+            e.eventType !== "private" &&
+            e.status === "approved" &&
+            (!e.endDate || new Date(e.endDate) >= now)
+        )
+      );
+
+      // Filter active/upcoming organization events (only our own private/pending/rejected)
       setOrgEvents(
         allEvents.filter(
           (e) =>
-            // Only display private events created by the current organization
-            (e.eventType === "private" && e.createdBy === currentUser?.id) ||
-            e.status === "pending" ||
-            e.status === "rejected",
-        ),
+            ((e.eventType === "private" && e.createdBy === currentUser?.id) ||
+              e.status === "pending" ||
+              e.status === "rejected") &&
+            (!e.endDate || new Date(e.endDate) >= now)
+        )
       );
+
+      // Filter completed events created by this organization
+      setCompletedEvents(
+        allEvents.filter(
+          (e) =>
+            e.createdBy === currentUser?.id &&
+            e.status === "approved" &&
+            e.endDate &&
+            new Date(e.endDate) < now
+        )
+      );
+
       const dashData = await orgApiService.getDashboard();
       if (dashData) setUserStats(dashData.stats as any);
 
@@ -318,26 +346,24 @@ export const OrgDashboard: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-[#509CD1]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(80,156,209,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(80,156,209,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#509CD1]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-[#509CD1]/10 flex items-center justify-center text-[#509CD1] group-hover:bg-[#509CD1] group-hover:text-white transition-colors duration-300">
-                <Clock size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">
-                Hours Logged
-              </span>
+        {/* Enhanced Stats Grid - Responsive grid: 1 column on mobile (3 rows total), 3 columns on tablet/desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* Hours Card */}
+          <div className="bg-[#fffbeb]/60 border border-[#fef3c7] p-4 rounded-[2rem] flex flex-row items-center gap-4 shadow-[0_4px_16px_-4px_rgba(251,191,36,0.08)] hover:shadow-[0_8px_24px_-6px_rgba(251,191,36,0.15)] transition-all duration-300">
+            <div className="w-11 h-11 rounded-full bg-[#eab308] text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Clock size={20} />
             </div>
-            <div className="relative z-10">
+            <div className="flex flex-col">
+              <span className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wide">
+                Clean-up Hours
+              </span>
               {(() => {
                 const time = formatCleanupTime(userStats?.totalHours ?? 0);
                 return (
-                  <p className="text-4xl font-black text-gray-900 tracking-tight">
+                  <p className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-0.5">
                     {time.value}
-                    <span className="text-lg font-bold text-gray-400 ml-1">
+                    <span className="text-xs md:text-sm font-bold text-gray-500 ml-1">
                       {time.unit}
                     </span>
                   </p>
@@ -346,56 +372,37 @@ export const OrgDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-[#86B537]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(134,181,55,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(134,181,55,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#86B537]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
-                <Trash2 size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
+          {/* Waste Card */}
+          <div className="bg-[#f0fdf4]/60 border border-[#dcfce7] p-4 rounded-[2rem] flex flex-row items-center gap-4 shadow-[0_4px_16px_-4px_rgba(34,197,94,0.08)] hover:shadow-[0_8px_24px_-6px_rgba(34,197,94,0.15)] transition-all duration-300">
+            <div className="w-11 h-11 rounded-full bg-[#86efac] text-[#166534] flex items-center justify-center shrink-0 shadow-sm">
+              <Trash2 size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wide">
                 Waste Collected
               </span>
-            </div>
-            <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">
+              <p className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-0.5">
                 {userStats?.totalWeight ?? 0}
-                <span className="text-lg font-bold text-gray-400 ml-1">kg</span>
+                <span className="text-xs md:text-sm font-bold text-gray-500 ml-1">kg</span>
               </p>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-[#86B537]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(134,181,55,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(134,181,55,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#86B537]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-[#86B537]/10 flex items-center justify-center text-[#86B537] group-hover:bg-[#86B537] group-hover:text-white transition-colors duration-300">
-                <Award size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#86B537]">
+          {/* Points Card */}
+          <div className="bg-[#eff6ff]/60 border border-[#dbeafe] p-4 rounded-[2rem] flex flex-row items-center gap-4 shadow-[0_4px_16px_-4px_rgba(59,130,246,0.08)] hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.15)] transition-all duration-300">
+            <div className="w-11 h-11 rounded-full bg-[#bfdbfe] text-[#1e40af] flex items-center justify-center shrink-0 shadow-sm">
+              <Award size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wide">
                 Total Points
               </span>
-            </div>
-            <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">
+              <p className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-0.5">
                 {userStats?.totalPoints ?? 0}
+                <span className="text-xs md:text-sm font-bold text-gray-500 ml-1">pts</span>
               </p>
             </div>
           </div>
-          {/* <div className="bg-white p-5 rounded-2xl border border-[#509CD1]/20 flex flex-col justify-between gap-4 shadow-[0_2px_10px_-4px_rgba(80,156,209,0.2)] hover:shadow-[0_8px_20px_-6px_rgba(80,156,209,0.3)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#509CD1]/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-[#509CD1]/10 flex items-center justify-center text-[#509CD1] group-hover:bg-[#509CD1] group-hover:text-white transition-colors duration-300">
-                <Users size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#509CD1]">
-                Team Size
-              </span>
-            </div> */}
-          {/* <div className="relative z-10">
-              <p className="text-4xl font-black text-gray-900 tracking-tight">
-                {orgUsers.length}
-              </p>
-            </div> */}
-          {/* </div> */}
         </div>
 
         {/* Main Content Split */}
@@ -435,51 +442,72 @@ export const OrgDashboard: React.FC = () => {
 
           {/* Right: Sidebar */}
           <div className="flex flex-col gap-6">
-            {/* <div className="bg-white rounded-2xl border border-gray-100 p-5"> */}
-              {/* <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-900 text-sm">
-                  Team Members
-                </h3> */}
-                {/* <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                  {orgUsers.length}
-                </span> */}
-              {/* </div> */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-50">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-[#86B537]" />
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    Completed Events
+                  </h3>
+                </div>
+                <span className="text-xs font-bold bg-[#f4fff5] text-[#86B537] px-2.5 py-0.5 rounded-full">
+                  {completedEvents.length}
+                </span>
+              </div>
 
-              {/* {orgUsers.length === 0 ? (
-                <div className="text-center py-6">
-                  <Users className="mx-auto text-gray-300 mb-2" size={24} />
-                  <p className="text-xs text-gray-500 font-medium">
-                    No members added yet.
+              {completedEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="mx-auto text-gray-300 mb-2.5 animate-pulse" size={28} />
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                    No completed events yet.<br />Your past clean-ups will appear here.
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {orgUsers.slice(0, 5).map((u) => (
+                <div className="flex flex-col gap-3.5 max-h-[245px] overflow-y-auto pr-1 snap-y snap-mandatory scroll-smooth completed-cleanups-scroll">
+                  {completedEvents.map((event) => (
                     <div
-                      key={u.id}
-                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-xl transition-colors"
+                      key={event.eventId}
+                      className="flex flex-col gap-1.5 p-3 hover:bg-gray-50 rounded-xl transition-all border border-gray-50 hover:border-gray-100 hover:shadow-sm cursor-pointer group snap-start shrink-0"
+                      onClick={() => navigate(`/events/${event.eventId}`)}
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#f4fff5] text-[#86B537] flex items-center justify-center font-bold text-xs shrink-0">
-                        {u.name.charAt(0).toUpperCase()}
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="text-xs font-bold text-gray-900 group-hover:text-[#86B537] transition-colors line-clamp-1">
+                          {event.name}
+                        </h4>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#86B537] bg-[#f4fff5] px-1.5 py-0.5 rounded-md shrink-0">
+                          Done
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
-                          {u.name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {u.email}
-                        </p>
+
+                      <div className="flex flex-col gap-1 text-[10px] text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          <span>
+                            {event.startDate
+                              ? new Date(event.startDate).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Users className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-semibold text-gray-600">
+                            {event.joinsCount || 0} volunteers joined
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
-                  {orgUsers.length > 5 && (
-                    <button className="text-xs font-semibold text-[#509CD1] hover:text-[#3b7eb3] mt-2 flex items-center justify-center gap-1 py-2">
-                      View all members <ChevronRight size={14} />
-                    </button>
-                  )}
                 </div>
-              )} */}
-            {/* </div> */}
+              )}
+            </div>
           </div>
         </div>
       </main>
