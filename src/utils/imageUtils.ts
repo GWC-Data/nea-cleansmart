@@ -1,11 +1,13 @@
 import { ENV } from "../config/env";
+// Import local fallback image asset for events when no image is uploaded.
+import fallBackEventImage from "../assets/fallBackEventImage.jpg";
 
 /**
  * Converts a backend image path to a full browser-accessible URL.
  * Handles Windows backslashes and null values.
  */
 export function getEventImageUrl(imagePath: string | null | undefined): string {
-  const FALLBACK = "https://picsum.photos/seed/default/600/400";
+  const FALLBACK = fallBackEventImage;
 
   if (!imagePath) return FALLBACK;
 
