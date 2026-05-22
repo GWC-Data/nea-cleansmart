@@ -695,11 +695,13 @@ export const Calendar = ({
     } else if (mode === "end") {
       const [hours, minutes] = endTime.split(":").map(Number);
       const newEnd = new Date(day);
-      if (endTime === "" || (hours === 0 && minutes === 0)) {
-        // Default to end of day if no time is selected or if 12:00 AM is picked
+      if (endTime === "") {
+        // Default to end of day if no time is selected.
         newEnd.setHours(23, 59, 59, 999);
       } else {
-        newEnd.setHours(hours, minutes, 0, 0);
+        // Apply Singapore-style database offset logic (12:00 AM -> 11:59:59 PM of previous day, 12:30 AM -> 12:29 AM).
+        const adjusted = adjustEndDate(newEnd, hours, minutes);
+        newEnd.setTime(adjusted.getTime());
       }
       onChange({ start: value?.start || null, end: newEnd });
       // Removing setIsOpen(false) to allow time selection after date selection
@@ -851,6 +853,55 @@ export const Calendar = ({
     const ampm = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     return { h: h.toString().padStart(2, "0"), m, ampm };
+  };
+
+  // Helper to reconstruct the base selected end date without the -1min offset shift.
+  // If the previous time selected was 12:00 AM (stored as 23:59:59 PM of the previous day),
+  // we add 1 day back to get the original date selected on the calendar.
+  const getBaseEndDate = (
+    currentEnd: Date | null | undefined,
+    currentEndTimeStr: string,
+  ): Date => {
+    const base = currentEnd ? new Date(currentEnd) : new Date();
+    if (currentEndTimeStr) {
+      const [h, m] = currentEndTimeStr.split(":").map(Number);
+      if (h === 0 && m === 0) {
+        base.setDate(base.getDate() + 1);
+      }
+    }
+    return base;
+  };
+
+  // Helper to adjust the end date according to the required database offset logic.
+  // 12:00 AM (00:00) -> 11:59:59 PM of the previous day (selected time - 1)
+  // 12:30 AM (00:30) -> 12:29:00 AM of the same day (selected time - 1)
+  // All other times -> Adjusted to the chosen hour and minute of the selected day.
+  const adjustEndDate = (baseDate: Date, hours: number, minutes: number): Date => {
+    const adjusted = new Date(baseDate);
+    if (hours === 0 && minutes === 0) {
+      adjusted.setDate(adjusted.getDate() - 1);
+      adjusted.setHours(23, 59, 59, 999);
+    } else if (hours === 0 && minutes === 30) {
+      adjusted.setHours(0, 29, 0, 0);
+    } else {
+      adjusted.setHours(hours, minutes, 0, 0);
+    }
+    return adjusted;
+  };
+
+  // Helper to map DB/internal times back to standard options for the dropdowns.
+  // Maps 23:59 (internal representation for 12:00 AM - 1 min) -> 12:00 AM.
+  // Maps 00:29 (internal representation for 12:30 AM - 1 min) -> 12:30 AM.
+  // Other times are processed standardly by get12Parts.
+  const get12PartsForEnd = (time24: string) => {
+    if (!time24) return { h: "", m: "", ampm: "" };
+    if (time24 === "23:59") {
+      return { h: "12", m: "00", ampm: "AM" };
+    }
+    if (time24 === "00:29") {
+      return { h: "12", m: "30", ampm: "AM" };
+    }
+    return get12Parts(time24);
   };
 
   const hourOptions = Array.from({ length: 12 }, (_, i) => ({
@@ -1222,9 +1273,9 @@ export const Calendar = ({
                               size="xsmall"
                               placeholder="HH"
                               options={hourOptions}
-                              value={get12Parts(endTime).h}
+                              value={get12PartsForEnd(endTime).h}
                               onChange={(e) => {
-                                const { m, ampm } = get12Parts(endTime);
+                                const { m, ampm } = get12PartsForEnd(endTime);
                                 const newTime = parse12To24(
                                   e.target.value,
                                   m || "00",
@@ -1236,14 +1287,10 @@ export const Calendar = ({
                                   const [h, min] = newTime
                                     .split(":")
                                     .map(Number);
-                                  const newEnd = new Date(
-                                    value?.end || new Date(),
-                                  );
-                                  if (h === 0 && min === 0) {
-                                    newEnd.setHours(23, 59, 59, 999);
-                                  } else {
-                                    newEnd.setHours(h, min, 0, 0);
-                                  }
+                                  // Reconstruct base selected calendar date to prevent cumulative subtraction errors.
+                                  const baseDate = getBaseEndDate(value?.end, endTime);
+                                  // Compute adjusted end date/time (-1 minute database offset rule).
+                                  const newEnd = adjustEndDate(baseDate, h, min);
                                   onChange({
                                     ...value,
                                     end: newEnd,
@@ -1255,9 +1302,9 @@ export const Calendar = ({
                               size="xsmall"
                               placeholder="MM"
                               options={minuteOptions}
-                              value={get12Parts(endTime).m}
+                              value={get12PartsForEnd(endTime).m}
                               onChange={(e) => {
-                                const { h, ampm } = get12Parts(endTime);
+                                const { h, ampm } = get12PartsForEnd(endTime);
                                 const newTime = parse12To24(
                                   h || "12",
                                   e.target.value,
@@ -1269,14 +1316,10 @@ export const Calendar = ({
                                   const [hrs, mins] = newTime
                                     .split(":")
                                     .map(Number);
-                                  const newEnd = new Date(
-                                    value?.end || new Date(),
-                                  );
-                                  if (hrs === 0 && mins === 0) {
-                                    newEnd.setHours(23, 59, 59, 999);
-                                  } else {
-                                    newEnd.setHours(hrs, mins, 0, 0);
-                                  }
+                                  // Reconstruct base selected calendar date to prevent cumulative subtraction errors.
+                                  const baseDate = getBaseEndDate(value?.end, endTime);
+                                  // Compute adjusted end date/time (-1 minute database offset rule).
+                                  const newEnd = adjustEndDate(baseDate, hrs, mins);
                                   onChange({
                                     ...value,
                                     end: newEnd,
@@ -1288,9 +1331,9 @@ export const Calendar = ({
                               size="xsmall"
                               placeholder="AM"
                               options={ampmOptions}
-                              value={get12Parts(endTime).ampm}
+                              value={get12PartsForEnd(endTime).ampm}
                               onChange={(e) => {
-                                const { h, m } = get12Parts(endTime);
+                                const { h, m } = get12PartsForEnd(endTime);
                                 const newTime = parse12To24(
                                   h || "12",
                                   m || "00",
@@ -1302,14 +1345,10 @@ export const Calendar = ({
                                   const [hrs, mins] = newTime
                                     .split(":")
                                     .map(Number);
-                                  const newEnd = new Date(
-                                    value?.end || new Date(),
-                                  );
-                                  if (hrs === 0 && mins === 0) {
-                                    newEnd.setHours(23, 59, 59, 999);
-                                  } else {
-                                    newEnd.setHours(hrs, mins, 0, 0);
-                                  }
+                                  // Reconstruct base selected calendar date to prevent cumulative subtraction errors.
+                                  const baseDate = getBaseEndDate(value?.end, endTime);
+                                  // Compute adjusted end date/time (-1 minute database offset rule).
+                                  const newEnd = adjustEndDate(baseDate, hrs, mins);
                                   onChange({
                                     ...value,
                                     end: newEnd,
@@ -1330,14 +1369,10 @@ export const Calendar = ({
                                   .split(":")
                                   .map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newEnd = new Date(
-                                    value?.end || new Date(),
-                                  );
-                                  if (hours === 0 && minutes === 0) {
-                                    newEnd.setHours(23, 59, 59, 999);
-                                  } else {
-                                    newEnd.setHours(hours, minutes, 0, 0);
-                                  }
+                                  // Reconstruct base selected calendar date to prevent cumulative subtraction errors.
+                                  const baseDate = getBaseEndDate(value?.end, endTime);
+                                  // Compute adjusted end date/time (-1 minute database offset rule).
+                                  const newEnd = adjustEndDate(baseDate, hours, minutes);
                                   onChange({
                                     ...value,
                                     end: newEnd,

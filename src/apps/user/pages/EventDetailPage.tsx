@@ -348,7 +348,7 @@ export const EventDetailPage: React.FC = () => {
     }
     const diffMs = end - start;
     const diffHours = diffMs / (3600 * 1000);
-    
+
     // Return standard duration mapping: 30m (0.5h), 1h (1h), 1.5h (1h 30m), 2h (2h)
     if (diffHours <= 0.75) return 0.5;
     if (diffHours <= 1.25) return 1.0;
@@ -555,9 +555,9 @@ export const EventDetailPage: React.FC = () => {
             );
             const data = await res.json();
             if (data?.display_name) setDashboardLocation(data.display_name);
-          } catch {}
+          } catch { }
         },
-        () => {},
+        () => { },
       );
     }
   }, []);
@@ -669,15 +669,33 @@ export const EventDetailPage: React.FC = () => {
   // Total hours for the current user from the leaderboard entry
   const userTotalHours = currentUser
     ? (leaderboardData?.leaderboard.find((e) => e.userId === currentUser.id)
-        ?.totalHours ?? 0)
+      ?.totalHours ?? 0)
     : 0;
 
   // Helper to render the event date and time formatted in the Singapore timezone with AM/PM.
   // Displays same-day events in a stacked format and multi-day events as separate start/end blocks.
   const renderEventDateTime = () => {
     if (!event || !event.startDate || !event.endDate) return null;
-    const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
+
+    // Helper to parse date strings (e.g. ISO UTC format) by treating the digits as Singapore Local Time (SGT, UTC+8).
+    // This is required because date-fns formats local times and appends 'Z' when saving, storing local clock time in the DB.
+    const parseAsSingaporeTime = (isoString: string): Date => {
+      if (!isoString) return new Date();
+      try {
+        const clean = isoString.replace(/Z$|[+-]\d{2}:\d{2}$/, "");
+        const withOffset = clean.includes("T") ? `${clean}+08:00` : `${clean.replace(" ", "T")}+08:00`;
+        const parsed = new Date(withOffset);
+        if (!isNaN(parsed.getTime())) {
+          return parsed;
+        }
+      } catch (e) {
+        // Fallback to default Date parsing if regex or offset appending fails
+      }
+      return new Date(isoString);
+    };
+
+    const startDate = parseAsSingaporeTime(event.startDate);
+    const endDate = parseAsSingaporeTime(event.endDate);
 
     // Compare date strings to check if they occur on the same calendar day in Singapore timezone
     const isSameDay =
@@ -1084,11 +1102,10 @@ export const EventDetailPage: React.FC = () => {
                       <button
                         onClick={() => setStopModalOpen(true)}
                         disabled={orgStopButtonDisabled}
-                        className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
-                          orgStopButtonDisabled
+                        className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${orgStopButtonDisabled
                             ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                             : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                        }`}
+                          }`}
                         title={
                           orgStopButtonDisabled
                             ? `Must run the event for at least ${Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60)} minutes before stopping`
@@ -1120,11 +1137,10 @@ export const EventDetailPage: React.FC = () => {
                         }
                         openDurationPicker(eventId);
                       }}
-                      className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                        userStats && (userStats.todayHours || 0) >= 2
+                      className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${userStats && (userStats.todayHours || 0) >= 2
                           ? "bg-gray-400 grayscale cursor-not-allowed"
                           : "bg-[#96c93d] hover:bg-[#86b537]"
-                      }`}
+                        }`}
                     >
                       {userStats && (userStats.todayHours || 0) >= 2
                         ? "Daily Limit Reached"
@@ -1149,11 +1165,10 @@ export const EventDetailPage: React.FC = () => {
                           stopButtonDisabled ? undefined : initiateCheckout
                         }
                         disabled={stopButtonDisabled}
-                        className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
-                          stopButtonDisabled
+                        className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${stopButtonDisabled
                             ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                             : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                        }`}
+                          }`}
                         title={
                           stopButtonDisabled
                             ? "Must complete at least 30 minutes before stopping"
@@ -1232,11 +1247,10 @@ export const EventDetailPage: React.FC = () => {
                     <button
                       onClick={() => setStopModalOpen(true)}
                       disabled={orgStopButtonDisabled}
-                      className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${
-                        orgStopButtonDisabled
+                      className={`px-5 py-2 rounded-full font-bold text-sm shadow-sm flex items-center gap-1.5 transition-all ${orgStopButtonDisabled
                           ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                           : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                      }`}
+                        }`}
                       title={
                         orgStopButtonDisabled
                           ? `Must run the event for at least ${Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60)} minutes before stopping`
@@ -1267,11 +1281,10 @@ export const EventDetailPage: React.FC = () => {
                       }
                       openDurationPicker(eventId);
                     }}
-                    className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${
-                      userStats && (userStats.todayHours || 0) >= 2
+                    className={`cursor-pointer font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-white text-sm ${userStats && (userStats.todayHours || 0) >= 2
                         ? "bg-gray-400 grayscale cursor-not-allowed"
                         : "bg-[#96c93d] hover:bg-[#86b537]"
-                    }`}
+                      }`}
                   >
                     {userStats && (userStats.todayHours || 0) >= 2
                       ? "Daily Limit Reached"
@@ -1331,11 +1344,10 @@ export const EventDetailPage: React.FC = () => {
                         stopButtonDisabled ? undefined : initiateCheckout
                       }
                       disabled={stopButtonDisabled}
-                      className={`w-44 h-10 cursor-pointer font-extrabold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all ${
-                        stopButtonDisabled
+                      className={`w-44 h-10 cursor-pointer font-extrabold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all ${stopButtonDisabled
                           ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                           : "cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95"
-                      }`}
+                        }`}
                       title={
                         stopButtonDisabled
                           ? "Must complete at least 30 minutes before stopping"
