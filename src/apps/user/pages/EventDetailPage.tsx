@@ -945,8 +945,8 @@ export const EventDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Join button — only for upcoming (not joined) events and if approved */}
-      {!isActiveEvent && !isOrganization && event.status === "approved" && (
+      {/* Join button — only for upcoming (not joined) events, if approved, and the event has not completed */}
+      {!isActiveEvent && !isOrganization && event.status === "approved" && !isEventCompleted && (
         <button
           onClick={() => setModalView("confirm")}
           className="cursor-pointer mt-2 self-start bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-10 py-3.5 rounded-full shadow-sm transition-colors active:scale-95"
