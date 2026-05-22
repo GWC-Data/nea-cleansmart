@@ -33,7 +33,7 @@ import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { orgApiService } from "../../../services/orgApiService";
 
 // Configuration constants for event duration constraints
-const ORG_MAX_DURATION_HOURS = 2; // Maximum allowed duration in hours
+const ORG_MAX_DURATION_HOURS = 2; // Default fallback maximum allowed duration in hours if not calculable from event details
 const ORG_MIN_DURATION_MINUTES = 30; // Minimum duration required before stopping in minutes
 
 const MedalIcon: React.FC<{ label: string; className?: string }> = ({
@@ -336,10 +336,32 @@ export const EventDetailPage: React.FC = () => {
   // Track if the organization stop modal has been automatically opened once during the current session
   const hasAutoOpenedRef = useRef(false);
 
-  // Event timer and stop lock logic for organization started events derived from constants
-  const orgDurationSeconds = ORG_MAX_DURATION_HOURS * 3600;
+  // Find the event duration in hours dynamically based on event's startDate and endDate
+  const getEventDurationHours = (): number => {
+    if (!event || !event.startDate || !event.endDate) {
+      return ORG_MAX_DURATION_HOURS; // Fallback to default of 2 hours
+    }
+    const start = new Date(event.startDate).getTime();
+    const end = new Date(event.endDate).getTime();
+    if (isNaN(start) || isNaN(end)) {
+      return ORG_MAX_DURATION_HOURS;
+    }
+    const diffMs = end - start;
+    const diffHours = diffMs / (3600 * 1000);
+    
+    // Return standard duration mapping: 30m (0.5h), 1h (1h), 1.5h (1h 30m), 2h (2h)
+    if (diffHours <= 0.75) return 0.5;
+    if (diffHours <= 1.25) return 1.0;
+    if (diffHours <= 1.75) return 1.5;
+    return 2.0;
+  };
+
+  const dynamicDurationHours = getEventDurationHours();
+
+  // Event timer and stop lock logic for organization started events derived from dynamic duration
+  const orgDurationSeconds = dynamicDurationHours * 3600;
   const orgRemainingSeconds = Math.max(0, orgDurationSeconds - elapsedOrgSeconds);
-  const orgStopButtonDisabled = elapsedOrgSeconds < ORG_MIN_DURATION_MINUTES * 60;
+  const orgStopButtonDisabled = elapsedOrgSeconds < Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60) * 60;
 
   const lastScannedRef = useRef<{ id: string; time: number } | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -650,12 +672,66 @@ export const EventDetailPage: React.FC = () => {
         ?.totalHours ?? 0)
     : 0;
 
-  const formattedDate = new Date(event.startDate).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  // Helper to render the event date and time formatted in the Singapore timezone with AM/PM.
+  // Displays same-day events in a stacked format and multi-day events as separate start/end blocks.
+  const renderEventDateTime = () => {
+    if (!event || !event.startDate || !event.endDate) return null;
+    const startDate = new Date(event.startDate);
+    const endDate = new Date(event.endDate);
+
+    // Compare date strings to check if they occur on the same calendar day in Singapore timezone
+    const isSameDay =
+      startDate.toLocaleDateString("en-US", { timeZone: "Asia/Singapore" }) ===
+      endDate.toLocaleDateString("en-US", { timeZone: "Asia/Singapore" });
+
+    const formatTime = (date: Date) =>
+      date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Singapore",
+      });
+
+    const formatDateLong = (date: Date) =>
+      date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "Asia/Singapore",
+      });
+
+    const formatDateShort = (date: Date) =>
+      date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "Asia/Singapore",
+      });
+
+    if (isSameDay) {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-gray-900 font-semibold">{formatDateLong(startDate)}</span>
+          <span className="text-gray-500 text-xs font-medium">{formatTime(startDate)} - {formatTime(endDate)}</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 text-sm text-gray-500 font-medium">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Start</span>
+            <span className="text-gray-900 font-semibold">{formatDateShort(startDate)} · {formatTime(startDate)}</span>
+          </div>
+          <span className="hidden sm:inline text-gray-400 font-bold">→</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">End</span>
+            <span className="text-gray-900 font-semibold">{formatDateShort(endDate)} · {formatTime(endDate)}</span>
+          </div>
+        </div>
+      );
+    }
+  };
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -787,7 +863,7 @@ export const EventDetailPage: React.FC = () => {
       if (eventCheckInTime) {
         const checkInDate = new Date(eventCheckInTime);
         const maxCheckOut = new Date(
-          checkInDate.getTime() + ORG_MAX_DURATION_HOURS * 3600 * 1000,
+          checkInDate.getTime() + dynamicDurationHours * 3600 * 1000,
         );
 
         // Prevent clock skew issues: checkOutDate cannot be before checkInDate
@@ -868,9 +944,12 @@ export const EventDetailPage: React.FC = () => {
         className={`flex ${compact ? "flex-row items-center justify-between" : "flex-col gap-2"} text-sm text-gray-500 font-medium`}
       >
         <div className="flex flex-col gap-2">
+          {/* Calendar icon wrapper is flex items-center to keep the icon vertically centered relative to the multiline date/time layout */}
           <span className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#08351e] shrink-0" />
-            {formattedDate}
+            <span className="flex-1 text-left">
+              {renderEventDateTime()}
+            </span>
           </span>
           <span className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-[#08351e] shrink-0" />
@@ -994,7 +1073,7 @@ export const EventDetailPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      {/* Running timer counting backward from 2 hours */}
+                      {/* Running timer counting backward from the dynamic event duration */}
                       <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                         <Clock className="w-4 h-4" />
                         <span className="font-mono font-bold tabular-nums text-sm">
@@ -1012,7 +1091,7 @@ export const EventDetailPage: React.FC = () => {
                         }`}
                         title={
                           orgStopButtonDisabled
-                            ? "Must run the event for at least 30 minutes before stopping"
+                            ? `Must run the event for at least ${Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60)} minutes before stopping`
                             : undefined
                         }
                       >
@@ -1142,7 +1221,7 @@ export const EventDetailPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    {/* Running timer counting backward from 2 hours */}
+                    {/* Running timer counting backward from the dynamic event duration */}
                     <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                       <Clock className="w-4 h-4" />
                       <span className="font-mono font-bold tabular-nums text-sm">
@@ -1160,7 +1239,7 @@ export const EventDetailPage: React.FC = () => {
                       }`}
                       title={
                         orgStopButtonDisabled
-                          ? "Must run the event for at least 30 minutes before stopping"
+                          ? `Must run the event for at least ${Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60)} minutes before stopping`
                           : undefined
                       }
                     >
@@ -1422,6 +1501,7 @@ export const EventDetailPage: React.FC = () => {
           onSelect={handleDurationSelected}
           onCancel={cancelDurationPicker}
           todayHours={userStats?.todayHours || 0}
+          eventDurationHours={dynamicDurationHours}
         />
       )}
 

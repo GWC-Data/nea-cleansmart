@@ -5,12 +5,14 @@ interface DurationSelectModalProps {
   onSelect: (seconds: number) => Promise<void> | void;
   onCancel: () => void;
   todayHours?: number;
+  eventDurationHours?: number; /* Maximum duration of the event itself to cap options */
 }
 
 export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
   onSelect,
   onCancel,
   todayHours = 0,
+  eventDurationHours = 2, /* Default to 2 hours if not specified */
 }) => {
   const [selectedSeconds, setSelectedSeconds] = useState<number | null>(null);
 
@@ -21,9 +23,14 @@ export const DurationSelectModal: React.FC<DurationSelectModalProps> = ({
     { label: "2 Hours", value: 7200 },
   ];
 
+  // Calculate remaining clean-up hours for today (daily limit is 2 hours)
   const remainingHours = Math.max(0, 2 - todayHours);
+  
+  // Cap the selectable duration options by the minimum of remaining daily limit and the event's own duration limit
+  const maxAllowedHours = Math.min(remainingHours, eventDurationHours);
+  
   const OPTIONS = ALL_OPTIONS.filter(
-    (opt) => opt.value / 3600 <= remainingHours + 0.01,
+    (opt) => opt.value / 3600 <= maxAllowedHours + 0.01,
   ); // +0.01 to handle float precision
 
   const [isLoading, setIsLoading] = useState(false);

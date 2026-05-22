@@ -4,22 +4,50 @@ import { useNavigate } from "react-router-dom";
 import type { EventData } from "../../types/api.types";
 import { getEventImageUrl } from "../../utils/imageUtils";
 import type { SessionState } from "../../hooks/useCleanUpSession";
+import { useAuth } from "../../hooks/useAuth";
 
 interface EventCarouselProps {
   events: EventData[];
   activeSessionEventId: string | null;
   activeSessionState: SessionState;
+  // Optional list of event IDs that the user has joined, to verify eligibility to view status badges
+  joinedEventIds?: string[];
 }
 
 export const EventCarousel: React.FC<EventCarouselProps> = ({
   events,
   activeSessionEventId,
   activeSessionState,
+  joinedEventIds,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  
+  // Fetch current user and role context to enforce status visibility rules
+  const { currentUser } = useAuth();
+
+  // Helper function to check if the current user has access to see event status badges (Running, Report, Pending, Rejected)
+  const showEventStatus = (event: EventData) => {
+    if (!currentUser) return false;
+
+    // Rule 1: Organizations should only see status badges on events they created/own
+    if (currentUser.role === "organization") {
+      return event.createdBy === currentUser.id;
+    }
+
+    // Rule 2: Regular users/volunteers should only see status badges if they have joined the event
+    if (currentUser.role === "user") {
+      if (joinedEventIds) {
+        return joinedEventIds.includes(event.eventId);
+      }
+      return currentUser.joinedEvents?.includes(event.eventId) ?? false;
+    }
+
+    // Fallback: Default to showing status for admin or other management roles
+    return true;
+  };
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -110,43 +138,47 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
                 </p>
               </div>
 
-              {/* Status Badges */}
-              {event.status === "pending" && (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-yellow-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-yellow-200/20">
-                  <Clock className="w-2.5 h-2.5" />
-                  Pending
-                </div>
-              )}
-              {event.status === "rejected" && (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-red-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-red-200/20">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  Rejected
-                </div>
-              )}
+              {/* Status Badges (Pending, Rejected, Running, Report!) - Conditional based on user permission context */}
+              {showEventStatus(event) && (
+                <>
+                  {event.status === "pending" && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-yellow-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-yellow-200/20">
+                      <Clock className="w-2.5 h-2.5" />
+                      Pending
+                    </div>
+                  )}
+                  {event.status === "rejected" && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-red-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-red-200/20">
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      Rejected
+                    </div>
+                  )}
 
-              {/* Running Status */}
-              {event.isStarted ? (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
-                  <Clock className="w-2.5 h-2.5 animate-pulse" />
-                  Running
-                </div>
-              ) : (
-                activeSessionEventId === event.eventId && (
-                  <>
-                    {activeSessionState === "checked_in" && (
-                      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
-                        <Clock className="w-2.5 h-2.5 animate-pulse" />
-                        Running
-                      </div>
-                    )}
-                    {activeSessionState === "logging_activity" && (
-                      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
-                        <AlertCircle className="w-2.5 h-2.5" />
-                        Report!
-                      </div>
-                    )}
-                  </>
-                )
+                  {/* Running Status */}
+                  {event.isStarted ? (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
+                      <Clock className="w-2.5 h-2.5 animate-pulse" />
+                      Running
+                    </div>
+                  ) : (
+                    activeSessionEventId === event.eventId && (
+                      <>
+                        {activeSessionState === "checked_in" && (
+                          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
+                            <Clock className="w-2.5 h-2.5 animate-pulse" />
+                            Running
+                          </div>
+                        )}
+                        {activeSessionState === "logging_activity" && (
+                          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
+                            <AlertCircle className="w-2.5 h-2.5" />
+                            Report!
+                          </div>
+                        )}
+                      </>
+                    )
+                  )}
+                </>
               )}
             </div>
 

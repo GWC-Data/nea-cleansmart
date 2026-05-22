@@ -27,6 +27,8 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
           events={activeEvents}
           activeSessionEventId={activeSessionEventId || null}
           activeSessionState={activeSessionState || "idle"}
+          // Provide joined event IDs to allow status badge display for active events
+          joinedEventIds={activeEvents.map((e) => e.eventId)}
         />
       </div>
 
@@ -38,6 +40,8 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
           events={upcomingEvents}
           activeSessionEventId={activeSessionEventId || null}
           activeSessionState={activeSessionState || "idle"}
+          // Provide joined event IDs to restrict status badge rendering on upcoming events
+          joinedEventIds={activeEvents.map((e) => e.eventId)}
         />
       </div>
     </div>
