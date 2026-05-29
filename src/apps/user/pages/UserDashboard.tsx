@@ -8,6 +8,8 @@ import { CommunityEvents } from "../../../components/sections/user/CommunityEven
 import { DesktopDashboardView } from "../../../components/sections/user/DesktopDashboardView";
 import { Leaderboard } from "../../../components/sections/user/Leaderboard";
 import { apiService } from "../../../services/apiService";
+import { RewardsBadgesCard } from "../../../components/shared/RewardsBadgesCard";
+import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 import type {
   EventData,
   UserStats,
@@ -15,13 +17,83 @@ import type {
 } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
 import type { SessionState } from "../../../hooks/useCleanUpSession"; // Session state type for timer badge display
+import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
+import { toast } from "sonner";
 
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, logout: handleLogout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [logFormOpen, setLogFormOpen] = useState(false);
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Load all registered organizations to identify/filter organization-created events
+  useEffect(() => {
+    async function fetchOrganizations() {
+      const orgs = await apiService.getOrganizations();
+      setOrganizations(orgs);
+    }
+    fetchOrganizations();
+  }, []);
+
+  // Handle the manual logging form submission sequentially (check-in then check-out)
+  const handleManualReportSubmit = async (
+    weight: number,
+    type: string,
+    finalLocation: string,
+    photo?: File,
+    eventId?: string,
+    date?: string,
+    durationSeconds?: number
+  ) => {
+    if (!eventId || !date || !durationSeconds) {
+      toast.error("Invalid event or log options selected.");
+      return;
+    }
+
+    // Step 1: Call check-in API to generate an active event log record
+    const result = await apiService.checkInEvent({
+      eventId,
+      checkInTime: new Date(date).toISOString(),
+      hoursEnrolled: (durationSeconds / 3600).toString(),
+    });
+
+    if (result !== null && typeof result === "object" && "error" in result) {
+      toast.error(result.error);
+      return;
+    }
+
+    if (result === null) {
+      toast.error("Check-in failed. Please try again.");
+      return;
+    }
+
+    const logId = result;
+
+    // Step 2: Call check-out API to complete the session with report metrics
+    const checkOutTime = new Date(new Date(date).getTime() + durationSeconds * 1000).toISOString();
+    const checkoutResult = await apiService.checkOutEvent(logId, {
+      checkOutTime,
+      garbageWeight: weight,
+      garbageType: type,
+      eventLocation: finalLocation,
+      wasteImage: photo,
+    });
+
+    if (checkoutResult === true) {
+      setLogFormOpen(false);
+      toast.success("Activity logged successfully! Great job 🌿");
+      await loadDashboard(); // refresh stats and dashboard data
+    } else {
+      // In case of a checkout failure, clean up the incomplete check-in log
+      await apiService.deleteEventLog(logId);
+      toast.error(
+        checkoutResult.error || "Failed to submit report. Please try again."
+      );
+    }
+  };
 
   // All events from /events (for Upcoming section)
   const [events, setEvents] = useState<EventData[]>([]);
@@ -159,12 +231,22 @@ export const UserDashboard: React.FC = () => {
         <div className="flex items-center">
           <img
             src={logo}
+            onClick={() => navigate("/dashboard")}
             alt="Public Hygiene Council"
-            className="h-10 lg:h-12 w-auto object-contain"
+            className="h-10 lg:h-12 w-auto object-contain cursor-pointer"
           />
         </div>
 
-        <div className="flex items-center gap-3 relative shrink-0">
+        <div className="flex items-center gap-5 relative shrink-0">
+          {/* Log Clean-up button to trigger manual logging modal */}
+          <button
+            onClick={() => setLogFormOpen(true)}
+            className="cursor-pointer bg-[#218355] hover:bg-[#2d7c50] text-white font-extrabold px-4 py-2.5 rounded-lg text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            title="Log manual clean-up activity"
+          >
+            <span>Log Clean-up</span>
+          </button>
+
           {/* Profile Dropdown */}
           <div className="relative" ref={menuRef}>
             <button
@@ -249,11 +331,16 @@ export const UserDashboard: React.FC = () => {
             upcomingEvents={upcomingEvents}
             activeSessionEventId={activeSessionEventId}
             activeSessionState={activeSessionState}
-            // currentUserId={currentUser?.id ?? null}
-            // onJoinClick={setSelectedEventToJoin}
+          // currentUserId={currentUser?.id ?? null}
+          // onJoinClick={setSelectedEventToJoin}
           />
           {/* <EventGuidelines /> */}
         </div>
+
+        {/* Display badges progress and guidelines directly on the dashboard page */}
+        {/* Comment: Pass total points instead of total hours to calculate badges progress */}
+        <RewardsBadgesCard userTotalPoints={userStats?.totalPoints ?? 0} />
+        <EventGuidelines />
       </main>
 
       {/* ── Desktop Layout ──────────────────────────────────────────────────── */}
@@ -278,8 +365,9 @@ export const UserDashboard: React.FC = () => {
           <div className="flex items-center">
             <img
               src={logo}
+              onClick={() => navigate("/dashboard")}
               alt="Public Hygiene Council"
-              className="h-8 lg:h-10 w-auto object-contain"
+              className="h-8 lg:h-10 w-auto object-contain cursor-pointer"
             />
           </div>
           <p className="text-xs font-semibold text-gray-400 text-center sm:text-left">
@@ -325,6 +413,19 @@ export const UserDashboard: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Manual Activity Logging Form Modal */}
+      {logFormOpen && (
+        <LogActivityForm
+          isDashboardLog={true}
+          joinedEvents={activeEvents}
+          allEvents={events}
+          organizations={organizations}
+          todayHours={userStats?.todayHours || 0}
+          onCancel={() => setLogFormOpen(false)}
+          onSubmit={handleManualReportSubmit}
+        />
       )}
     </div>
   );

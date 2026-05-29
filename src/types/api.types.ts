@@ -23,6 +23,10 @@ export interface EventData {
   participantLimit?: number | null;
   status?: "pending" | "approved" | "rejected";
   isStarted?: boolean;
+  registeredParticipant?: string[] | string;
+  attendentParticipant?: string[] | string;
+  // List of checked-in users with profiles mapped by backend
+  attendentUsers?: { id: string; name: string; checkInTime?: string | null; updatedAt?: string }[];
   createdBy?: string;
   createdAt: string;
   updatedAt: string;

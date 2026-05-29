@@ -22,8 +22,11 @@ import type {
 import { apiService } from "../../../services/apiService";
 import { orgApiService } from "../../../services/orgApiService";
 import type { UserStats } from "../../../services/apiService";
-// import { toast } from "sonner"; // Commented out unused import
+import { toast } from "sonner";
+import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
 import { EventCarousel } from "../../../components/shared/EventCarousel";
+import { RewardsBadgesCard } from "../../../components/shared/RewardsBadgesCard";
+import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 // import { LazyEventImage } from "../../../components/ui/LazyEventImage";
 
 function formatCleanupTime(hours: number): { value: string; unit: string } {
@@ -47,13 +50,19 @@ export const OrgDashboard: React.FC = () => {
   // const [notificationsOpen, setNotificationsOpen] = useState(false); // Commented out unused state
   // const [eventRequestOpen, setEventRequestOpen] = useState(false); // Commented out unused state
   // const [addUserModalOpen, setAddUserModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"org" | "public">("org");
+  // Tab state representing Organization Events ('org') or Other Events created by Admin ('other')
+  const [activeTab, setActiveTab] = useState<"org" | "other">("org");
 
   // const [orgUsers, setOrgUsers] = useState<UserProfile[]>([]);
   const [orgEvents, setOrgEvents] = useState<EventData[]>([]);
-  const [publicEvents, setPublicEvents] = useState<EventData[]>([]);
+  // Events created by admin (Other events)
+  const [otherEvents, setOtherEvents] = useState<EventData[]>([]);
   const [completedEvents, setCompletedEvents] = useState<EventData[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+
+  // New state hooks for manual activity logging and all events list
+  const [logFormOpen, setLogFormOpen] = useState(false);
+  const [allEventsList, setAllEventsList] = useState<EventData[]>([]);
 
   // Active session state — used to show timer badge on event cards
   const [activeSessionEventId, setActiveSessionEventId] = useState<
@@ -68,26 +77,34 @@ export const OrgDashboard: React.FC = () => {
   const loadData = async () => {
     // if (!silent) setLoading(true);
     try {
-      const allEvents = await apiService.getEvents();
+      // Fetch both events and organizations concurrently to determine event creator roles
+      const [allEvents, orgs] = await Promise.all([
+        apiService.getEvents(),
+        apiService.getOrganizations(),
+      ]);
+      setAllEventsList(allEvents); // store raw events in state
       const now = new Date();
 
-      // Filter public events that are active/upcoming (created by anyone)
-      setPublicEvents(
+      // Store a set of organization IDs to identify admin-created events
+      const orgIds = new Set(orgs.map((o) => o.orgId || o.id));
+
+      // Filter active/upcoming admin-created events (Other events)
+      // Admin events are approved events whose creator is not in the organization registry and not the current organization
+      setOtherEvents(
         allEvents.filter(
           (e) =>
-            e.eventType !== "private" &&
             e.status === "approved" &&
+            (!e.createdBy || !orgIds.has(e.createdBy)) &&
+            e.createdBy !== currentUser?.id &&
             (!e.endDate || new Date(e.endDate) >= now)
         )
       );
 
-      // Filter active/upcoming organization events (only our own private/pending/rejected)
+      // Filter active/upcoming organization events (both public and private events created by the current organization)
       setOrgEvents(
         allEvents.filter(
           (e) =>
-            ((e.eventType === "private" && e.createdBy === currentUser?.id) ||
-              e.status === "pending" ||
-              e.status === "rejected") &&
+            e.createdBy === currentUser?.id &&
             (!e.endDate || new Date(e.endDate) >= now)
         )
       );
@@ -110,6 +127,90 @@ export const OrgDashboard: React.FC = () => {
       // setMyRequests(requests);
     } catch (error) {
       console.error("Failed to load data", error);
+    }
+  };
+
+  // Submit handler for organization manual activity logging via bulk check-in/check-out
+  const handleOrgManualReportSubmit = async (
+    weight: number,
+    type: string,
+    finalLocation: string,
+    photo?: File,
+    eventId?: string,
+    date?: string,
+    durationSeconds?: number
+  ) => {
+    if (!eventId || !date || !durationSeconds) {
+      toast.error("Invalid event or log options selected.");
+      return;
+    }
+
+    // Find selected event to retrieve attendee list
+    const selectedEvent = [...orgEvents, ...completedEvents].find((e) => e.eventId === eventId);
+    if (!selectedEvent) {
+      toast.error("Event not found.");
+      return;
+    }
+
+    let attendees = selectedEvent.attendentParticipant || [];
+    if (typeof attendees === "string") {
+      try {
+        attendees = JSON.parse(attendees);
+      } catch {
+        attendees = [];
+      }
+    }
+
+    // Filter out the organization's own user ID (currentUser?.id) from the attendees list
+    // to avoid checking in/out the organization itself as a volunteer participant.
+    const attendeesFiltered = (attendees as string[]).filter((uid) => uid !== currentUser?.id);
+
+    if (attendeesFiltered.length === 0) {
+      toast.error("No registered volunteer attendees have been scanned for this event yet. Please scan volunteers on the event details page first.");
+      return;
+    }
+
+    const checkInTime = new Date(date).toISOString();
+    const hoursEnrolled = (durationSeconds / 3600).toString();
+
+    try {
+      // Step 1: Bulk check-in all volunteer attendees to register active sessions
+      const checkInRes = await orgApiService.bulkCheckIn({
+        eventId,
+        checkInTime,
+        hoursEnrolled,
+        users: attendeesFiltered,
+      });
+
+      if (!checkInRes) {
+        toast.error("Failed to check in attendees.");
+        return;
+      }
+
+      // Step 2: Bulk check-out all volunteer attendees with split garbage weight
+      const splitWeight = weight / attendeesFiltered.length;
+      const checkOutTime = new Date(new Date(date).getTime() + durationSeconds * 1000).toISOString();
+
+      const checkOutRes = await orgApiService.bulkCheckOut({
+        eventId,
+        checkOutTime,
+        garbageWeight: splitWeight,
+        garbageType: type,
+        eventLocation: finalLocation,
+        users: attendeesFiltered,
+        wasteImage: photo,
+      });
+
+      if (checkOutRes && checkOutRes.updatedCount > 0) {
+        toast.success(`Activity logged successfully! Stats updated for ${checkOutRes.updatedCount} attendees.`);
+        setLogFormOpen(false);
+        await loadData(); // refresh dashboard stats
+      } else {
+        toast.error("Failed to check out attendees.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "An error occurred while logging activity.");
     }
   };
 
@@ -226,7 +327,8 @@ export const OrgDashboard: React.FC = () => {
   };
   const initials = getInitials(currentUser?.name || "Org User");
 
-  const displayedEvents = activeTab === "org" ? orgEvents : publicEvents;
+  // Map active tab to selected list: either Organization-created events or Other events (Admin-created)
+  const displayedEvents = activeTab === "org" ? orgEvents : otherEvents;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f4fff5] lg:bg-[#f8fcf9] font-sans text-gray-900">
@@ -235,8 +337,9 @@ export const OrgDashboard: React.FC = () => {
         <div className="flex items-center">
           <img
             src={logo}
+            onClick={() => navigate("/org/dashboard")}
             alt="Public Hygiene Council"
-            className="h-10 lg:h-12 w-auto object-contain"
+            className="h-10 lg:h-12 w-auto object-contain cursor-pointer"
           />
         </div>
 
@@ -294,6 +397,14 @@ export const OrgDashboard: React.FC = () => {
           </div>
           */}
 
+          {/* Log Clean-up button with matching green styling for a premium look */}
+          <button
+            onClick={() => setLogFormOpen(true)}
+            className="cursor-pointer bg-[#218355] hover:bg-[#2d7c50] text-white font-extrabold px-4 py-2.5 rounded-lg text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
+          >
+            Log Clean-up
+          </button>
+
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
@@ -324,7 +435,8 @@ export const OrgDashboard: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-6 pt-10 pb-12 flex flex-col gap-10">
+      {/* Comment: Main layout container with maximum width set to match the individual user dashboard page configuration */}
+      <main className="flex-1 w-full max-w-[1400px] mx-auto px-6 pt-10 pb-12 flex flex-col gap-8">
         {/* Welcome & Actions Row */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
@@ -340,7 +452,7 @@ export const OrgDashboard: React.FC = () => {
               onClick={() => {
                 navigate("/org/create-event");
               }}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-[#86B537] text-white rounded-lg text-sm font-bold hover:bg-[#7aa632] hover:shadow-md hover:-translate-y-0.5 transition-all"
+              className="flex-1 cursor-pointer md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-[#86B537] text-white rounded-lg text-sm font-bold hover:bg-[#7aa632] hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <Plus className="w-4 h-4" /> Create Event
             </button>
@@ -348,7 +460,7 @@ export const OrgDashboard: React.FC = () => {
         </div>
         {/* Enhanced Stats Grid - Responsive grid: 1 column on mobile (3 rows total), 3 columns on tablet/desktop */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
+
           {/* Hours Card */}
           <div className="bg-[#fffbeb]/60 border border-[#fef3c7] p-4 rounded-[2rem] flex flex-row items-center gap-4 shadow-[0_4px_16px_-4px_rgba(251,191,36,0.08)] hover:shadow-[0_8px_24px_-6px_rgba(251,191,36,0.15)] transition-all duration-300">
             <div className="w-11 h-11 rounded-full bg-[#eab308] text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -405,15 +517,16 @@ export const OrgDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Main Content Split: Events and Completed Events Row */}
+        {/* Comment: Layout grid for active/other events on the left and completed events on the right. Both sections have matched height constraints for consistent alignment. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           {/* Left: Events Section */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* Minimal Tabs */}
+            {/* Minimal Tabs for filtering events */}
             <div className="flex gap-8 border-b border-gray-200">
               <button
                 onClick={() => setActiveTab("org")}
-                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "org" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+                className={`pb-3 text-sm cursor-pointer font-semibold transition-colors relative ${activeTab === "org" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
               >
                 Organization Events
                 {activeTab === "org" && (
@@ -421,53 +534,64 @@ export const OrgDashboard: React.FC = () => {
                 )}
               </button>
               <button
-                onClick={() => setActiveTab("public")}
-                className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "public" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+                onClick={() => setActiveTab("other")}
+                className={`pb-3 text-sm cursor-pointer font-semibold transition-colors relative ${activeTab === "other" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
               >
-                Public Platform Events
-                {activeTab === "public" && (
+                Other events
+                {activeTab === "other" && (
                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#86B537] rounded-t-full"></div>
                 )}
               </button>
             </div>
 
-            {/* Events Grid */}
-            <EventCarousel
-              events={displayedEvents}
-              activeSessionEventId={activeSessionEventId}
-              activeSessionState={activeSessionState}
-            />
-
+            {/* Tab content wrapper with matching height constraint (320px + 56px tabs header matches 376px Completed Events card) */}
+            <div className="h-[230px] flex flex-col justify-center">
+              {displayedEvents.length === 0 ? (
+                <div className="h-full bg-white rounded-2xl border border-gray-100 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] text-center flex flex-col items-center justify-center">
+                  <Calendar className="mx-auto text-gray-300 mb-2.5 animate-pulse" size={28} />
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                    No events found.<br />Check back later for new events!
+                  </p>
+                </div>
+              ) : (
+                <EventCarousel
+                  events={displayedEvents}
+                  activeSessionEventId={activeSessionEventId}
+                  activeSessionState={activeSessionState}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Right: Sidebar */}
+          {/* Right: Completed Events */}
+          {/* Comment: Completed Events sidebar block with a fixed height matching the Events tab section. */}
           <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
-              <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-50">
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] h-[286px] flex flex-col">
+              <div className="flex justify-between items-center mb-2 border-b border-gray-50 pb-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-[#86B537]" />
                   <h3 className="font-bold text-gray-900 text-sm">
                     Completed Events
                   </h3>
                 </div>
-                <span className="text-xs font-bold bg-[#f4fff5] text-[#86B537] px-2.5 py-0.5 rounded-full">
+                {/* <span className="text-xs font-bold bg-[#f4fff5] text-[#86B537] px-2.5 py-0.5 rounded-full">
                   {completedEvents.length}
-                </span>
+                </span> */}
               </div>
 
               {completedEvents.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
                   <CheckCircle2 className="mx-auto text-gray-300 mb-2.5 animate-pulse" size={28} />
                   <p className="text-xs text-gray-500 font-medium leading-relaxed">
                     No completed events yet.<br />Your past clean-ups will appear here.
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3.5 max-h-[245px] overflow-y-auto pr-1 snap-y snap-mandatory scroll-smooth completed-cleanups-scroll">
+                <div className="flex-1 overflow-y-auto pr-1 snap-y snap-mandatory scroll-smooth completed-cleanups-scroll">
                   {completedEvents.map((event) => (
                     <div
                       key={event.eventId}
-                      className="flex flex-col gap-1.5 p-3 hover:bg-gray-50 rounded-xl transition-all border border-gray-50 hover:border-gray-100 hover:shadow-sm cursor-pointer group snap-start shrink-0"
+                      className="flex flex-col gap-0.5 p-3 hover:bg-gray-50 rounded-xl transition-all border border-gray-50 hover:border-gray-100 hover:shadow-sm cursor-pointer group snap-start shrink-0 mb-2 last:mb-0"
                       onClick={() => navigate(`/events/${event.eventId}`)}
                     >
                       <div className="flex justify-between items-start gap-2">
@@ -485,16 +609,26 @@ export const OrgDashboard: React.FC = () => {
                           <span>
                             {event.startDate
                               ? new Date(event.startDate).toLocaleDateString(undefined, {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
                               : "N/A"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="truncate">{event.location}</span>
+                        {/* Flex container displaying location on the left and a Public/Private event type badge on the right */}
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                          {/* Badge showing whether the event is Public or Private */}
+                          <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${event.eventType === "private"
+                              ? "bg-[#0083cf] text-white border border-[#0083cf]"
+                              : "bg-[#88cc00] text-white border border-[#88cc00]"
+                            }`}>
+                            {event.eventType === "private" ? "Private" : "Public"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <Users className="w-3.5 h-3.5 text-gray-400" />
@@ -510,6 +644,22 @@ export const OrgDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Guidelines and Badge Milestones Row */}
+        {/* Comment: Row placed after events showing guidelines on the left side and rewards/badges progress on the right side. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          {/* Left: Event Guidelines */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <EventGuidelines />
+          </div>
+
+          {/* Right: Badge progress card */}
+          <div className="flex flex-col gap-6">
+            {/* Reusable Badges progress card */}
+            {/* Comment: Pass total points instead of total hours to calculate badges progress */}
+            <RewardsBadgesCard userTotalPoints={userStats?.totalPoints ?? 0} />
+          </div>
+        </div>
       </main>
 
       {/* ── Global Footer ───────────────────────────────────────────────────── */}
@@ -518,8 +668,9 @@ export const OrgDashboard: React.FC = () => {
           <div className="flex items-center">
             <img
               src={logo}
+              onClick={() => navigate("/org/dashboard")}
               alt="Public Hygiene Council"
-              className="h-8 lg:h-10 w-auto object-contain"
+              className="h-8 lg:h-10 w-auto object-contain cursor-pointer"
             />
           </div>
           <p className="text-xs font-semibold text-gray-400 text-center sm:text-left">
@@ -543,6 +694,18 @@ export const OrgDashboard: React.FC = () => {
         onClose={() => setAddUserModalOpen(false)}
         onUserAdded={handleUserAdded}
       /> */}
+
+      {/* Manual Activity Logging Form Modal for Organizations */}
+      {logFormOpen && (
+        <LogActivityForm
+          isDashboardLog={true}
+          isOrgFlow={true}
+          currentUserId={currentUser?.id}
+          allEvents={allEventsList}
+          onCancel={() => setLogFormOpen(false)}
+          onSubmit={handleOrgManualReportSubmit}
+        />
+      )}
     </div>
   );
 };

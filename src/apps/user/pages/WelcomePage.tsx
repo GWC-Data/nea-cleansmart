@@ -9,21 +9,38 @@ export const WelcomePage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-sans bg-white">
       {/* ── LEFT PANEL — Hero Image ───────────────────────────────────── */}
-      <div className="hidden lg:flex h-screen aspect-square shrink-0 bg-[#f8fcf9]">
+      {/* Container is relative to allow absolute positioning of the logo click overlay */}
+      <div className="hidden lg:flex h-screen aspect-square shrink-0 bg-[#f8fcf9] relative">
         <img
           src={mainImage}
           alt="Keep Singapore Clean 2026"
           className="w-full h-full object-contain"
         />
+        {/* Accessible clickable overlay positioned precisely over the baked-in Public Hygiene Council logo */}
+        <div
+          onClick={() => navigate("/")}
+          className="absolute top-[3%] left-[3%] w-[12%] h-[6%] cursor-pointer z-10 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8cc63f]"
+          title="Go to Home"
+          aria-label="Public Hygiene Council Logo - Go to Home"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              navigate("/");
+            }
+          }}
+        />
       </div>
 
       {/* ── RIGHT PANEL — Auth Panel ──────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-12 py-12 md:py-0 bg-white">
-        {/* Logo (mobile only — desktop logo sits inside left image) */}
+        {/* Logo (visible on mobile and tablet — desktop logo sits inside left image) */}
         <img
           src={logo}
           alt="Public Hygiene Council"
-          className="h-10 object-contain mb-8 md:hidden"
+          className="h-10 object-contain mb-8 lg:hidden cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => navigate("/")}
+          title="Go to Home"
         />
 
         <div className="w-full max-w-sm space-y-6">

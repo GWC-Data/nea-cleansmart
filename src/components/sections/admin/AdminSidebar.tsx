@@ -146,8 +146,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <div className="rounded-lg p-1.5" style={{ background: "#F5F7FA" }}>
             <img
               src={logo}
+              onClick={()=>navigate("/admin/dashboard")}
               alt="Public Hygiene Council"
-              className="h-9 md:h-12 lg:h-14 object-contain"
+              className="h-9 md:h-12 lg:h-14 object-contain cursor-pointer"
             />
           </div>
           <button

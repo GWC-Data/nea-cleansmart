@@ -22,6 +22,8 @@ export interface EventData {
   participants: string[];
   registeredParticipant?: string[];
   attendentParticipant?: string[];
+  // List of checked-in users with profiles mapped by backend
+  attendentUsers?: { id: string; name: string; checkInTime?: string | null; updatedAt?: string }[];
   eventImage?: string | null;
   eventType?: "public" | "private";
   userPoints?: number;
@@ -299,6 +301,15 @@ export const apiService = {
           data.event.eventImage || data.event.event_image || null;
         data.event.userPoints = data.userPoints ?? 0;
         data.event.hasCompleted = data.hasCompleted ?? false;
+
+        // Merge top-level attendentUsers and filtered attendentParticipant
+        // into the event object so the frontend can display them correctly
+        if (data.attendentUsers !== undefined) {
+          data.event.attendentUsers = data.attendentUsers;
+        }
+        if (data.attendentParticipant !== undefined) {
+          data.event.attendentParticipant = data.attendentParticipant;
+        }
       }
       return data.event || null;
     } catch (error) {
@@ -913,6 +924,48 @@ export const apiService = {
     } catch (error) {
       console.error("getEventLeaderboard error:", error);
       return null;
+    }
+  },
+
+  /**
+   * Get all registered organizations
+   * Requires JWT authentication
+   * @returns Array of organization objects
+   */
+  async getOrganizations(): Promise<any[]> {
+    try {
+      const response = await fetch(`${BASE}/organizations`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch organizations: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data.organizations || [];
+    } catch (error) {
+      console.error("getOrganizations error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Delete an event log by ID
+   * Requires JWT authentication
+   * Used to clean up orphaned/incomplete check-in sessions
+   * @param logId The ID of the event log to delete
+   * @returns Boolean indicating success status
+   */
+  async deleteEventLog(logId: number): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE}/event-logs/${logId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("deleteEventLog error:", error);
+      return false;
     }
   },
 

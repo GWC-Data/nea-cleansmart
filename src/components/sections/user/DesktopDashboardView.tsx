@@ -3,6 +3,8 @@ import { Trash2, Clock, Wind, Trophy, Building2, Medal } from "lucide-react";
 import type { EventData, UserStats } from "../../../services/apiService";
 import type { SessionState } from "../../../hooks/useCleanUpSession"; // For event session badge display
 import { EventCarousel } from "../../shared/EventCarousel";
+import { RewardsBadgesCard } from "../../shared/RewardsBadgesCard";
+import { EventGuidelines } from "./EventGuidelines";
 
 function formatCleanupHours(totalMinutes: number): string {
   if (totalMinutes === 0) return "0";
@@ -62,82 +64,116 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
 
   return (
     <div className="min-h-screen bg-[#f3f7f5] font-sans text-gray-900 pb-12">
-      <div className="max-w-[1400px] mx-auto px-8 xl:px-12 pt-8 flex flex-col gap-8">
+      <div className="max-w-[1400px] mx-auto px-8 xl:px-12 pt-8 flex flex-col gap-5">
         {/* TOP ROW: Welcome */}
-        <div className="grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 flex flex-col gap-2">
-            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight text-gray-900 leading-tight">
-              Welcome back, {name}!
-            </h1>
-            <p className="text-gray-500 font-medium text-sm leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
-              Your contribution helped to create a cleaner and more hygienic
-              environment for all Singapore residents to enjoy.
-            </p>
-          </div>
+        {/* Comment: Welcome message header spanning full width */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight text-gray-900 leading-tight">
+            Welcome back, {name}!
+          </h1>
+          <p className="text-gray-500 font-medium text-sm lg:text-base leading-relaxed">
+            Your contribution helped to create a cleaner and more hygienic
+            environment for all Singapore residents to enjoy.
+          </p>
         </div>
 
-        {/* MAIN CONTENT + RIGHT PANEL */}
-        <div className="grid grid-cols-12 gap-8 items-start">
-          {/* LEFT — Events */}
-          <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
-            {/* Stat Cards — single horizontal row */}
-            <div className="flex flex-row gap-4">
-              {/* Clean-up Hours */}
-              <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#eab308] shadow-sm flex-1">
-                <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
-                    Clean-up Hours
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">{hoursDisplay}</span>
-                    <span className="text-sm font-bold">h</span>
-                  </div>
+        {/* MAIN CONTENT */}
+        {/* Comment: Main layout container containing stat cards, events carousel, and leaderboard/guidelines */}
+        <div className="flex flex-col gap-5">
+          {/* Stat Cards — single horizontal row on desktop, wrapping on smaller screens */}
+          {/* Comment: Stat cards displaying volunteer metrics and achievements */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Clean-up Hours */}
+            <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#eab308] shadow-sm min-w-0">
+              <div className="flex-1">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-1 text-gray-500">
+                  Clean-up Hours
                 </div>
-                <div className="bg-[#fef9c3] p-2 rounded-xl shrink-0">
-                  <Clock className="w-5 h-5 text-[#eab308]" />
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black">{hoursDisplay}</span>
+                  <span className="text-sm font-bold text-gray-500">h</span>
                 </div>
               </div>
-
-              {/* Waste Collected */}
-              <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#22c55e] shadow-sm flex-1">
-                <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
-                    Waste Collected
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">{totalWeight}</span>
-                    <span className="text-sm font-bold">kg</span>
-                  </div>
-                </div>
-                <div className="bg-[#dcfce7] p-2 rounded-xl shrink-0">
-                  <Trash2 className="w-5 h-5 text-[#22c55e]" />
-                </div>
-              </div>
-
-              {/* Carbon Reduced */}
-              <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#3b82f6] shadow-sm flex-1">
-                <div className="flex-1">
-                  <div className="text-[10px] font-black uppercase tracking-widest mb-1">
-                    Carbon Reduced
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black">{carbonReduced}</span>
-                    <span className="text-sm font-bold">kg CO₂</span>
-                  </div>
-                </div>
-                <div className="bg-[#dbeafe] p-2 rounded-xl shrink-0">
-                  <Wind className="w-5 h-5 text-[#3b82f6]" />
-                </div>
+              <div className="bg-[#fef9c3] p-2 rounded-xl shrink-0">
+                <Clock className="w-5 h-5 text-[#eab308]" />
               </div>
             </div>
 
+            {/* Waste Collected */}
+            <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#22c55e] shadow-sm min-w-0">
+              <div className="flex-1">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-1 text-gray-500">
+                  Waste Collected
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black">{totalWeight}</span>
+                  <span className="text-sm font-bold text-gray-500">kg</span>
+                </div>
+              </div>
+              <div className="bg-[#dcfce7] p-2 rounded-xl shrink-0">
+                <Trash2 className="w-5 h-5 text-[#22c55e]" />
+              </div>
+            </div>
+
+            {/* Carbon Reduced */}
+            <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#3b82f6] shadow-sm min-w-0">
+              <div className="flex-1">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-1 text-gray-500">
+                  Carbon Reduced
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black">{carbonReduced}</span>
+                  <span className="text-sm font-bold text-gray-500">kg CO₂</span>
+                </div>
+              </div>
+              <div className="bg-[#dbeafe] p-2 rounded-xl shrink-0">
+                <Wind className="w-5 h-5 text-[#3b82f6]" />
+              </div>
+            </div>
+
+            {/* Total Points */}
+            {/* Comment: Stat card for volunteer points and dynamic badge status subtext */}
+            <div className="flex items-center gap-4 bg-white rounded-2xl px-5 py-3.5 border-l-4 border-[#96c93d] shadow-sm min-w-0">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-1 text-gray-500">
+                  Total Points
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black">{stats?.totalPoints ?? 0}</span>
+                  <span className="text-sm font-bold text-gray-500">pts</span>
+                </div>
+                <p className="text-[10px] text-gray-400 font-bold truncate mt-1.5" title={(() => {
+                  const points = stats?.totalPoints ?? 0;
+                  if (points >= 150) return "Diamond Badge earned";
+                  if (points >= 100) return "Gold Badge earned";
+                  if (points >= 50) return "Silver Badge earned";
+                  return "Start clean up to earn Silver Badge";
+                })()}>
+                  {(() => {
+                    const points = stats?.totalPoints ?? 0;
+                    if (points >= 150) return "Diamond Badge earned";
+                    if (points >= 100) return "Gold Badge earned";
+                    if (points >= 50) return "Silver Badge earned";
+                    return "Start clean up to earn Silver Badge";
+                  })()}
+                </p>
+              </div>
+              <div className="bg-[#f4fbf7] p-2 rounded-xl shrink-0">
+                <Trophy className="w-5 h-5 text-[#96c93d]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Event Sections Grid - Stacked up to lg screen, side-by-side on xl screen */}
+          {/* Comment: Renders Active Events and Upcoming Events side-by-side on xl screens, and stacked vertically on smaller screens */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {/* Active Events */}
-            <section>
+            <section className="min-w-0">
               <h2 className="text-xl font-black tracking-tight mb-4">
                 Active Events
               </h2>
               {activeEvents.length === 0 ? (
-                <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center">
+                <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center h-[240px] flex flex-col items-center justify-center">
                   <div className="text-3xl mb-3">🌱</div>
                   <p className="text-sm font-semibold">No events joined yet.</p>
                   <p className="text-xs mt-1">
@@ -156,12 +192,12 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
             </section>
 
             {/* Upcoming Events */}
-            <section>
+            <section className="min-w-0">
               <h2 className="text-xl font-black text-gray-900 tracking-tight mb-4">
                 Upcoming Events
               </h2>
               {upcomingEvents.length === 0 ? (
-                <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center">
+                <div className="bg-white rounded-2xl px-6 py-10 border border-gray-100 shadow-sm text-center h-[240px] flex flex-col items-center justify-center">
                   <div className="text-3xl mb-3">📅</div>
                   <p className="text-sm font-semibold text-gray-400">
                     No upcoming events available.
@@ -182,8 +218,10 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
             </section>
           </div>
 
-          {/* RIGHT PANEL — Leaderboards */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-8 sticky top-24">
+          {/* Leaderboard & Guidelines Sections */}
+          {/* Comment: Responsive grid containing Leaderboard on the left/half-width and Rewards progress + Guidelines on the right/half-width */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* Leaderboard Card */}
             <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-gray-100 overflow-hidden h-[450px]">
               {/* Tab Navigation */}
               <div className="flex p-1 bg-gray-50 rounded-[2rem] mb-4">
@@ -220,11 +258,11 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   <>
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-black text-gray-900 tracking-tight mb-2">
-                        Top Performers
+                        Top Users
                       </h3>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 overflow-y-auto max-h-[320px] pr-1">
                       {userLeaderboard.length > 0 ? (
                         userLeaderboard.map((user, idx) => (
                           <div
@@ -274,7 +312,7 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                       </h3>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 overflow-y-auto max-h-[320px] pr-1">
                       {orgLeaderboard.length > 0 ? (
                         orgLeaderboard.map((org, idx) => (
                           <div
@@ -316,6 +354,16 @@ export const DesktopDashboardView: React.FC<DesktopDashboardViewProps> = ({
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Badges & Guidelines Side */}
+            <div className="flex flex-col gap-6">
+              {/* Reusable Badges progress card */}
+              {/* Comment: Pass total points instead of total hours to calculate badges progress */}
+              <RewardsBadgesCard userTotalPoints={stats?.totalPoints ?? 0} />
+
+              {/* Event Guidelines */}
+              <EventGuidelines />
             </div>
           </div>
         </div>

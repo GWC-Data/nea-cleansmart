@@ -5,11 +5,7 @@ import {
   MapPin,
   Calendar,
   Users,
-  Medal,
   Share2,
-  Clock,
-  Gift,
-  StopCircle,
   QrCode,
   CircleX,
   Clock3,
@@ -19,210 +15,21 @@ import { apiService } from "../../../services/apiService";
 import { useAuth } from "../../../hooks/useAuth";
 import type {
   EventData,
-  EventLeaderboard,
-  UserStats,
 } from "../../../services/apiService";
 import logo from "../../../assets/publicHygineCouncil.png";
 import { toast } from "sonner";
 import { getEventImageUrl } from "../../../utils/imageUtils";
-import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
-import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
+// import { useCleanUpSession } from "../../../hooks/useCleanUpSession";
+// import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
 import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
-import { EventGuidelines } from "../../../components/sections/user/EventGuidelines";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { orgApiService } from "../../../services/orgApiService";
 
 // Configuration constants for event duration constraints
 const ORG_MAX_DURATION_HOURS = 2; // Default fallback maximum allowed duration in hours if not calculable from event details
-const ORG_MIN_DURATION_MINUTES = 30; // Minimum duration required before stopping in minutes
+// Commented out unused constant to fix compiler warning TS6133
+// const ORG_MIN_DURATION_MINUTES = 30; // Minimum duration required before stopping in minutes
 
-const MedalIcon: React.FC<{ label: string; className?: string }> = ({
-  label,
-  className,
-}) => {
-  const isDiamond = label === "Diamond";
-  const isGold = label === "Gold";
-
-  const place = isDiamond ? "1st" : isGold ? "2nd" : "3rd";
-  const mainColor = isDiamond ? "#009cdc" : isGold ? "#e39c03" : "#94a1b2";
-  const textColor = isDiamond ? "#2b3441" : isGold ? "#2b3441" : "#2b3441";
-
-  return (
-    <div className={`relative flex items-center justify-center ${className}`}>
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
-        {/* Scalloped edge */}
-        <path
-          d="M50 5 L58 10 L68 7 L73 16 L83 16 L83 27 L92 32 L89 42 L95 50 L89 58 L92 68 L83 73 L83 83 L73 84 L68 93 L58 90 L50 95 L42 90 L32 93 L27 84 L17 83 L17 73 L8 68 L11 58 L5 50 L11 42 L8 32 L17 27 L17 16 L27 16 L32 7 L42 10 Z"
-          fill={mainColor}
-        />
-        {/* Inner circle line */}
-        {/* <circle
-          cx="50"
-          cy="50"
-          r="38"
-          fill="none"
-          stroke={textColor}
-          strokeWidth="0.5"
-          strokeDasharray="1 1"
-          opacity="0.5"
-        /> */}
-
-        {/* Text */}
-        <text
-          x="50"
-          y="65"
-          textAnchor="middle"
-          fill={textColor}
-          fontSize="26"
-          fontWeight="900"
-          fontFamily="serif"
-        >
-          {place.slice(0, -2)}
-          <tspan fontSize="10" dy="-10">
-            {place.slice(-2)}
-          </tspan>
-        </text>
-      </svg>
-    </div>
-  );
-};
-
-const BADGES = [
-  {
-    label: "Silver",
-    points: 50,
-    hours: 5,
-    color: "bg-[#eff1f2]",
-    border: "border-slate-100",
-    icon: "text-slate-400",
-    ring: "ring-slate-200",
-  },
-  {
-    label: "Gold",
-    points: 100,
-    hours: 10,
-    color: "bg-[#f3e68a]",
-    border: "border-yellow-100",
-    icon: "text-yellow-400",
-    ring: "ring-yellow-200",
-  },
-  {
-    label: "Diamond",
-    points: 150,
-    hours: 15,
-    color: "bg-[#caf4fb]",
-    border: "border-blue-100",
-    icon: "text-blue-400",
-    ring: "ring-blue-200",
-  },
-];
-
-// ── Rewards & Badges Card ────────────────────────────────────────────────────
-const RewardsBadgesCard: React.FC<{
-  rewards: string;
-  userTotalHours: number;
-  isActiveEvent?: boolean;
-}> = ({ rewards, userTotalHours }) => {
-  const highestEarned = [...BADGES]
-    .reverse()
-    .find((b) => userTotalHours >= b.hours);
-  // const nextBadge = BADGES.find((b) => userTotalHours < b.hours);
-  return (
-    <div className="bg-[#ffffff] rounded-[2rem] p-6 shadow-sm border border-orange-50/50">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="bg-[#08351e] p-2 rounded-xl shadow-lg shadow-green-900/10">
-          <Medal className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
-            Badges
-          </h3>
-        </div>
-      </div>
-      <p className="text-xs font-medium mb-3 leading-relaxed">
-        Complete clean-up hours to unlock badges and rewards.
-      </p>
-      {/* {isActiveEvent && nextBadge && (
-        <div className="mb-5 bg-white rounded-2xl px-4 py-3 border border-gray-100">
-          <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1.5">
-            <span>Progress to {nextBadge.label}</span>
-            <span className="text-[#08351e]">
-              {(Math.floor(userTotalHours * 10) / 10).toFixed(1)}h /{" "}
-              {nextBadge.hours}h
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="h-2 rounded-full bg-[#08351e] transition-all duration-500"
-              style={{
-                width: `${Math.min((userTotalHours / nextBadge.hours) * 100, 100)}%`,
-              }}
-            />
-          </div>
-        </div>
-      )} */}
-      {/* Badge */}
-      <div className="flex flex-col lg:flex-row gap-3">
-        {BADGES.map((badge) => {
-          const isEarned = userTotalHours >= badge.hours;
-          const isCurrent = highestEarned?.label === badge.label;
-          return (
-            <div
-              key={badge.label}
-              className={`flex items-center lg:flex-col lg:justify-center gap-4 lg:gap-3 rounded-2xl px-4 py-3 lg:py-5 lg:px-2 border shadow-sm transition-all lg:flex-1 ${isCurrent ? `${badge.color} border-transparent ring-2 ${badge.ring} scale-[1.02]` : isEarned ? `${badge.color} border-transparent opacity-70` : "bg-white border-gray-100"}`}
-            >
-              <div
-                className={`p-1 rounded-full shrink-0 flex items-center justify-center`}
-              >
-                <MedalIcon label={badge.label} className="w-16 h-16" />
-              </div>
-              <div className="flex-1 lg:flex-none w-full flex flex-col items-start lg:items-center">
-                <div className="flex items-center gap-2 lg:flex-col lg:gap-1.5">
-                  <p className="font-extrabold text-gray-800 text-sm">
-                    {badge.label}
-                  </p>
-                  {isCurrent && (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.border} ${badge.icon} bg-white/70`}
-                    >
-                      ✓ Current
-                    </span>
-                  )}
-                  {isEarned && !isCurrent && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 text-gray-400 bg-white/70">
-                      ✓ Earned
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-gray-500 font-medium lg:text-center mt-1 lg:mt-2 lg:leading-tight">
-                  <span className="lg:block">{badge.points} pts</span>
-                  <span className="lg:hidden"> · {badge.hours} hrs</span>
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Reward */}
-      {rewards && (
-        <div className="mt-7 border-t border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-[#08351e] p-2 rounded-xl shadow-lg shadow-green-900/10">
-              <Gift className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
-                Rewards
-              </h3>
-            </div>
-          </div>
-          <p className="text-xs font-medium leading-relaxed">{rewards}</p>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ── Confirm Modal ────────────────────────────────────────────────────────────
 interface ConfirmModalProps {
@@ -304,6 +111,41 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ eventName, onClose }) => (
   </div>
 );
 
+// Helper to parse date/time strings by treating the digits as Singapore Local Time (SGT, UTC+8).
+const parseAsSingaporeTime = (isoString: string): Date => {
+  if (!isoString) return new Date();
+  try {
+    const clean = isoString.replace(/Z$|[+-]\d{2}:\d{2}$/, "");
+    const withOffset = clean.includes("T") ? `${clean}+08:00` : `${clean.replace(" ", "T")}+08:00`;
+    const parsed = new Date(withOffset);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  } catch (e) {
+    // Fallback to standard parsing
+  }
+  return new Date(isoString);
+};
+
+// Helper to format scan and checkout logs in the Singapore local time format (SGT, UTC+8) for the details modal
+const formatAttendeeLogDateTime = (isoString: string | null): string => {
+  if (!isoString) return "N/A";
+  try {
+    const parsedDate = parseAsSingaporeTime(isoString);
+    return parsedDate.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Singapore",
+    });
+  } catch (e) {
+    return new Date(isoString).toLocaleString();
+  }
+};
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 export const EventDetailPage: React.FC = () => {
   const { eventId = "" } = useParams();
@@ -311,30 +153,36 @@ export const EventDetailPage: React.FC = () => {
   const { currentUser, isLoading, refreshUserProfile } = useAuth();
 
   const [event, setEvent] = useState<EventData | null>(null);
-  const [leaderboardData, setLeaderboardData] =
-    useState<EventLeaderboard | null>(null);
+  // Note: leaderboardData state and getEventLeaderboard API call were removed because they were unused and caused compile errors
   const [eventsJoined, setEventsJoined] = useState<string[]>([]);
   const [modalView, setModalView] = useState<"none" | "confirm" | "success">(
     "none",
   );
   const [isJoining, setIsJoining] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [dashboardLocation, setDashboardLocation] = useState("");
+  // Commented out unused userStats and dashboardLocation states
+  // const [userStats, setUserStats] = useState<UserStats | null>(null);
+  // const [dashboardLocation, setDashboardLocation] = useState("");
 
-  const [isEventStarted, setIsEventStarted] = useState(false);
+  // Commented out unused event session status state to fix compiler warning TS6133
+  // const [isEventStarted, setIsEventStarted] = useState(false);
   const [eventCheckInTime, setEventCheckInTime] = useState<string | null>(null);
   const [isScanningQR, setIsScanningQR] = useState(false);
+  // Commented out unused lastScannedUserId state to fix compiler warning TS6133
+  // const [lastScannedUserId, setLastScannedUserId] = useState<string | null>(null);
   const [stopModalOpen, setStopModalOpen] = useState(false);
   // const [totalWeightCollected, setTotalWeightCollected] = useState("");
-  const [elapsedOrgSeconds, setElapsedOrgSeconds] = useState(0);
+  // Declared state without its unused setter to fix compiler warning TS6133
+  const [elapsedOrgSeconds] = useState(0);
   const [isProcessingScan, setIsProcessingScan] = useState(false);
+  // Track the specific check-in log entry selected by the organization user to display in the details modal popup
+  const [selectedAttendeeLog, setSelectedAttendeeLog] = useState<any | null>(null);
 
   // Check if the current user is the creator of this event
   const isCreator = event && currentUser && event.createdBy === currentUser.id;
 
-  // Track if the organization stop modal has been automatically opened once during the current session
-  const hasAutoOpenedRef = useRef(false);
+  // Commented out unused ref to fix compiler warning TS6133
+  // const hasAutoOpenedRef = useRef(false);
 
   // Find the event duration in hours dynamically based on event's startDate and endDate
   const getEventDurationHours = (): number => {
@@ -360,13 +208,16 @@ export const EventDetailPage: React.FC = () => {
 
   // Event timer and stop lock logic for organization started events derived from dynamic duration
   const orgDurationSeconds = dynamicDurationHours * 3600;
-  const orgRemainingSeconds = Math.max(0, orgDurationSeconds - elapsedOrgSeconds);
-  const orgStopButtonDisabled = elapsedOrgSeconds < Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60) * 60;
+  // Commented out unused derived variables to fix compiler warning TS6133
+  // const orgRemainingSeconds = Math.max(0, orgDurationSeconds - elapsedOrgSeconds);
+  // const orgStopButtonDisabled = elapsedOrgSeconds < Math.min(ORG_MIN_DURATION_MINUTES, dynamicDurationHours * 60) * 60;
 
   const lastScannedRef = useRef<{ id: string; time: number } | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const scannerControlsRef = React.useRef<IScannerControls | null>(null);
 
+  // Commented out unused useCleanUpSession hook
+  /*
   const {
     state: sessionState,
     activeEventId,
@@ -382,6 +233,7 @@ export const EventDetailPage: React.FC = () => {
     cancelCheckout,
     completeSession,
   } = useCleanUpSession();
+  */
 
   const loadData = useCallback(
     async (silent = false) => {
@@ -398,12 +250,13 @@ export const EventDetailPage: React.FC = () => {
         ]);
 
         setEvent(found);
-        setIsEventStarted(statusData?.isStarted ?? false);
+        // Commented out unused state setter to fix compiler warning TS6133
+        // setIsEventStarted(statusData?.isStarted ?? false);
         setEventCheckInTime(statusData?.checkInTime ?? null);
 
         // Always fetch the regular dashboard to get joined events and personal stats
         const dashboard = await apiService.getDashboard();
-        setUserStats(dashboard?.stats ?? null);
+        // setUserStats(dashboard?.stats ?? null);
         const joinedIds = (dashboard?.eventsJoined ?? []).map((e) => e.eventId);
 
         if (isOrgUser) {
@@ -421,8 +274,8 @@ export const EventDetailPage: React.FC = () => {
         setEventsJoined(joinedIds);
 
         if (joinedIds.includes(eventId)) {
-          const lb = await apiService.getEventLeaderboard(eventId);
-          setLeaderboardData(lb);
+          // Fetch leaderboard if needed in the future; removed setLeaderboardData here to fix compile error
+          await apiService.getEventLeaderboard(eventId);
         }
       } finally {
         if (!silent) setDataLoading(false);
@@ -437,6 +290,8 @@ export const EventDetailPage: React.FC = () => {
   }, [eventId, isLoading, loadData]);
 
   // Load active cleanup timer on mount
+  // Commented out unused active timer loader
+  /*
   useEffect(() => {
     async function loadActiveTimer() {
       const timerData = await apiService.getTimer();
@@ -446,8 +301,10 @@ export const EventDetailPage: React.FC = () => {
     }
     loadActiveTimer();
   }, [initializeTimer]);
+  */
 
-  // Running timer for organization private events, paused when stopModalOpen is true
+  // Running timer for organization private events commented out per user request
+  /*
   useEffect(() => {
     if (!isEventStarted || !eventCheckInTime) {
       setElapsedOrgSeconds(0);
@@ -477,6 +334,7 @@ export const EventDetailPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [isEventStarted, eventCheckInTime, stopModalOpen, isCreator, orgDurationSeconds]);
+  */
 
   // QR Scanner Lifecycle
   useEffect(() => {
@@ -544,7 +402,8 @@ export const EventDetailPage: React.FC = () => {
     };
   }, [isScanningQR]);
 
-  // Geolocation for checkout
+  // Geolocation for checkout (commented out as it's unused now)
+  /*
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -561,7 +420,10 @@ export const EventDetailPage: React.FC = () => {
       );
     }
   }, []);
+  */
 
+  // Commented out unused formatTime helper to fix compiler warning TS6133
+  /*
   const formatTime = (secs: number) => {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -570,7 +432,10 @@ export const EventDetailPage: React.FC = () => {
       return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
+  */
 
+  // Commented out unused volunteer check-in/check-out states and handlers
+  /*
   const stopButtonDisabled = elapsedSeconds < 1800 && remainingSeconds > 0;
 
   const handleDurationSelected = async (durationSecs: number) => {
@@ -648,6 +513,7 @@ export const EventDetailPage: React.FC = () => {
       );
     }
   };
+  */
 
   //  Loading guard — BEFORE any derivations
   if (dataLoading || isLoading || !event)
@@ -666,33 +532,14 @@ export const EventDetailPage: React.FC = () => {
   // Check if the current user is an organization
   const isOrganization = currentUser?.role === "organization";
 
-  // Total hours for the current user from the leaderboard entry
-  const userTotalHours = currentUser
-    ? (leaderboardData?.leaderboard.find((e) => e.userId === currentUser.id)
-      ?.totalHours ?? 0)
-    : 0;
+  // Commented out unused derived variable isCreatorOrg to fix compiler warning TS6133
+  // const isCreatorOrg = isCreator && isOrganization;
+
 
   // Helper to render the event date and time formatted in the Singapore timezone with AM/PM.
   // Displays same-day events in a stacked format and multi-day events as separate start/end blocks.
   const renderEventDateTime = () => {
     if (!event || !event.startDate || !event.endDate) return null;
-
-    // Helper to parse date strings (e.g. ISO UTC format) by treating the digits as Singapore Local Time (SGT, UTC+8).
-    // This is required because date-fns formats local times and appends 'Z' when saving, storing local clock time in the DB.
-    const parseAsSingaporeTime = (isoString: string): Date => {
-      if (!isoString) return new Date();
-      try {
-        const clean = isoString.replace(/Z$|[+-]\d{2}:\d{2}$/, "");
-        const withOffset = clean.includes("T") ? `${clean}+08:00` : `${clean.replace(" ", "T")}+08:00`;
-        const parsed = new Date(withOffset);
-        if (!isNaN(parsed.getTime())) {
-          return parsed;
-        }
-      } catch (e) {
-        // Fallback to default Date parsing if regex or offset appending fails
-      }
-      return new Date(isoString);
-    };
 
     const startDate = parseAsSingaporeTime(event.startDate);
     const endDate = parseAsSingaporeTime(event.endDate);
@@ -848,6 +695,8 @@ export const EventDetailPage: React.FC = () => {
     navigate("/dashboard");
   };
 
+  // Commented out unused handleStartEvent function to fix compiler warning TS6133
+  /*
   const handleStartEvent = async () => {
     try {
       const response = await apiService.startEvent(eventId);
@@ -867,6 +716,7 @@ export const EventDetailPage: React.FC = () => {
       toast.error("An error occurred while starting the event.");
     }
   };
+  */
 
   const handleStopEventSubmit = async (
     weight: number,
@@ -904,7 +754,8 @@ export const EventDetailPage: React.FC = () => {
       });
 
       if (response && response.success) {
-        setIsEventStarted(false);
+        // Commented out unused state setter to fix compiler warning TS6133
+        // setIsEventStarted(false);
         setEventCheckInTime(null);
         setStopModalOpen(false);
         toast.success(
@@ -925,6 +776,8 @@ export const EventDetailPage: React.FC = () => {
       const success = await apiService.recordAttendance(eventId, userId);
       if (success) {
         toast.success("Attendance scanned and registered successfully! 🌿");
+        // Commented out unused state setter to fix compiler warning TS6133
+        // setLastScannedUserId(userId);
         // Silent update to refresh stats without closing camera
         await loadData(true);
       } else {
@@ -979,50 +832,12 @@ export const EventDetailPage: React.FC = () => {
           </span>
         </div>
 
-        {compact &&
-          (() => {
-            const displayPoints = event.userPoints ?? 0;
-            return (
-              <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="#f3f4f6"
-                    strokeWidth="6"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="#08351e"
-                    strokeWidth="6"
-                    strokeDasharray={213.6}
-                    strokeDashoffset={
-                      213.6 - Math.min(displayPoints / 150, 1) * 213.6
-                    }
-                    strokeLinecap="round"
-                    fill="transparent"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-lg font-black text-[#08351e] leading-none">
-                    {displayPoints}
-                  </span>
-                  <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">
-                    points
-                  </span>
-                </div>
-              </div>
-            );
-          })()}
+
       </div>
 
-      <hr className="border-gray-100" />
+      <hr className="border-gray-200" />
 
+      {/* Event description section with responsive layout and fallback logic */}
       {event.description && (
         <div>
           <h3 className="font-extrabold text-gray-800 mb-2">
@@ -1033,11 +848,93 @@ export const EventDetailPage: React.FC = () => {
           </p>
         </div>
       )}
+      {/* Event details section describing standard operating instructions */}
       {event.details && (
         <div>
           <h3 className="font-extrabold text-gray-800 mb-2">Details</h3>
           <p className="text-sm text-gray-500 leading-relaxed">
             {event.details}
+          </p>
+        </div>
+      )}
+      {/* "Attendance Log" section displayed specifically to logged-in organizations showing checked-in attendees grouped by user ID */}
+      {isOrganization && event.attendentUsers && event.attendentUsers.length > 0 && (
+        <div className="pt-4 border-t border-gray-200">
+          <h3 className="font-extrabold text-gray-800 mb-2 flex items-center gap-2">
+            Attendance Log
+          </h3>
+          <div className="max-h-56 overflow-y-auto space-y-3 snap-y scroll-smooth pr-1">
+            {(() => {
+              // Group attendance logs by user ID to cluster multiple scans neatly under each attendee's name
+              const grouped = (event.attendentUsers || []).reduce((acc: any, log: any) => {
+                const userId = log.id;
+                if (!acc[userId]) {
+                  acc[userId] = {
+                    name: log.name,
+                    logs: []
+                  };
+                }
+                acc[userId].logs.push(log);
+                return acc;
+              }, {});
+
+              return Object.entries(grouped).map(([userId, groupData]: [string, any]) => (
+                <div key={userId} className="bg-gray-50/50 border border-gray-100 rounded-xl p-3 space-y-2 snap-start">
+                  {/* Attendee Name Header Row */}
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-1.5">
+                    <span className="font-bold text-gray-800 text-xs">{groupData.name}</span>
+                    {/* <span className="text-[9px] font-black uppercase bg-[#86B537]/10 text-[#86B537] px-1.5 py-0.5 rounded-full">
+                      {groupData.logs.length} {groupData.logs.length === 1 ? "Scan" : "Scans"}
+                    </span> */}
+                  </div>
+                  {/* Nested Scans/Logs list for this volunteer */}
+                  <div className="space-y-1">
+                    {groupData.logs.map((log: any, idx: number) => {
+                      const scanTimeStr = log.checkInTime || log.updatedAt;
+                      let formattedTime = "N/A";
+                      if (scanTimeStr) {
+                        try {
+                          const parsedDate = parseAsSingaporeTime(scanTimeStr);
+                          // Format both date and time in SGT (Singapore Local Time)
+                          formattedTime = parsedDate.toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                            timeZone: "Asia/Singapore",
+                          });
+                        } catch (e) {
+                          formattedTime = new Date(scanTimeStr).toLocaleString();
+                        }
+                      }
+                      return (
+                        <div
+                          key={log.logId || idx}
+                          // Clicking on the specific scan row opens the detail popup modal for that record
+                          onClick={() => setSelectedAttendeeLog(log)}
+                          className="cursor-pointer hover:bg-white border border-transparent hover:border-gray-100 flex items-center justify-between text-[11px] py-1 px-2 rounded-lg transition-colors"
+                        >
+                          <span className="text-gray-500 font-semibold">Scan #{idx + 1}: {formattedTime}</span>
+                          <span className="text-[10px] underline text-gray-400 font-bold hover:text-[#86B537]">
+                            Details
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+      {/* Event reward section highlighting achievements for completing cleanups */}
+      {event.rewards && (
+        <div>
+          <h3 className="font-extrabold text-gray-800 mb-2">Reward</h3>
+          <p className="text-sm text-gray-500 leading-relaxed font-semibold text-[#08351e]">
+            {event.rewards}
           </p>
         </div>
       )}
@@ -1073,16 +970,27 @@ export const EventDetailPage: React.FC = () => {
             {isCreator ? (
               event.status === "approved" && !isEventCompleted ? (
                 <div className="flex items-center gap-4">
-                  {!isEventStarted ? (
+                  {/*
+                    Commented out Start/Stop Cleanup Event buttons and timer logic per user request.
+                    Organizations now manually log cleanup activities from the dashboard.
+                  */}
+                  {/* {!isEventStarted ? ( */}
                     <>
-                      <button
-                        onClick={() => setIsScanningQR(true)}
-                        className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
-                        title="Scan Attendance QR Code"
-                      >
-                        <QrCode className="w-5 h-5" />
-                      </button>
-                      <button
+                      {/* Render the QR scanner button for the organization creator only for private/registered events */}
+                      {event.eventType !== "public" && (
+                        <button
+                          onClick={() => {
+                            // Commented out unused state setter to fix compiler warning TS6133
+                            // setLastScannedUserId(null);
+                            setIsScanningQR(true);
+                          }}
+                          className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                          title="Scan Attendance QR Code"
+                        >
+                          <QrCode className="w-5 h-5" />
+                        </button>
+                      )}
+                      {/* <button
                         onClick={handleStartEvent}
                         className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
                       >
@@ -1091,14 +999,12 @@ export const EventDetailPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      {/* Running timer counting backward from the dynamic event duration */}
                       <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                         <Clock className="w-4 h-4" />
                         <span className="font-mono font-bold tabular-nums text-sm">
                           {formatTime(orgRemainingSeconds)}
                         </span>
                       </div>
-                      {/* Stop Cleanup button disabled during the first 30 minutes of the event */}
                       <button
                         onClick={() => setStopModalOpen(true)}
                         disabled={orgStopButtonDisabled}
@@ -1114,14 +1020,18 @@ export const EventDetailPage: React.FC = () => {
                       >
                         <StopCircle className="w-4 h-4" />
                         <span>Stop Cleanup</span>
-                      </button>
+                      </button> */}
                     </>
-                  )}
+                  {/* )} */}
                 </div>
               ) : null
             ) : (
               <>
-                {/* Start Clean-up — only for active (joined) events, restrict private events if not approved */}
+                {/* 
+                  Commented out volunteer check-in timer session, "Start Clean-up", and "Stop Clean-up" buttons 
+                  since the logging flow is now manual from the dashboard.
+                */}
+                {/*
                 {isActiveEvent &&
                   sessionState === "idle" &&
                   event.eventType !== "private" &&
@@ -1148,7 +1058,6 @@ export const EventDetailPage: React.FC = () => {
                     </button>
                   )}
 
-                {/* Always show active participant session if exists, regardless of role, restrict if not approved for private events */}
                 {sessionState === "checked_in" &&
                   activeEventId === eventId &&
                   event.eventType !== "private" &&
@@ -1180,6 +1089,7 @@ export const EventDetailPage: React.FC = () => {
                       </button>
                     </div>
                   )}
+                */}
               </>
             )}
           </div>
@@ -1218,16 +1128,27 @@ export const EventDetailPage: React.FC = () => {
           {isCreator ? (
             event.status === "approved" && !isEventCompleted ? (
               <div className="flex items-center gap-4 w-full justify-between">
-                {!isEventStarted ? (
+                {/*
+                  Commented out Start/Stop Cleanup Event buttons and timer logic per user request.
+                  Organizations now manually log cleanup activities from the dashboard.
+                */}
+                {/* {!isEventStarted ? ( */}
                   <>
-                    <button
-                      onClick={() => setIsScanningQR(true)}
-                      className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
-                      title="Scan Attendance QR Code"
-                    >
-                      <QrCode className="w-5 h-5" />
-                    </button>
-                    <button
+                    {/* Render the QR scanner button for the organization creator only for private/registered events */}
+                    {event.eventType !== "public" && (
+                      <button
+                        onClick={() => {
+                          // Commented out unused state setter to fix compiler warning TS6133
+                          // setLastScannedUserId(null);
+                          setIsScanningQR(true);
+                        }}
+                        className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                        title="Scan Attendance QR Code"
+                      >
+                        <QrCode className="w-5 h-5" />
+                      </button>
+                    )}
+                    {/* <button
                       onClick={handleStartEvent}
                       className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
                     >
@@ -1236,14 +1157,12 @@ export const EventDetailPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    {/* Running timer counting backward from the dynamic event duration */}
                     <div className="flex items-center gap-1.5 bg-[#f4fff5] border border-[#a8e8bd] px-4 py-2 rounded-full text-[#08351e] shadow-sm" title="Time remaining for cleanup event">
                       <Clock className="w-4 h-4" />
                       <span className="font-mono font-bold tabular-nums text-sm">
                         {formatTime(orgRemainingSeconds)}
                       </span>
                     </div>
-                    {/* Stop Cleanup button disabled during the first 30 minutes of the event */}
                     <button
                       onClick={() => setStopModalOpen(true)}
                       disabled={orgStopButtonDisabled}
@@ -1259,13 +1178,18 @@ export const EventDetailPage: React.FC = () => {
                     >
                       <StopCircle className="w-4 h-4" />
                       <span>Stop Cleanup</span>
-                    </button>
+                    </button> */}
                   </>
-                )}
+                {/* )} */}
               </div>
             ) : null
           ) : (
             <>
+              {/* 
+                Commented out volunteer check-in timer session, "Start Clean-up", and "Stop Clean-up" buttons 
+                since the logging flow is now manual from the dashboard.
+              */}
+              {/*
               {isActiveEvent &&
                 sessionState === "idle" &&
                 event.eventType !== "private" &&
@@ -1298,7 +1222,6 @@ export const EventDetailPage: React.FC = () => {
                 event.status === "approved" && (
                   <div className="flex justify-evenly w-full gap-3">
                     <div className="flex items-center gap-1.5">
-                      {/* Hours */}
                       <div className="flex flex-col items-center gap-1">
                         <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
                           <span className="text-xl font-black text-[#0083cf] tabular-nums">
@@ -1311,7 +1234,6 @@ export const EventDetailPage: React.FC = () => {
                           Hrs
                         </span>
                       </div>
-                      {/* Minutes */}
                       <div className="flex flex-col items-center gap-1">
                         <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
                           <span className="text-xl font-black text-[#0083cf] tabular-nums">
@@ -1324,7 +1246,6 @@ export const EventDetailPage: React.FC = () => {
                           Min
                         </span>
                       </div>
-                      {/* Seconds */}
                       <div className="flex flex-col items-center gap-1">
                         <div className="bg-[#96c93d]/70 rounded-lg w-12 h-10 flex items-center justify-center">
                           <span className="text-xl font-black text-[#0083cf] tabular-nums">
@@ -1359,6 +1280,7 @@ export const EventDetailPage: React.FC = () => {
                     </button>
                   </div>
                 )}
+              */}
             </>
           )}
         </div>
@@ -1373,106 +1295,24 @@ export const EventDetailPage: React.FC = () => {
 
         <EventInfoCard compact />
 
-        {/* Rewards & Badges section */}
-        <RewardsBadgesCard
-          rewards={event.rewards}
-          userTotalHours={isActiveEvent ? userTotalHours : 0}
-          isActiveEvent={isActiveEvent}
-        />
 
-        <EventGuidelines />
       </div>
 
-      {/* Desktop */}
+      {/* Desktop split-screen layout displaying the event image on the left and the detailed EventInfoCard on the right */}
       <div className="hidden lg:block">
-        <div className="max-w-full mx-auto px-8 xl:px-12 py-10">
-          <div className="grid grid-cols-12 gap-8 xl:gap-10 items-start">
-            {/* LEFT */}
-            <div className="col-span-7 flex flex-col gap-6">
-              <div className="w-full h-64 xl:h-[320px] rounded-[2rem] overflow-hidden shadow-sm">
-                <img
-                  src={getEventImageUrl(event.eventImage)}
-                  className="w-full h-full object-cover"
-                  alt={event.name}
-                />
-              </div>
-              <div className="lg:pr-4">
-                <EventInfoCard />
-              </div>
+        <div className="max-w-8xl mx-auto px-8 xl:px-12 py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-start">
+            {/* Left Section: Sticky Event Image for interactive scrolling experience on desktop */}
+            <div className="lg:col-span-6 w-full h-[400px] rounded-[2rem] overflow-hidden shadow-sm lg:sticky lg:top-24">
+              <img
+                src={getEventImageUrl(event.eventImage)}
+                className="w-full h-full object-cover"
+                alt={event.name}
+              />
             </div>
-
-            {/* RIGHT */}
-            <div className="col-span-5">
-              <div className="sticky top-24 flex flex-col gap-6">
-                {/* XP Ring */}
-                {(() => {
-                  const displayPoints = event.userPoints ?? 0;
-                  const progress = Math.min(displayPoints / 150, 1);
-                  const circumference = 264;
-                  const offset = circumference - progress * circumference;
-                  return (
-                    <div className="w-full h-64 xl:h-[320px] bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-4">
-                      <div className="relative w-40 h-40 xl:w-48 xl:h-48">
-                        <svg
-                          className="w-full h-full -rotate-90"
-                          viewBox="0 0 100 100"
-                        >
-                          <circle
-                            strokeWidth="8"
-                            stroke="#f3f7f5"
-                            fill="transparent"
-                            r="42"
-                            cx="50"
-                            cy="50"
-                          />
-                          <circle
-                            strokeWidth="8"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={offset}
-                            strokeLinecap="round"
-                            stroke="#96c93d"
-                            fill="transparent"
-                            r="42"
-                            cx="50"
-                            cy="50"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-4xl xl:text-5xl font-black text-gray-900 leading-none">
-                            {displayPoints}
-                          </span>
-                          <span className="text-[10px] xl:text-xs font-black uppercase tracking-widest mt-1">
-                            Points
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 mt-2">
-                        <p className="text-sm font-extrabold text-gray-800 text-center">
-                          Event Reward
-                        </p>
-                        <p className="text-xs text-gray-500 font-medium text-center">
-                          <>
-                            Complete this event to earn up to{" "}
-                            <span className="font-black text-[#08351e]">
-                              {displayPoints} pts
-                            </span>
-                            !
-                          </>
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <RewardsBadgesCard
-                  rewards={event.rewards}
-                  userTotalHours={isActiveEvent ? userTotalHours : 0}
-                  isActiveEvent={isActiveEvent}
-                />
-
-                {/* Event Guidelines */}
-                <EventGuidelines />
-              </div>
+            {/* Right Section: Detailed Event Information Card containing details, description, rewards, and checked-in logs */}
+            <div className="lg:col-span-6">
+              <EventInfoCard />
             </div>
           </div>
         </div>
@@ -1507,7 +1347,91 @@ export const EventDetailPage: React.FC = () => {
         <SuccessModal eventName={event.name} onClose={handleSuccessClose} />
       )}
 
-      {/* Duration Picker Modal */}
+      {/* Details modal popup showing the check-in/out times, hours, and trash metrics of the selected attendee */}
+      {selectedAttendeeLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-6 sm:p-8 border border-gray-100 animate-in zoom-in-95 text-left relative">
+            <h3 className="text-xl font-bold tracking-tight text-gray-900 mb-6 border-b border-gray-50 pb-4 flex items-center justify-between">
+              <span>Attendance Details</span>
+              <button 
+                onClick={() => setSelectedAttendeeLog(null)} 
+                className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </h3>
+            
+            <div className="space-y-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Name</span>
+                <span className="text-sm font-bold text-gray-800">{selectedAttendeeLog.name}</span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Worked Date & Time</span>
+                <div className="text-xs text-gray-600 font-medium space-y-1.5 bg-gray-50/50 border border-gray-100 p-3 rounded-xl mt-1">
+                  <div>
+                    <span className="text-gray-400 font-bold mr-1.5">Checked In:</span>
+                    <span className="text-gray-700 font-semibold">{formatAttendeeLogDateTime(selectedAttendeeLog.checkInTime)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 font-bold mr-1.5">Checked Out:</span>
+                    {selectedAttendeeLog.checkOutTime ? (
+                      <span className="text-gray-700 font-semibold">{formatAttendeeLogDateTime(selectedAttendeeLog.checkOutTime)}</span>
+                    ) : (
+                      <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-md text-[10px] border border-green-100 uppercase tracking-wide">Active / In Progress</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Time Spent</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {selectedAttendeeLog.totalHours !== null && selectedAttendeeLog.totalHours !== undefined ? (
+                    `${Number(selectedAttendeeLog.totalHours).toFixed(2)} hours`
+                  ) : (
+                    <span className="text-gray-400 font-medium italic">Active / In Progress</span>
+                  )}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Garbage Collected</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {selectedAttendeeLog.garbageWeight !== null && selectedAttendeeLog.garbageWeight !== undefined ? (
+                    `${Number(selectedAttendeeLog.garbageWeight).toFixed(2)} kg`
+                  ) : (
+                    "0.00 kg"
+                  )}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Garbage Type</span>
+                <span className="text-sm font-semibold text-gray-700 bg-gray-50/50 border border-gray-100 px-3 py-2 rounded-xl mt-1 block">
+                  {selectedAttendeeLog.garbageType || "N/A"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setSelectedAttendeeLog(null)}
+                className="cursor-pointer bg-[#08351e] hover:bg-[#0a4527] text-white font-extrabold px-6 py-2.5 rounded-full text-xs shadow-md transition-colors active:scale-95"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 
+        Commented out volunteer-side Duration Picker Modal and Log Activity Form rendering blocks
+        since the logging flow is now manual from the dashboard.
+      */}
+      {/*
       {sessionState === "selecting_duration" && (
         <DurationSelectModal
           onSelect={handleDurationSelected}
@@ -1517,7 +1441,6 @@ export const EventDetailPage: React.FC = () => {
         />
       )}
 
-      {/* Log Activity Form — only shown for the event the session belongs to */}
       {sessionState === "logging_activity" && activeEventId === eventId && (
         <LogActivityForm
           eventName={event?.name}
@@ -1528,6 +1451,7 @@ export const EventDetailPage: React.FC = () => {
           isMandatory={restoredFromStorage}
         />
       )}
+      */}
 
       {/* Organization Stop Event Form */}
       {stopModalOpen && isCreator && (
@@ -1543,10 +1467,27 @@ export const EventDetailPage: React.FC = () => {
       {isScanningQR && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
           <div className="bg-[#1e1e1e] text-white rounded-3xl shadow-2xl w-full max-w-md p-6 border border-gray-800 relative overflow-hidden animate-in zoom-in-95">
-            {/* Holographic Header */}
+            {/* Holographic Header with pulsing green scanned count badge */}
             <div className="text-center mb-6">
-              <div className="mx-auto w-16 h-16 bg-[#E8F2FA]/10 text-[#0083cf] rounded-full flex items-center justify-center mb-3 animate-pulse border border-[#0083cf]/30">
-                <QrCode className="w-8 h-8" />
+              <div className="mx-auto w-20 h-20 bg-green-500/10 text-green-400 rounded-full flex flex-col items-center justify-center mb-3 border border-green-500/30 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+                <span className="text-3xl font-black tracking-tight leading-none text-green-400">
+                  {(() => {
+                    // Extract scanned count dynamically by parsing the attendee participant list safely
+                    if (!event || !event.attendentParticipant) return 0;
+                    let attendees = event.attendentParticipant;
+                    if (typeof attendees === "string") {
+                      try {
+                        attendees = JSON.parse(attendees);
+                      } catch {
+                        attendees = [];
+                      }
+                    }
+                    return (attendees as string[]).length;
+                  })()}
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-green-500/70">
+                  Scanned
+                </span>
               </div>
               <h3 className="text-xl font-bold tracking-tight text-white">
                 QR Code Attendance Scanner
@@ -1587,56 +1528,6 @@ export const EventDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Registered Participants to Scan - Commented out as requested */}
-            {/* <div className="mb-6 text-left">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Select Registered Attendee to Scan
-              </label>
-              {(() => {
-                let registered: string[] = event?.registeredParticipant || [];
-                if (typeof registered === 'string') {
-                  try { registered = JSON.parse(registered); } catch { registered = []; }
-                }
-
-                if (registered.length === 0) {
-                  return (
-                    <p className="text-sm text-yellow-500 font-semibold bg-yellow-500/10 px-4 py-3 rounded-xl border border-yellow-500/20 text-center">
-                      No registered participants left to scan!
-                    </p>
-                  );
-                }
-
-                return (
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {registered.map((userId, idx) => (
-                      <div
-                        key={userId}
-                        onClick={() => {
-                          handleScanAttendance(userId);
-                          setIsScanningQR(false);
-                        }}
-                        className="cursor-pointer bg-[#2a2a2a] hover:bg-[#333] border border-gray-800 hover:border-[#0083cf]/50 p-3 rounded-xl flex items-center justify-between transition-all"
-                      >
-                        <div className="flex items-center gap-2.5 text-left">
-                          <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center font-bold text-xs shrink-0">
-                            {idx + 1}
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-gray-200">Registered Participant</p>
-                            <p className="text-[10px] text-gray-500 font-mono truncate max-w-[200px]">{userId}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-black uppercase text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md shrink-0">
-                          SCAN QR
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div> */}
-
             <button
               onClick={() => setIsScanningQR(false)}
               className="cursor-pointer w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition-all text-sm"

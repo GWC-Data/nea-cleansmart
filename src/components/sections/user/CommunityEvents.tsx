@@ -18,7 +18,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
   activeSessionState,
 }) => {
   return (
-    <div className="w-full flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-4">
       <div>
         <h2 className="text-[1.35rem] font-bold text-gray-900 tracking-tight mb-4 px-2">
           Active Events

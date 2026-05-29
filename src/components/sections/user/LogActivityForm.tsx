@@ -1,49 +1,194 @@
 import React, { useState } from "react";
 import { Camera, X } from "lucide-react";
 import { toast } from "sonner"; // For displaying field validation errors
+import { DropdownInput } from "../../shared/dropdownInput";
+
 
 interface LogActivityFormProps {
-  elapsedSeconds: number;
-  location: string;
-  eventName?: string; // Added to display which event the report belongs to
+  // Legacy props
+  elapsedSeconds?: number;
+  location?: string;
+  eventName?: string;
+  isMandatory?: boolean;
+
+  // New dashboard manual logging props
+  joinedEvents?: any[];
+  allEvents?: any[];
+  organizations?: any[];
+  isDashboardLog?: boolean;
+  todayHours?: number;
+
+  // Organization manual logging flow additions
+  isOrgFlow?: boolean;
+  currentUserId?: string;
+
   onCancel?: () => void;
   onSubmit: (
     weight: number,
     type: string,
     finalLocation: string,
     photo?: File,
+    eventId?: string,
+    date?: string,
+    durationSeconds?: number
   ) => Promise<void> | void;
-  isMandatory?: boolean;
 }
 
 const WASTE_TYPES = [
-  "Food waste (Styrofoam/packet/plastic)",
-  "Packet/canned drinks",
-  "Cigarette butts",
-  "Tissue paper",
-  "Flyers/Brochures/Pamphlets",
-  "Stationery (Pens/Pencils/Erasers etc)",
+  "Plastic Bags",
+  "Plastic Containers (includes bottles, boxes packaging etc.)",
+  "Other Plastics (includes straws, disposable cutleries, toys, lighters, grasscutter nylon strings etc.)",
+  "Cigarette Butts",
+  "Cigarette Boxes & Wrappers",
+  "Paper Containers & Boxes",
+  "Smaller Paper Items (includes tissue paper, receipts, tickets, flyers, envelopes etc.)",
+  "Other Paper Items (newspapers, magazines, cardboards etc.)",
+  "Styrofoam (includes boxes & packaging etc.)",
+  "Glass (includes bottles, cups, bulbs etc.)",
+  "Metal (drink cans, nails, screws etc.)",
+  "E-waste (includes batteries, cables, appliances etc.)",
+  "Others (includes bulk waste etc.)"
 ];
 
 export const LogActivityForm: React.FC<LogActivityFormProps> = ({
-  elapsedSeconds,
-  location,
+  elapsedSeconds = 0,
+  location = "",
   eventName,
-  // onCancel,
+  joinedEvents,
+  allEvents,
+  organizations,
+  isDashboardLog = false,
+  todayHours = 0,
+  onCancel,
   onSubmit,
   isMandatory,
+  isOrgFlow = false,
+  currentUserId,
 }) => {
   const [weight, setWeight] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [manualLocation, setManualLocation] = useState("");
+  const [manualLocation, setManualLocation] = useState(location || "");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // States for unified dashboard manual logging
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [cleanupDate, setCleanupDate] = useState(() => {
+    return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  });
+  const [durationSecs, setDurationSecs] = useState<number>(3600); // Default to 1 hour
+
+  // Filter events: only public events not created by organization leaders are allowed to be logged manually
+  // If isOrgFlow is true, filter to display only private events created by the current organization
+  const loggableEvents = React.useMemo(() => {
+    if (isOrgFlow) {
+      if (!allEvents || !currentUserId) return [];
+      return allEvents.filter(
+        (e) => e.createdBy === currentUserId
+      );
+    }
+
+    if (!joinedEvents || !allEvents || !organizations) return [];
+    return joinedEvents.filter((joinedEvent) => {
+      const fullEvent = allEvents.find((e) => e.eventId === joinedEvent.eventId);
+      if (!fullEvent) return false;
+      
+      // Exclude private events (only public events are loggable)
+      if (fullEvent.eventType !== "public") return false;
+      
+      // Exclude completed/ended events
+      const isCompleted = fullEvent.endDate ? new Date(fullEvent.endDate) < new Date() : false;
+      if (isCompleted) return false;
+      
+      // Exclude organization-created events
+      const isCreatedByOrg = organizations.some(
+        (org) => org.orgId === fullEvent.createdBy
+      );
+      return !isCreatedByOrg;
+    });
+  }, [joinedEvents, allEvents, organizations, isOrgFlow, currentUserId]);
+
+  // Map loggable events to the dropdown options format for the DropdownInput component
+  const eventOptions = React.useMemo(() => {
+    return loggableEvents.map((e: any) => ({
+      value: e.eventId,
+      label: e.eventName || e.name,
+    }));
+  }, [loggableEvents]);
+
+  const handleEventChange = (eventId: string) => {
+    setSelectedEventId(eventId);
+    const fullEvent = allEvents?.find((e) => e.eventId === eventId);
+    if (fullEvent) {
+      if (fullEvent.location) {
+        setManualLocation(fullEvent.location);
+      } else {
+        setManualLocation("");
+      }
+
+      // Automatically calculate duration from event schedule and cap at 2 hours for organization flow
+      if (isOrgFlow) {
+        if (fullEvent.startDate && fullEvent.endDate) {
+          const start = new Date(fullEvent.startDate).getTime();
+          const end = new Date(fullEvent.endDate).getTime();
+          if (!isNaN(start) && !isNaN(end)) {
+            const diffMs = end - start;
+            const diffHours = diffMs / (3600 * 1000);
+            
+            // Map duration in seconds: 30m, 1h, 1.5h, 2h (capped at 2 hours per day per event)
+            let calculatedSecs = 7200; // default cap
+            if (diffHours <= 0.75) calculatedSecs = 1800;
+            else if (diffHours <= 1.25) calculatedSecs = 3600;
+            else if (diffHours <= 1.75) calculatedSecs = 5400;
+            else calculatedSecs = 7200;
+
+            setDurationSecs(calculatedSecs);
+          }
+        }
+
+        // Prefill the cleanup date based on the event's start date
+        if (fullEvent.startDate) {
+          const eventDateStr = new Date(fullEvent.startDate).toISOString().split("T")[0];
+          setCleanupDate(eventDateStr);
+        }
+      }
+    } else {
+      setManualLocation("");
+      if (isOrgFlow) {
+        setCleanupDate("");
+        setDurationSecs(3600);
+      }
+    }
+  };
+
+  // Skip daily remaining limit check for organization logging flow
+  const remainingHours = isOrgFlow ? 999 : Math.max(0, 2 - todayHours);
+  const DURATION_OPTIONS = React.useMemo(() => {
+    return [
+      { label: "30 Min", value: 1800 },
+      { label: "1 Hour", value: 3600 },
+      { label: "1.5 Hours", value: 5400 },
+      { label: "2 Hours", value: 7200 },
+    ].filter((opt) => opt.value / 3600 <= remainingHours + 0.01);
+  }, [remainingHours]);
+
+  // Keep durationSecs synchronized with available options based on daily limits
+  React.useEffect(() => {
+    if (DURATION_OPTIONS.length > 0) {
+      const exists = DURATION_OPTIONS.some((opt) => opt.value === durationSecs);
+      if (!exists) {
+        setDurationSecs(DURATION_OPTIONS[0].value);
+      }
+    }
+  }, [DURATION_OPTIONS, durationSecs]);
+
+
   const getDurationText = () => {
-    const h = Math.floor(elapsedSeconds / 3600);
-    const m = Math.floor((elapsedSeconds % 3600) / 60);
-    const s = elapsedSeconds % 60;
+    const elapsed = isDashboardLog ? durationSecs : elapsedSeconds;
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
+    const s = elapsed % 60;
     if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}m`;
     return `${m}m ${s.toString().padStart(2, "0")}s`;
   };
@@ -71,7 +216,17 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
     e.preventDefault();
     if (isSubmitting) return;
 
-    const finalLocation = location || manualLocation;
+    if (isDashboardLog && !selectedEventId) {
+      toast.error("Please select an event.");
+      return;
+    }
+
+    if (!isOrgFlow && isDashboardLog && DURATION_OPTIONS.length === 0) {
+      toast.error("You have reached your daily volunteer limit of 2 hours.");
+      return;
+    }
+
+    const finalLocation = isDashboardLog ? manualLocation : (location || manualLocation);
 
     // Validation for all fields: Location, weight, and waste types
     if (!finalLocation.trim()) {
@@ -93,12 +248,24 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(
-        parseFloat(weight),
-        typesJoined,
-        finalLocation,
-        photoFile ?? undefined,
-      );
+      if (isDashboardLog) {
+        await onSubmit(
+          parseFloat(weight),
+          typesJoined,
+          finalLocation,
+          photoFile ?? undefined,
+          selectedEventId,
+          cleanupDate,
+          durationSecs
+        );
+      } else {
+        await onSubmit(
+          parseFloat(weight),
+          typesJoined,
+          finalLocation,
+          photoFile ?? undefined,
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -115,63 +282,180 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
             <p className="text-xs text-gray-500 font-medium">
               {isMandatory
                 ? "⚠️ Please complete your previous session report"
-                : eventName
-                  ? `Event: ${eventName}`
-                  : "Session Report"}
+                : isDashboardLog
+                  ? "Log your manual clean-up activity"
+                  : eventName
+                    ? `Event: ${eventName}`
+                    : "Session Report"}
             </p>
           </div>
-          {/* {!isMandatory && ( // 👈 hide X when mandatory
+          {onCancel && (
             <button
               onClick={onCancel}
+              type="button"
               className="cursor-pointer p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-          )} */}
+          )}
         </div>
 
         <div className="overflow-y-auto p-5 pb-8 space-y-6">
-          {/* Auto-filled details */}
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 shadow-sm">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Date</span>
-              <span className="font-bold text-gray-900">
-                {new Date().toLocaleDateString()}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Duration</span>
-              <span className="font-bold text-secondary">
-                {getDurationText()}
-              </span>
-            </div>
-            {location && (
+          {!isDashboardLog && (
+            /* Auto-filled details for legacy timer sessions */
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 shadow-sm">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 font-medium">Location</span>
-                <span
-                  className="font-bold text-gray-900 text-right w-1/2 line-clamp-1 truncate"
-                  title={location}
-                >
-                  {location}
+                <span className="text-gray-500 font-medium">Date</span>
+                <span className="font-bold text-gray-900">
+                  {new Date().toLocaleDateString()}
                 </span>
               </div>
-            )}
-          </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Duration</span>
+                <span className="font-bold text-secondary">
+                  {getDurationText()}
+                </span>
+              </div>
+              {location && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Location</span>
+                  <span
+                    className="font-bold text-gray-900 text-right w-1/2 line-clamp-1 truncate"
+                    title={location}
+                  >
+                    {location}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <form id="logForm" onSubmit={handleSubmit} className="space-y-6">
-            {!location && (
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-900">
-                  Location <span className="text-red-500 font-medium">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={manualLocation}
-                  onChange={(e) => setManualLocation(e.target.value)}
-                  placeholder="e.g. East Coast Park"
-                  className="w-full bg-background border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-gray-400"
-                />
-              </div>
+            {isDashboardLog ? (
+              /* Fields for Dashboard Manual Logging flow */
+              <>
+                {/* Date Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-900">
+                    Date of Clean-up <span className="text-red-500 font-medium">*</span>
+                  </label>
+                  {/* Read-only / disabled date input field for organization flow to use the event's start date as the cleanup date */}
+                  <input
+                    type={isOrgFlow ? "text" : "date"}
+                    value={isOrgFlow ? (!selectedEventId ? "N/A" : cleanupDate) : cleanupDate}
+                    disabled={isOrgFlow}
+                    max={isOrgFlow ? undefined : new Date().toISOString().split("T")[0]}
+                    onChange={(e) => !isOrgFlow && setCleanupDate(e.target.value)}
+                    onClick={(e) => {
+                      if (isOrgFlow) return;
+                      // Trigger native calendar popup when clicking anywhere in the input field
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.warn("showPicker not supported on this browser context", err);
+                      }
+                    }}
+                    className={`w-full border rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none transition-all ${
+                      isOrgFlow
+                        ? "bg-gray-50 border-gray-100 text-gray-500 cursor-not-allowed"
+                        : "bg-background border-gray-200 focus:border-secondary focus:ring-2 focus:ring-secondary/20 cursor-pointer"
+                    }`}
+                  />
+                </div>
+
+                {/* Time Slot (Duration) Selection - Rendered as a 2x2 grid of pill buttons */}
+                <div className="space-y-2.5">
+                  <label className="text-sm font-bold text-gray-900">
+                    Time Slot / Duration <span className="text-red-500 font-medium">*</span>
+                  </label>
+                  {isOrgFlow ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Read-only automatically calculated duration displayed as a button style with white background and gray border. Shows "—" if no event is selected. */}
+                      <div className="py-3.5 px-4 text-sm font-bold text-center border border-gray-200 bg-white rounded-2xl text-gray-700 font-semibold shadow-sm animate-in fade-in">
+                        {!selectedEventId ? "N/A" : durationSecs === 1800 ? "30 Min" : durationSecs === 3600 ? "1 Hour" : durationSecs === 5400 ? "1.5 Hours" : "2 Hours"}
+                      </div>
+                    </div>
+                  ) : remainingHours <= 0 ? (
+                    <div className="text-xs text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-200 font-semibold">
+                      ⚠️ Daily limit of 2 hours reached. You cannot log more activities today.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {DURATION_OPTIONS.map((opt) => {
+                        const isSelected = durationSecs === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setDurationSecs(opt.value)}
+                            className={`py-3.5 px-4 text-sm font-bold text-center border rounded-2xl cursor-pointer transition-all shadow-sm active:scale-[0.98] ${
+                              isSelected
+                                ? "bg-soft border-secondary text-secondary font-extrabold"
+                                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+
+                {/* Event Selection - Custom dropdown input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-900">
+                    Event Type <span className="text-red-500 font-medium">*</span>
+                  </label>
+                  {loggableEvents.length === 0 ? (
+                    <div className="text-xs text-amber-600 bg-amber-50 p-3.5 rounded-xl border border-amber-200 font-medium">
+                      {isOrgFlow
+                        ? "⚠️ No private events created by your organization were found."
+                        : "⚠️ No eligible joined events found. Please join a public or non-organization event first under the Individual Dashboard."}
+                    </div>
+                  ) : (
+                    <DropdownInput
+                      label="Events"
+                      options={eventOptions}
+                      value={selectedEventId}
+                      onChange={handleEventChange}
+                      placeholder="Select an Event"
+                    />
+                  )}
+                </div>
+
+
+                {/* Location Input (Prefilled but editable) */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-900">
+                    Location <span className="text-red-500 font-medium">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    placeholder="e.g. East Coast Park"
+                    className="w-full bg-background border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-gray-400"
+                  />
+                </div>
+              </>
+            ) : (
+              /* Legacy Location Input if not dashboard manual logging */
+              !location && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-900">
+                    Location <span className="text-red-500 font-medium">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    placeholder="e.g. East Coast Park"
+                    className="w-full bg-background border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-gray-400"
+                  />
+                </div>
+              )
             )}
 
             <div className="space-y-2">
