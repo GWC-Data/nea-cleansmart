@@ -69,7 +69,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           <>
             <div className="flex items-center justify-between px-1">
               <h3 className="font-black text-gray-900 text-sm tracking-tight">
-                Top Performers
+                Top Users
               </h3>
             </div>
             <div className="flex flex-col gap-2.5">

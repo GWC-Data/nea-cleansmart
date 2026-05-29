@@ -354,3 +354,13 @@
   0% { opacity: 1; }
   100% { opacity: 0.15; }
 }
+
+/* Custom scrollbar utility to hide native browser scrollbars */
+/* Comment: Hides scrollbars globally on Webkit (Chrome/Safari), IE/Edge, and Firefox browsers */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

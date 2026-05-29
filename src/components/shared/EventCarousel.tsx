@@ -24,7 +24,7 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
   const navigate = useNavigate();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  
+
   // Fetch current user and role context to enforce status visibility rules
   const { currentUser } = useAuth();
 
@@ -110,15 +110,15 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
           <div
             key={event.eventId}
             onClick={() => navigate(`/events/${event.eventId}`)}
-            className="snap-start shrink-0 w-[300px] group bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#86B537]/30 hover:shadow-md transition-all flex flex-col gap-3"
+            className="snap-start shrink-0 w-[300px] group bg-white border border-gray-100 rounded-2xl cursor-pointer hover:border-[#86B537]/30 hover:shadow-md transition-all flex flex-col gap-3"
           >
-            <div className="h-32 rounded-xl bg-gray-50 overflow-hidden relative">
+            <div className="h-32 rounded-sm bg-gray-50 overflow-hidden relative">
               <img
                 src={getEventImageUrl(event.eventImage)}
                 alt={event.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              
+
               {/* Dates */}
               <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-center shadow-sm">
                 <p className="text-[10px] font-bold uppercase text-gray-900 leading-none">
@@ -154,41 +154,53 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
                     </div>
                   )}
 
-                  {/* Running Status */}
-                  {event.isStarted ? (
-                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
-                      <Clock className="w-2.5 h-2.5 animate-pulse" />
-                      Running
-                    </div>
-                  ) : (
-                    activeSessionEventId === event.eventId && (
-                      <>
-                        {activeSessionState === "checked_in" && (
-                          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
-                            <Clock className="w-2.5 h-2.5 animate-pulse" />
-                            Running
-                          </div>
-                        )}
-                        {activeSessionState === "logging_activity" && (
-                          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
-                            <AlertCircle className="w-2.5 h-2.5" />
-                            Report!
-                          </div>
-                        )}
-                      </>
+                  {/* Running Status - only visible for volunteers (users) since organizations manually log activity */}
+                  {currentUser?.role !== "organization" && (
+                    event.isStarted ? (
+                      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
+                        <Clock className="w-2.5 h-2.5 animate-pulse" />
+                        Running
+                      </div>
+                    ) : (
+                      activeSessionEventId === event.eventId && (
+                        <>
+                          {activeSessionState === "checked_in" && (
+                            <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#08351e]/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-[#9bf8b7]/20">
+                              <Clock className="w-2.5 h-2.5 animate-pulse" />
+                              Running
+                            </div>
+                          )}
+                          {activeSessionState === "logging_activity" && (
+                            <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm text-white text-[9px] font-black px-2 py-1 rounded-lg shadow-md border border-orange-200/20">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              Report!
+                            </div>
+                          )}
+                        </>
+                      )
                     )
                   )}
                 </>
               )}
             </div>
 
-            <div>
+            <div className="px-4 pb-4">
               <h3 className="font-bold text-gray-900 text-sm truncate mb-1">
                 {event.name}
               </h3>
-              <div className="flex items-center text-xs text-gray-500 gap-1 font-medium">
-                <MapPin size={12} className="shrink-0" />
-                <span className="truncate">{event.location}</span>
+              {/* Flex container displaying location on the left and a Public/Private event type badge on the right */}
+              <div className="flex items-center justify-between text-xs text-gray-500 gap-2 font-medium w-full">
+                <div className="flex items-center gap-1 min-w-0">
+                  <MapPin size={12} className="shrink-0" />
+                  <span className="truncate">{event.location}</span>
+                </div>
+                {/* Badge showing whether the event is Public or Private */}
+                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${event.eventType === "private"
+                  ? "bg-[#0083cf] text-white border border-[#0083cf]"
+                  : "bg-[#88cc00] text-white border border-[#88cc00]"
+                  }`}>
+                  {event.eventType === "private" ? "Private" : "Public"}
+                </span>
               </div>
             </div>
           </div>

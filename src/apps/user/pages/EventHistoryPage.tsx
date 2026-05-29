@@ -117,8 +117,9 @@ export const EventHistoryPage: React.FC = () => {
           </button>
           <img
             src={logo}
+            onClick={() => navigate("/dashboard")}
             alt="Public Hygiene Council"
-            className="h-10 lg:h-12 w-auto object-contain"
+            className="h-10 lg:h-12 w-auto object-contain cursor-pointer"
           />
         </div>
       </header>
@@ -234,8 +235,9 @@ export const EventHistoryPage: React.FC = () => {
           <div className="flex items-center">
             <img
               src={logo}
+              onClick={() => navigate("/dashboard")}
               alt="Public Hygiene Council"
-              className="h-8 lg:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
+              className="h-8 lg:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
             />
           </div>
           <p className="text-center sm:text-left">

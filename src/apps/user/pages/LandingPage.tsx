@@ -4,9 +4,11 @@ import { FaYoutube, FaFacebook, FaInstagram } from "react-icons/fa6";
 import logo from "../../../assets/publicHygineCouncil.png";
 import keepSingapreClean from "../../../assets/keepSingaporeClean.png";
 import underline from "../../../assets/underline.png";
+import { useNavigate } from "react-router-dom";
 
 export const LandingPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-white font-sans flex flex-col relative overflow-x-hidden">
@@ -14,8 +16,9 @@ export const LandingPage: React.FC = () => {
       <header className="w-full bg-white px-6 md:px-12 py-4 flex justify-between items-center z-20 shadow-sm relative">
         <img
           src={logo}
+          onClick={() => navigate("/")}
           alt="Public Hygiene Council"
-          className="h-10 md:h-12 object-contain"
+          className="h-10 md:h-12 object-contain cursor-pointer"
         />
 
         {/* Desktop Nav */}
