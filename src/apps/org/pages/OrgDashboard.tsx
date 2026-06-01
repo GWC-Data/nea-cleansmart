@@ -170,7 +170,8 @@ export const OrgDashboard: React.FC = () => {
       return;
     }
 
-    const checkInTime = new Date(date).toISOString();
+    // Use the current date and time stamp (when the organization submits the form) as the check-in time
+    const checkInTime = new Date().toISOString();
     const hoursEnrolled = (durationSeconds / 3600).toString();
 
     try {
@@ -189,7 +190,8 @@ export const OrgDashboard: React.FC = () => {
 
       // Step 2: Bulk check-out all volunteer attendees with split garbage weight
       const splitWeight = weight / attendeesFiltered.length;
-      const checkOutTime = new Date(new Date(date).getTime() + durationSeconds * 1000).toISOString();
+      // Calculate checkout time relative to the correct checkInTime (preserving the time component)
+      const checkOutTime = new Date(new Date(checkInTime).getTime() + durationSeconds * 1000).toISOString();
 
       const checkOutRes = await orgApiService.bulkCheckOut({
         eventId,
@@ -624,8 +626,8 @@ export const OrgDashboard: React.FC = () => {
                           </div>
                           {/* Badge showing whether the event is Public or Private */}
                           <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${event.eventType === "private"
-                              ? "bg-[#0083cf] text-white border border-[#0083cf]"
-                              : "bg-[#88cc00] text-white border border-[#88cc00]"
+                            ? "bg-[#0083cf] text-white border border-[#0083cf]"
+                            : "bg-[#88cc00] text-white border border-[#88cc00]"
                             }`}>
                             {event.eventType === "private" ? "Private" : "Public"}
                           </span>

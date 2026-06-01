@@ -53,10 +53,13 @@ export const UserDashboard: React.FC = () => {
       return;
     }
 
+    // Use the current date and time stamp (when the user submits the form) as the check-in time
+    const checkInTime = new Date().toISOString();
+
     // Step 1: Call check-in API to generate an active event log record
     const result = await apiService.checkInEvent({
       eventId,
-      checkInTime: new Date(date).toISOString(),
+      checkInTime,
       hoursEnrolled: (durationSeconds / 3600).toString(),
     });
 
@@ -72,8 +75,8 @@ export const UserDashboard: React.FC = () => {
 
     const logId = result;
 
-    // Step 2: Call check-out API to complete the session with report metrics
-    const checkOutTime = new Date(new Date(date).getTime() + durationSeconds * 1000).toISOString();
+    // Step 2: Call check-out API to complete the session with report metrics (preserving the time component)
+    const checkOutTime = new Date(new Date(checkInTime).getTime() + durationSeconds * 1000).toISOString();
     const checkoutResult = await apiService.checkOutEvent(logId, {
       checkOutTime,
       garbageWeight: weight,
