@@ -131,7 +131,9 @@ const parseAsSingaporeTime = (isoString: string): Date => {
 const formatAttendeeLogDateTime = (isoString: string | null): string => {
   if (!isoString) return "N/A";
   try {
-    const parsedDate = parseAsSingaporeTime(isoString);
+    // Manually add 8 hours (8 * 60 * 60 * 1000 ms) to shift the UTC base date to Singapore local time (UTC+8) for display
+    const baseDate = new Date(isoString);
+    const parsedDate = new Date(baseDate.getTime() + 8 * 60 * 60 * 1000);
     return parsedDate.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
@@ -139,7 +141,7 @@ const formatAttendeeLogDateTime = (isoString: string | null): string => {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-      timeZone: "Asia/Singapore",
+      timeZone: "UTC", // Format using UTC to prevent browser local timezone double shifting
     });
   } catch (e) {
     return new Date(isoString).toLocaleString();
@@ -894,15 +896,17 @@ export const EventDetailPage: React.FC = () => {
                       let formattedTime = "N/A";
                       if (scanTimeStr) {
                         try {
-                          const parsedDate = parseAsSingaporeTime(scanTimeStr);
-                          // Format both date and time in SGT (Singapore Local Time)
+                          // Manually add 8 hours (8 * 60 * 60 * 1000 ms) to shift the UTC base date to Singapore local time (UTC+8) for display
+                          const baseDate = new Date(scanTimeStr);
+                          const parsedDate = new Date(baseDate.getTime() + 8 * 60 * 60 * 1000);
+                          // Format both date and time in SGT (Singapore Local Time) using UTC timezone to prevent double shifts
                           formattedTime = parsedDate.toLocaleString("en-US", {
                             month: "short",
                             day: "numeric",
                             hour: "numeric",
                             minute: "2-digit",
                             hour12: true,
-                            timeZone: "Asia/Singapore",
+                            timeZone: "UTC",
                           });
                         } catch (e) {
                           formattedTime = new Date(scanTimeStr).toLocaleString();
