@@ -111,8 +111,11 @@ export const UserDashboard: React.FC = () => {
   const [orgLeaderboard, setOrgLeaderboard] = useState<any[]>([]);
 
   // Active session state — used to show timer badge on event cards
-  const [activeSessionEventId, setActiveSessionEventId] = useState<string | null>(null);
-  const [activeSessionState, setActiveSessionState] = useState<SessionState>("idle");
+  // const [activeSessionEventId, setActiveSessionEventId] = useState<string | null>(null);
+  // const [activeSessionState, setActiveSessionState] = useState<SessionState>("idle");
+  // Active session state — used to show timer badge on event cards (timer sessions are disabled)
+  const activeSessionEventId = null;
+  const activeSessionState: SessionState = "idle";
 
   // Load dashboard data: stats + joined events
   const loadDashboard = useCallback(async () => {
@@ -147,7 +150,8 @@ export const UserDashboard: React.FC = () => {
     loadEvents();
   }, []);
 
-  // On dashboard load, check if there's an active cleanup session running on the server
+  // Commented out active cleanup session timer logic per user request (not using backend timer API)
+  /*
   useEffect(() => {
     async function checkActiveTimer() {
       const timerData = await apiService.getTimer();
@@ -183,6 +187,7 @@ export const UserDashboard: React.FC = () => {
     }
     checkActiveTimer();
   }, []);
+  */
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -222,6 +227,7 @@ export const UserDashboard: React.FC = () => {
     rewards: "",
     joinsCount: e.joinedCount,
     eventImage: e.eventImage ?? null,
+    eventType: e.eventType,
     participants: [],
     createdAt: "",
     updatedAt: "",

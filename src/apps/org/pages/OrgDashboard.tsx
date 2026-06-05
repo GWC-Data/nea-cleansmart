@@ -65,11 +65,15 @@ export const OrgDashboard: React.FC = () => {
   const [allEventsList, setAllEventsList] = useState<EventData[]>([]);
 
   // Active session state — used to show timer badge on event cards
-  const [activeSessionEventId, setActiveSessionEventId] = useState<
-    string | null
-  >(null);
-  const [activeSessionState, setActiveSessionState] =
-    useState<SessionState>("idle");
+  // const [activeSessionEventId, setActiveSessionEventId] = useState<
+  //   string | null
+  // >(null);
+  // const [activeSessionState, setActiveSessionState] =
+  //   useState<SessionState>("idle");
+
+  // Active session state — used to show timer badge on event cards (timer sessions are disabled)
+  const activeSessionEventId = null;
+  const activeSessionState: SessionState = "idle";
   // const [myRequests, setMyRequests] = useState<EventRequest[]>([]); // Commented out unused state
 
   // const [loading, setLoading] = useState(false);
@@ -243,7 +247,8 @@ export const OrgDashboard: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Check for active cleanup session running on the server
+  // Commented out checkActiveTimer useEffect per user request since volunteer/org timer sessions are disabled
+  /*
   useEffect(() => {
     async function checkActiveTimer() {
       const timerData = await apiService.getTimer();
@@ -284,6 +289,7 @@ export const OrgDashboard: React.FC = () => {
     }
     checkActiveTimer();
   }, []);
+  */
 
   /* Commented out unused event submission handler
   const handleEventSubmit = async (

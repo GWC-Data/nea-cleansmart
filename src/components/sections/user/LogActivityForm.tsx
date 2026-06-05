@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Camera, X } from "lucide-react";
 import { toast } from "sonner"; // For displaying field validation errors
 import { DropdownInput } from "../../shared/dropdownInput";
+import { apiService } from "../../../services/apiService";
 
 
 interface LogActivityFormProps {
@@ -58,7 +59,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
   allEvents,
   organizations,
   isDashboardLog = false,
-  todayHours = 0,
+  // todayHours = 0,
   onCancel,
   onSubmit,
   isMandatory,
@@ -74,10 +75,62 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
   // States for unified dashboard manual logging
   const [selectedEventId, setSelectedEventId] = useState("");
+  // Prefill the cleanup date based on the user type: individuals select dates, organizations log for today in Singapore timezone
   const [cleanupDate, setCleanupDate] = useState(() => {
+    if (isOrgFlow) {
+      return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" });
+    }
     return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
   });
   const [durationSecs, setDurationSecs] = useState<number>(3600); // Default to 1 hour
+
+  // Local state to store limit validation response from backend
+  const [limitMaxHoursInfo, setLimitMaxHoursInfo] = useState<{ maxHours: number; userName: string }>({
+    maxHours: 0,
+    userName: ""
+  });
+
+  // Parse scanned attendee participant IDs for the selected event, filtering out the organization itself (currentUserId)
+  const selectedEventAttendees = React.useMemo(() => {
+    if (!isOrgFlow || !selectedEventId || !allEvents) return [];
+    const fullEvent = allEvents.find((e) => e.eventId === selectedEventId);
+    if (!fullEvent) return [];
+    
+    let attendees = fullEvent.attendentParticipant || [];
+    if (typeof attendees === "string") {
+      try {
+        attendees = JSON.parse(attendees);
+      } catch {
+        attendees = [];
+      }
+    }
+    
+    return (Array.isArray(attendees) ? attendees : []).filter((uid: string) => uid !== currentUserId);
+  }, [selectedEventId, allEvents, isOrgFlow, currentUserId]);
+
+  // Fetch daily event limit information (max hours logged today) from the backend for users or scanned volunteers
+  React.useEffect(() => {
+    if (!selectedEventId || !cleanupDate) {
+      setLimitMaxHoursInfo({ maxHours: 0, userName: "" });
+      return;
+    }
+
+    const userIdsToCheck = isOrgFlow ? selectedEventAttendees : (currentUserId ? [currentUserId] : []);
+    if (userIdsToCheck.length > 0) {
+      apiService.checkAttendeeLimits(selectedEventId, cleanupDate, userIdsToCheck)
+        .then((res) => {
+          if (res) {
+            setLimitMaxHoursInfo(res);
+          }
+        })
+        .catch((err) => console.error("Failed to check attendee limits in form:", err));
+    } else {
+      setLimitMaxHoursInfo({ maxHours: 0, userName: "" });
+    }
+  }, [selectedEventId, cleanupDate, selectedEventAttendees, isOrgFlow, currentUserId]);
+
+  // Aligned with the backend limit checking API, returns the maximum hours already logged today for this event
+  const loggedHoursForSelectedEventAndDate = limitMaxHoursInfo.maxHours;
 
   // Filter events: only public events not created by organization leaders are allowed to be logged manually
   // If isOrgFlow is true, filter to display only private events created by the current organization
@@ -147,41 +200,49 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
           }
         }
 
-        // Prefill the cleanup date based on the event's start date
-        if (fullEvent.startDate) {
-          const eventDateStr = new Date(fullEvent.startDate).toISOString().split("T")[0];
-          setCleanupDate(eventDateStr);
-        }
+        // Prefill the cleanup date based on today's date in Singapore timezone for organization bulk check-in
+        const todaySG = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" });
+        setCleanupDate(todaySG);
       }
     } else {
       setManualLocation("");
       if (isOrgFlow) {
-        setCleanupDate("");
+        const todaySG = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" });
+        setCleanupDate(todaySG);
         setDurationSecs(3600);
       }
     }
   };
 
-  // Skip daily remaining limit check for organization logging flow
-  const remainingHours = isOrgFlow ? 999 : Math.max(0, 2 - todayHours);
+  // All standard duration options kept visible in the UI
   const DURATION_OPTIONS = React.useMemo(() => {
     return [
       { label: "30 Min", value: 1800 },
       { label: "1 Hour", value: 3600 },
       { label: "1.5 Hours", value: 5400 },
       { label: "2 Hours", value: 7200 },
-    ].filter((opt) => opt.value / 3600 <= remainingHours + 0.01);
-  }, [remainingHours]);
+    ];
+  }, []);
 
-  // Keep durationSecs synchronized with available options based on daily limits
+  // Synchronize durationSecs so that if the currently selected option becomes disabled, a valid one is automatically selected
   React.useEffect(() => {
-    if (DURATION_OPTIONS.length > 0) {
-      const exists = DURATION_OPTIONS.some((opt) => opt.value === durationSecs);
-      if (!exists) {
-        setDurationSecs(DURATION_OPTIONS[0].value);
+    if (!isOrgFlow && selectedEventId) {
+      const remainingHoursForEvent = Math.max(0, 2 - loggedHoursForSelectedEventAndDate);
+      const isCurrentOptionValid = (durationSecs / 3600) <= remainingHoursForEvent + 0.01;
+      
+      if (!isCurrentOptionValid) {
+        // Find the largest valid duration option
+        const validOptions = DURATION_OPTIONS.filter(
+          (opt) => (opt.value / 3600) <= remainingHoursForEvent + 0.01
+        );
+        if (validOptions.length > 0) {
+          setDurationSecs(validOptions[validOptions.length - 1].value);
+        } else {
+          setDurationSecs(0); // If daily limit is fully utilized, reset selection
+        }
       }
     }
-  }, [DURATION_OPTIONS, durationSecs]);
+  }, [loggedHoursForSelectedEventAndDate, selectedEventId, isOrgFlow, durationSecs, DURATION_OPTIONS]);
 
 
   const getDurationText = () => {
@@ -212,6 +273,14 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Determine if the submit button should be disabled based on status and time limit constraints, strictly cast to a boolean to prevent TypeScript type errors
+  const isSubmitDisabled = !!(
+    isSubmitting || 
+    (isDashboardLog && !selectedEventId) ||
+    (!isOrgFlow && isDashboardLog && durationSecs === 0) ||
+    (isOrgFlow && selectedEventId && (loggedHoursForSelectedEventAndDate + durationSecs / 3600 > 2.01))
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -221,9 +290,17 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
       return;
     }
 
-    if (!isOrgFlow && isDashboardLog && DURATION_OPTIONS.length === 0) {
-      toast.error("You have reached your daily volunteer limit of 2 hours.");
+    if (!isOrgFlow && isDashboardLog && durationSecs === 0) {
+      toast.error("You have reached the maximum allowed limit of 2 hours for this event today.");
       return;
+    }
+
+    if (isDashboardLog && selectedEventId) {
+      const remainingHoursForEvent = Math.max(0, 2 - loggedHoursForSelectedEventAndDate);
+      if ((durationSecs / 3600) > remainingHoursForEvent + 0.01) {
+        toast.error("Logging this activity would exceed the 2-hour daily limit for this event.");
+        return;
+      }
     }
 
     const finalLocation = isDashboardLog ? manualLocation : (location || manualLocation);
@@ -375,29 +452,56 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                         {!selectedEventId ? "N/A" : durationSecs === 1800 ? "30 Min" : durationSecs === 3600 ? "1 Hour" : durationSecs === 5400 ? "1.5 Hours" : "2 Hours"}
                       </div>
                     </div>
-                  ) : remainingHours <= 0 ? (
-                    <div className="text-xs text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-200 font-semibold">
-                      ⚠️ Daily limit of 2 hours reached. You cannot log more activities today.
-                    </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
                       {DURATION_OPTIONS.map((opt) => {
                         const isSelected = durationSecs === opt.value;
+                        const isDisabled = selectedEventId ? (loggedHoursForSelectedEventAndDate + opt.value / 3600 > 2.01) : false;
+                        
                         return (
                           <button
                             key={opt.value}
                             type="button"
+                            disabled={isDisabled}
                             onClick={() => setDurationSecs(opt.value)}
-                            className={`py-3.5 px-4 text-sm font-bold text-center border rounded-2xl cursor-pointer transition-all shadow-sm active:scale-[0.98] ${
-                              isSelected
-                                ? "bg-soft border-secondary text-secondary font-extrabold"
-                                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold"
+                            className={`py-3.5 px-4 text-sm font-bold text-center border rounded-2xl transition-all shadow-sm ${
+                              isDisabled
+                                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-60"
+                                : isSelected
+                                  ? "bg-soft border-secondary text-secondary font-extrabold cursor-pointer active:scale-[0.98]"
+                                  : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer active:scale-[0.98]"
                             }`}
                           >
                             {opt.label}
+                            {/* {isDisabled && (
+                              <span className="block text-[10px] font-medium text-gray-400 mt-0.5">
+                                (Exceeds Limit)
+                              </span>
+                            )} */}
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Warning messages and clear UI feedback on time limits */}
+                  {selectedEventId && (
+                    <div className="space-y-2">
+                      {isOrgFlow ? (
+                        loggedHoursForSelectedEventAndDate + durationSecs / 3600 > 2.01 && (
+                          <div className="text-xs text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-200 font-semibold animate-in fade-in">
+                            Reached the daily hours limit for this event.
+                          </div>
+                        )
+                      ) : loggedHoursForSelectedEventAndDate >= 1.99 ? (
+                        <div className="text-xs text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-200 font-semibold animate-in fade-in">
+                          You have reached the maximum allowed limit of 2 hours for this event today.
+                        </div>
+                      ) : loggedHoursForSelectedEventAndDate > 0 ? (
+                        <div className="text-xs text-amber-600 bg-amber-50 p-3.5 rounded-xl border border-amber-200 font-semibold animate-in fade-in">
+                          Some duration options are disabled to prevent exceeding the 2-hour daily limit for this event.
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>
@@ -411,8 +515,8 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
                   {loggableEvents.length === 0 ? (
                     <div className="text-xs text-amber-600 bg-amber-50 p-3.5 rounded-xl border border-amber-200 font-medium">
                       {isOrgFlow
-                        ? "⚠️ No private events created by your organization were found."
-                        : "⚠️ No eligible joined events found. Please join a public or non-organization event first under the Individual Dashboard."}
+                        ? "No private events created by your organization were found."
+                        : "No eligible joined events found. Please join a public or non-organization events."}
                     </div>
                   ) : (
                     <DropdownInput
@@ -570,7 +674,7 @@ export const LogActivityForm: React.FC<LogActivityFormProps> = ({
           <button
             type="submit"
             form="logForm"
-            disabled={isSubmitting}
+            disabled={isSubmitDisabled}
             className="cursor-pointer w-full bg-secondary hover:bg-secondary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] text-base"
           >
             {isSubmitting ? "Submitting..." : "Submit Report"}
