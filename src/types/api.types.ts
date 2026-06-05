@@ -132,6 +132,7 @@ export interface OrganizationDashboard {
     eventEndDate: string;
     joinedCount: number;
     eventImage: string | null;
+    eventType?: "public" | "private"; // 👈 Include eventType for public/private badges
   }[];
   events: {
     public: any[];

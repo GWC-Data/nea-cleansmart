@@ -86,7 +86,7 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
       {showLeftArrow && (
         <button
           onClick={() => scroll("left")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#86B537] hover:scale-110 transition-all active:scale-95"
+          className="cursor-pointer absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#86B537] hover:scale-110 transition-all active:scale-95"
         >
           <ChevronLeft size={24} />
         </button>
@@ -94,7 +94,7 @@ export const EventCarousel: React.FC<EventCarouselProps> = ({
       {showRightArrow && (
         <button
           onClick={() => scroll("right")}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#86B537] hover:scale-110 transition-all active:scale-95"
+          className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#86B537] hover:scale-110 transition-all active:scale-95"
         >
           <ChevronRight size={24} />
         </button>

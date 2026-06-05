@@ -23,7 +23,7 @@ import { getEventImageUrl } from "../../../utils/imageUtils";
 // import { DurationSelectModal } from "../../../components/sections/user/modal/DurationSelectModal";
 import { LogActivityForm } from "../../../components/sections/user/LogActivityForm";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
-import { orgApiService } from "../../../services/orgApiService";
+// import { orgApiService } from "../../../services/orgApiService";
 
 // Configuration constants for event duration constraints
 const ORG_MAX_DURATION_HOURS = 2; // Default fallback maximum allowed duration in hours if not calculable from event details
@@ -156,7 +156,8 @@ export const EventDetailPage: React.FC = () => {
 
   const [event, setEvent] = useState<EventData | null>(null);
   // Note: leaderboardData state and getEventLeaderboard API call were removed because they were unused and caused compile errors
-  const [eventsJoined, setEventsJoined] = useState<string[]>([]);
+  // Commented out unused eventsJoined state per user request (logic moved to currentUser.joinedEvents check)
+  // const [eventsJoined, setEventsJoined] = useState<string[]>([]);
   const [modalView, setModalView] = useState<"none" | "confirm" | "success">(
     "none",
   );
@@ -182,6 +183,41 @@ export const EventDetailPage: React.FC = () => {
 
   // Check if the current user is the creator of this event
   const isCreator = event && currentUser && event.createdBy === currentUser.id;
+
+  // Load registered organizations list to identify/filter organization IDs from attendee counts
+  const [organizations, setOrganizations] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchOrganizations() {
+      try {
+        const orgs = await apiService.getOrganizations();
+        setOrganizations(orgs || []);
+      } catch (err) {
+        console.error("Error fetching organizations in details page:", err);
+      }
+    }
+    fetchOrganizations();
+  }, []);
+
+  // Compute the count of scanned (attendance logged) users, skipping organization IDs
+  const scannedUsersCount = React.useMemo(() => {
+    if (!event || !event.attendentParticipant) return 0;
+
+    let attendees = event.attendentParticipant;
+    if (typeof attendees === "string") {
+      try {
+        attendees = JSON.parse(attendees);
+      } catch {
+        attendees = [];
+      }
+    }
+
+    if (!Array.isArray(attendees)) return 0;
+
+    // Build a Set of organization IDs for O(1) checks
+    const orgIds = new Set(organizations.map((org) => org.orgId || org.id));
+    return attendees.filter((id) => !orgIds.has(id)).length;
+  }, [event, organizations]);
 
   // Commented out unused ref to fix compiler warning TS6133
   // const hasAutoOpenedRef = useRef(false);
@@ -244,7 +280,8 @@ export const EventDetailPage: React.FC = () => {
         if (!eventId) return;
 
         // Determine if the current user is an organization and call the correct dashboard endpoint
-        const isOrgUser = currentUser?.role === "organization";
+        // Commented out unused isOrgUser to fix TS6133 compiler warning
+        // const isOrgUser = currentUser?.role === "organization";
 
         const [found, statusData] = await Promise.all([
           apiService.getEventById(eventId),
@@ -256,6 +293,8 @@ export const EventDetailPage: React.FC = () => {
         // setIsEventStarted(statusData?.isStarted ?? false);
         setEventCheckInTime(statusData?.checkInTime ?? null);
 
+        // Commented out unused dashboard and leaderboard API calls per user request
+        /*
         // Always fetch the regular dashboard to get joined events and personal stats
         const dashboard = await apiService.getDashboard();
         // setUserStats(dashboard?.stats ?? null);
@@ -279,6 +318,7 @@ export const EventDetailPage: React.FC = () => {
           // Fetch leaderboard if needed in the future; removed setLeaderboardData here to fix compile error
           await apiService.getEventLeaderboard(eventId);
         }
+        */
       } finally {
         if (!silent) setDataLoading(false);
       }
@@ -525,8 +565,8 @@ export const EventDetailPage: React.FC = () => {
       </div>
     );
 
-  // Derived from dashboard eventsJoined — true when this event is in the joined list
-  const isActiveEvent = eventsJoined.includes(eventId);
+  // Derived from currentUser joinedEvents list directly to avoid redundant dashboard API calls
+  const isActiveEvent = currentUser?.joinedEvents?.includes(eventId) || false;
 
   // Check if the event's endDate is in the past
   const isEventCompleted = event.endDate ? new Date(event.endDate) < new Date() : false;
@@ -667,7 +707,8 @@ export const EventDetailPage: React.FC = () => {
   const handleConfirmJoin = async () => {
     setIsJoining(true);
     try {
-      // Leave any currently active event first
+      // Leave any currently active event first logic commented out per user request
+      /*
       const currentActiveEvent = currentUser?.joinedEvents?.[0];
       if (currentActiveEvent) {
         const activeEventId =
@@ -678,6 +719,7 @@ export const EventDetailPage: React.FC = () => {
           await apiService.leaveEvent(activeEventId);
         }
       }
+      */
 
       await apiService.joinEvent(event.eventId);
       await refreshUserProfile(); // refresh so isActiveEvent updates immediately
@@ -865,7 +907,7 @@ export const EventDetailPage: React.FC = () => {
           <h3 className="font-extrabold text-gray-800 mb-2 flex items-center gap-2">
             Attendance Log
           </h3>
-          <div className="max-h-56 overflow-y-auto space-y-3 snap-y scroll-smooth pr-1">
+          <div className="max-h-32 overflow-y-auto space-y-3 snap-y scroll-smooth pr-1">
             {(() => {
               // Group attendance logs by user ID to cluster multiple scans neatly under each attendee's name
               const grouped = (event.attendentUsers || []).reduce((acc: any, log: any) => {
@@ -955,8 +997,9 @@ export const EventDetailPage: React.FC = () => {
     </div>
   );
 
+  // Wrap layout in a flex-col layout to implement a responsive sticky footer across all devices
   return (
-    <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-900">
+    <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-900 flex flex-col">
       {/* Header */}
       <header className="bg-white px-5 sm:px-8 lg:px-12 py-4 sticky top-0 z-40 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center">
@@ -979,22 +1022,25 @@ export const EventDetailPage: React.FC = () => {
                     Organizations now manually log cleanup activities from the dashboard.
                   */}
                   {/* {!isEventStarted ? ( */}
-                    <>
-                      {/* Render the QR scanner button for the organization creator only for private/registered events */}
-                      {event.eventType !== "public" && (
-                        <button
-                          onClick={() => {
-                            // Commented out unused state setter to fix compiler warning TS6133
-                            // setLastScannedUserId(null);
-                            setIsScanningQR(true);
-                          }}
-                          className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
-                          title="Scan Attendance QR Code"
-                        >
-                          <QrCode className="w-5 h-5" />
-                        </button>
+                  <>
+                    {/* Render the QR scanner button for the organization creator for both public and private events */}
+                    <button
+                      onClick={() => {
+                        // Commented out unused state setter to fix compiler warning TS6133
+                        // setLastScannedUserId(null);
+                        setIsScanningQR(true);
+                      }}
+                      className="relative cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                      title="Scan Attendance QR Code"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      {scannedUsersCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black px-1 min-w-[20px] h-5 rounded-full flex items-center justify-center border border-white shadow-sm">
+                          {scannedUsersCount}
+                        </span>
                       )}
-                      {/* <button
+                    </button>
+                    {/* <button
                         onClick={handleStartEvent}
                         className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
                       >
@@ -1025,7 +1071,7 @@ export const EventDetailPage: React.FC = () => {
                         <StopCircle className="w-4 h-4" />
                         <span>Stop Cleanup</span>
                       </button> */}
-                    </>
+                  </>
                   {/* )} */}
                 </div>
               ) : null
@@ -1125,33 +1171,38 @@ export const EventDetailPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile & Tablet */}
-      <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
-        {/* Mobile Action Area */}
-        <div className="flex justify-end items-center -mb-2 w-full">
-          {isCreator ? (
-            event.status === "approved" && !isEventCompleted ? (
-              <div className="flex items-center gap-4 w-full justify-between">
-                {/*
+      {/* Main content wrapper that dynamically expands to push the footer down on short pages */}
+      <main className="flex-1">
+        {/* Mobile & Tablet */}
+        <div className="lg:hidden px-5 sm:px-8 py-6 max-w-2xl mx-auto flex flex-col gap-6">
+          {/* Mobile Action Area */}
+          <div className="flex justify-end items-center -mb-2 w-full">
+            {isCreator ? (
+              event.status === "approved" && !isEventCompleted ? (
+                <div className="flex items-center gap-4 w-full justify-between">
+                  {/*
                   Commented out Start/Stop Cleanup Event buttons and timer logic per user request.
                   Organizations now manually log cleanup activities from the dashboard.
                 */}
-                {/* {!isEventStarted ? ( */}
+                  {/* {!isEventStarted ? ( */}
                   <>
-                    {/* Render the QR scanner button for the organization creator only for private/registered events */}
-                    {event.eventType !== "public" && (
-                      <button
-                        onClick={() => {
-                          // Commented out unused state setter to fix compiler warning TS6133
-                          // setLastScannedUserId(null);
-                          setIsScanningQR(true);
-                        }}
-                        className="cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
-                        title="Scan Attendance QR Code"
-                      >
-                        <QrCode className="w-5 h-5" />
-                      </button>
-                    )}
+                    {/* Render the QR scanner button for the organization creator for both public and private events */}
+                    <button
+                      onClick={() => {
+                        // Commented out unused state setter to fix compiler warning TS6133
+                        // setLastScannedUserId(null);
+                        setIsScanningQR(true);
+                      }}
+                      className="relative cursor-pointer flex items-center justify-center bg-[#E8F2FA] text-[#0083cf] p-2.5 rounded-full hover:bg-blue-100 transition-all border border-[#0083cf]/20"
+                      title="Scan Attendance QR Code"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      {scannedUsersCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black px-1 min-w-[16px] h-4 rounded-full flex items-center justify-center border border-white shadow-sm">
+                          {scannedUsersCount}
+                        </span>
+                      )}
+                    </button>
                     {/* <button
                       onClick={handleStartEvent}
                       className="cursor-pointer bg-[#96c93d] hover:bg-[#86b537] text-white font-extrabold px-6 py-2.5 rounded-full shadow-sm transition-colors active:scale-95 text-sm"
@@ -1184,16 +1235,16 @@ export const EventDetailPage: React.FC = () => {
                       <span>Stop Cleanup</span>
                     </button> */}
                   </>
-                {/* )} */}
-              </div>
-            ) : null
-          ) : (
-            <>
-              {/* 
+                  {/* )} */}
+                </div>
+              ) : null
+            ) : (
+              <>
+                {/* 
                 Commented out volunteer check-in timer session, "Start Clean-up", and "Stop Clean-up" buttons 
                 since the logging flow is now manual from the dashboard.
               */}
-              {/*
+                {/*
               {isActiveEvent &&
                 sessionState === "idle" &&
                 event.eventType !== "private" &&
@@ -1285,42 +1336,43 @@ export const EventDetailPage: React.FC = () => {
                   </div>
                 )}
               */}
-            </>
-          )}
+              </>
+            )}
+          </div>
+
+          <div className="w-full h-52 sm:h-64 rounded-[1.5rem] overflow-hidden shadow-sm">
+            <img
+              src={getEventImageUrl(event.eventImage)}
+              className="w-full h-full object-cover"
+              alt={event.name}
+            />
+          </div>
+
+          <EventInfoCard compact />
+
+
         </div>
 
-        <div className="w-full h-52 sm:h-64 rounded-[1.5rem] overflow-hidden shadow-sm">
-          <img
-            src={getEventImageUrl(event.eventImage)}
-            className="w-full h-full object-cover"
-            alt={event.name}
-          />
-        </div>
-
-        <EventInfoCard compact />
-
-
-      </div>
-
-      {/* Desktop split-screen layout displaying the event image on the left and the detailed EventInfoCard on the right */}
-      <div className="hidden lg:block">
-        <div className="max-w-8xl mx-auto px-8 xl:px-12 py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-start">
-            {/* Left Section: Sticky Event Image for interactive scrolling experience on desktop */}
-            <div className="lg:col-span-6 w-full h-[400px] rounded-[2rem] overflow-hidden shadow-sm lg:sticky lg:top-24">
-              <img
-                src={getEventImageUrl(event.eventImage)}
-                className="w-full h-full object-cover"
-                alt={event.name}
-              />
-            </div>
-            {/* Right Section: Detailed Event Information Card containing details, description, rewards, and checked-in logs */}
-            <div className="lg:col-span-6">
-              <EventInfoCard />
+        {/* Desktop split-screen layout displaying the event image on the left and the detailed EventInfoCard on the right */}
+        <div className="hidden lg:block">
+          <div className="max-w-8xl mx-auto px-8 xl:px-12 py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-start">
+              {/* Left Section: Sticky Event Image for interactive scrolling experience on desktop */}
+              <div className="lg:col-span-6 w-full h-[400px] rounded-[2rem] overflow-hidden shadow-sm lg:sticky lg:top-24">
+                <img
+                  src={getEventImageUrl(event.eventImage)}
+                  className="w-full h-full object-cover"
+                  alt={event.name}
+                />
+              </div>
+              {/* Right Section: Detailed Event Information Card containing details, description, rewards, and checked-in logs */}
+              <div className="lg:col-span-6">
+                <EventInfoCard />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* ── Global Footer ───────────────────────────────────────────────────── */}
       <footer className="max-w-[1600px] mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 border-t border-gray-100 animate-slide-up bg-white lg:bg-transparent">
@@ -1357,14 +1409,14 @@ export const EventDetailPage: React.FC = () => {
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-6 sm:p-8 border border-gray-100 animate-in zoom-in-95 text-left relative">
             <h3 className="text-xl font-bold tracking-tight text-gray-900 mb-6 border-b border-gray-50 pb-4 flex items-center justify-between">
               <span>Attendance Details</span>
-              <button 
-                onClick={() => setSelectedAttendeeLog(null)} 
+              <button
+                onClick={() => setSelectedAttendeeLog(null)}
                 className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>
             </h3>
-            
+
             <div className="space-y-5">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Name</span>
@@ -1475,19 +1527,7 @@ export const EventDetailPage: React.FC = () => {
             <div className="text-center mb-6">
               <div className="mx-auto w-20 h-20 bg-green-500/10 text-green-400 rounded-full flex flex-col items-center justify-center mb-3 border border-green-500/30 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
                 <span className="text-3xl font-black tracking-tight leading-none text-green-400">
-                  {(() => {
-                    // Extract scanned count dynamically by parsing the attendee participant list safely
-                    if (!event || !event.attendentParticipant) return 0;
-                    let attendees = event.attendentParticipant;
-                    if (typeof attendees === "string") {
-                      try {
-                        attendees = JSON.parse(attendees);
-                      } catch {
-                        attendees = [];
-                      }
-                    }
-                    return (attendees as string[]).length;
-                  })()}
+                  {scannedUsersCount}
                 </span>
                 <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-green-500/70">
                   Scanned

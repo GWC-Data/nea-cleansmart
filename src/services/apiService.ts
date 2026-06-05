@@ -83,6 +83,7 @@ export interface DashboardEvent {
   endDate: string;
   joinedCount: number;
   eventImage: string | null;
+  eventType?: "public" | "private"; // 👈 Include eventType for public/private badges
 }
 
 /**
@@ -654,6 +655,36 @@ export const apiService = {
   },
 
   /**
+   * Check daily volunteer time limits for scanned attendees
+   * @param eventId The event ID
+   * @param date Date string in format YYYY-MM-DD (Singapore timezone today's date)
+   * @param userIds List of scanned volunteer attendee IDs
+   * @returns Maximum hours logged today and corresponding username
+   */
+  async checkAttendeeLimits(
+    eventId: string,
+    date: string,
+    userIds: string[]
+  ): Promise<{ maxHours: number; userName: string }> {
+    try {
+      const response = await fetch(`${BASE}/event-logs/check-limit`, {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ eventId, date, userIds }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to check attendee limits: ${response.statusText}`,
+        );
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("checkAttendeeLimits error:", error);
+      return { maxHours: 0, userName: "" };
+    }
+  },
+
+  /**
    * Get user's event logs by date
    * User ID is extracted from JWT token on backend
    * @param date Date string in format YYYY-MM-DD
@@ -702,26 +733,27 @@ export const apiService = {
 
   /**
    * Get event logs by event
+   * Used by organization flow to determine already logged volunteer hours for an event
    * @param eventId The event ID
    * @returns Event logs for that event with stats
    */
-  // async getEventLogsByEvent(eventId: string): Promise<any | null> {
-  //   try {
-  //     const response = await fetch(`${BASE}/event-logs/event/${eventId}`, {
-  //       method: "GET",
-  //       headers: getAuthHeaders(),
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(
-  //         `Failed to fetch event logs for event: ${response.statusText}`,
-  //       );
-  //     }
-  //     return await response.json();
-  //   } catch (error) {
-  //     console.error("getEventLogsByEvent error:", error);
-  //     return null;
-  //   }
-  // },
+  async getEventLogsByEvent(eventId: string): Promise<any | null> {
+    try {
+      const response = await fetch(`${BASE}/event-logs/event/${eventId}`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch event logs for event: ${response.statusText}`,
+        );
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("getEventLogsByEvent error:", error);
+      return null;
+    }
+  },
 
   // ============================================================
   // DASHBOARD ENDPOINT
