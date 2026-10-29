@@ -29,7 +29,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   loading = false,
 }) => {
   return (
-    <div className="group relative bg-white rounded-2xl border border-[#E8EEF4] p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_40px_-18px_rgba(16,138,203,0.35)]">
+    // Full-height flex container ensuring equal card heights across responsive grid columns
+    <div className="group relative bg-white rounded-2xl border border-[#E8EEF4] p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_40px_-18px_rgba(16,138,203,0.35)] h-full flex flex-col justify-between">
       {/* Top accent stripe */}
       <div
         className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
