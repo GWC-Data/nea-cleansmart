@@ -364,9 +364,31 @@ export const adminApiService = {
       );
       if (!response.ok) return [];
       const data = await response.json();
-      return data.users || [];
+      // The backend returns the list of top users under `topUsers` (fallback to `users` for backwards compatibility)
+      return data.topUsers || data.users || [];
     } catch (error) {
       console.error("adminApiService.getTopLeaderboard error:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Get top N organizations leaderboard (by hours logged)
+   */
+  async getTopOrganizations(limit = 5): Promise<any[]> {
+    try {
+      const response = await fetch(
+        `${BASE}/organizations/leaderboard/top?limit=${limit}`,
+        {
+          method: "GET",
+          headers: adminHeaders(),
+        },
+      );
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.leaderboard || [];
+    } catch (error) {
+      console.error("adminApiService.getTopOrganizations error:", error);
       return [];
     }
   },
@@ -448,13 +470,39 @@ export const adminApiService = {
       ]);
 
       const now = new Date();
-      const activeEvents = events.filter((e) => new Date(e.startDate) >= now).length;
+      // Calculate active events using both criteria:
+      // Option B: Real-time cleanups currently in progress (volunteers actively checked in: isStarted === true)
+      // Option A: Event is currently ongoing within its schedule (startDate <= now and has not ended yet: !endDate || endDate >= now)
+      // Note: If an event's endDate has already passed, it is completed and cannot be active even if a past session was not checked out.
+      const activeEvents = events.filter((e) => {
+        if (e.status === "rejected") return false;
+
+        const isEnded = Boolean(e.endDate && new Date(e.endDate) < now);
+        if (isEnded) return false;
+
+        // Option B: Volunteers currently checked in for a live active session
+        if (e.isStarted) {
+          console.info(`[ActiveEvent] "${e.name}" is counted as ACTIVE via Option B (isStarted === true: active live cleanup)`);
+          return true;
+        }
+
+        // Option A: Event has started and has not ended yet
+        const start = new Date(e.startDate);
+        const hasStarted = !isNaN(start.getTime()) && start <= now;
+        if (hasStarted) {
+          console.info(`[ActiveEvent] "${e.name}" is counted as ACTIVE via Option A (schedule window: started ${e.startDate}, ends ${e.endDate || 'open'})`);
+          return true;
+        }
+
+        return false;
+      }).length;
+      // Calculate platform totals: backend returns `totalTimeLogged` for hours and `totalWasteCollected` for weight
       const totalHoursLogged = leaderboard.reduce(
-        (sum, e) => sum + (e.totalHours || 0),
+        (sum, e) => sum + (e.totalTimeLogged ?? e.totalHours ?? 0),
         0,
       );
       const totalWasteCollected = leaderboard.reduce(
-        (sum, e) => sum + (e.garbageWeightCollected || 0),
+        (sum, e) => sum + (e.totalWasteCollected ?? e.garbageWeightCollected ?? 0),
         0,
       );
 

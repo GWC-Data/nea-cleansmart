@@ -96,13 +96,20 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   userName: string;
-  userEmail: string;
-  totalHours: number;
-  garbageWeightCollected: number;
-  checkInTime: string;
-  checkOutTime: string;
-  eventName: string;
-  eventDate: string;
+  userEmail?: string;
+  email?: string;
+  // Hours logged by user (backend returns totalTimeLogged; fallback to totalHours)
+  totalHours?: number;
+  totalTimeLogged?: number;
+  // Garbage weight collected (backend returns totalWasteCollected; fallback to garbageWeightCollected)
+  garbageWeightCollected?: number;
+  totalWasteCollected?: number;
+  totalPoints?: number;
+  eventsJoined?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+  eventName?: string;
+  eventDate?: string;
 }
 
 export interface OrganizationProfile {
